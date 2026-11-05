@@ -143,7 +143,9 @@ input[type=range]{width:100%;accent-color:var(--blue)}
 }
 .lightning-legend{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:9px;color:#647b95}
 .lightning-legend span{display:inline-flex;align-items:center;gap:3px}
-.lightning-dot{width:9px;height:9px;border-radius:50%;display:inline-block;border:1px solid #0002}
+.lightning-dot{width:10px;height:10px;border-radius:50%;display:inline-block;border:1px solid #0002}
+.lightning-static-point{filter:drop-shadow(0 1px 2px #26384b88)}
+.leaflet-radar-raster{transition:opacity .16s linear}
 .lightning-status{font-size:10px;line-height:1.5;color:#647b95;margin-top:8px}
 
 /* TSC / STSC - ocorrências de tempo severo convectivo */
@@ -484,7 +486,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 
 <section class="panel">
 <h3>RAIOS E RELÂMPAGOS</h3>
-<div class="info">Exibe detecções reais de descargas elétricas no mapa. O símbolo ⚡ identifica cada descarga; a cor representa a energia relativa detectada.</div>
+<div class="info">Exibe as descargas elétricas detectadas no mapa como pontos coloridos. A cor representa a intensidade energética relativa informada pelo GOES-19 GLM; os pontos permanecem visíveis enquanto o loop anima cada descarga.</div>
 <button class="primary" id="lightningToggle" style="width:100%;margin-top:10px" onclick="toggleLightning()">ATIVAR RAIOS E RELÂMPAGOS</button>
 <button class="secondary" id="lightningLoopToggle" style="width:100%;margin-top:8px" onclick="toggleLightningLoop()" disabled>INICIAR LOOP DOS RAIOS</button>
 <label for="lightningSpeed">VELOCIDADE DO LOOP</label>
@@ -688,6 +690,7 @@ let currentProduct="maxcappi";
 let frames=[];
 let currentFrame=0;
 let loopTimer=null;
+let loopRunToken=0;
 let radarLayers=[];
 let refreshing=false;
 let frameRenderToken=0;
@@ -704,6 +707,7 @@ let lightningTimer=null;
 let lightningGroup=L.layerGroup();
 let lightningFeatures=[];
 let lightningLayers=[];
+let lightningStaticLayers=[];
 let lightningRequest=null;
 let lightningLastSignature="";
 let lightningAnimationTimer=null;
@@ -1666,8 +1670,8 @@ async function showFrame(index){
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
  const nextLayers=frame.images.map(image=>L.imageOverlay(
   radarExportSafeUrl(image.url),image.bounds,
-  {opacity,interactive:false,className:"leaflet-radar-raster"}
- ));
+  {opacity:0,interactive:false,className:"leaflet-radar-raster"}
+  ));
 
  // Registrar os eventos ANTES de adicionar as imagens evita perder o evento
  // load quando o navegador já tem o arquivo em cache.
@@ -1701,6 +1705,15 @@ async function showFrame(index){
  }
 
  if(loadResults.every(Boolean)){
+  // Transição curta entre quadros: os pixels originais são preservados,
+  // sem filtros de cor ou interpolação que alterem os valores meteorológicos.
+  nextLayers.forEach(layer=>layer.setOpacity(opacity));
+  radarLayers.forEach(layer=>layer.setOpacity(0));
+  await new Promise(resolve=>setTimeout(resolve,190));
+  if(renderToken!==frameRenderToken){
+   nextLayers.forEach(layer=>radarGroup.removeLayer(layer));
+   return;
+  }
   radarLayers.forEach(layer=>radarGroup.removeLayer(layer));
   radarLayers=nextLayers;
   lastRenderedFrame=currentFrame;
@@ -1764,13 +1777,23 @@ async function refreshRadar(){
 }
 
 function nextFrame(){
- if(frames.length) showFrame(currentFrame+1);
+ if(frames.length) return showFrame(currentFrame+1);
 }
 function previousFrame(){
- if(frames.length) showFrame(currentFrame-1);
+ if(frames.length) return showFrame(currentFrame-1);
 }
 function pauseLoop(){
- if(loopTimer){clearInterval(loopTimer);loopTimer=null;}
+ // Invalida qualquer ciclo que esteja aguardando o carregamento de um quadro.
+ loopRunToken++;
+ if(loopTimer){clearTimeout(loopTimer);loopTimer=null;}
+}
+async function runRadarLoop(token){
+ if(token!==loopRunToken||!frames.length)return;
+ const speed=Math.max(100,Number(document.getElementById("speed").value)||800);
+ // Aguarda o carregamento do quadro antes de programar o próximo.
+ await showFrame(currentFrame+1);
+ if(token!==loopRunToken||!frames.length)return;
+ loopTimer=setTimeout(()=>runRadarLoop(token),speed);
 }
 function startLoop(){
  if(!frames.length){
@@ -1778,8 +1801,8 @@ function startLoop(){
   return;
  }
  pauseLoop();
- const speed=Number(document.getElementById("speed").value)||800;
- loopTimer=setInterval(nextFrame,speed);
+ const token=loopRunToken;
+ runRadarLoop(token);
 }
 function stopLoop(){
  pauseLoop();
@@ -1885,8 +1908,8 @@ function showNextLightningFlash(){
  const icon=L.divIcon({
   className:"lightning-flash-icon",
   html:`<span class="lightning-flash-dot" style="--flash-color:${color};animation-duration:${LIGHTNING_FLASH_DURATION}ms"></span>`,
-  iconSize:[20,20],
-  iconAnchor:[10,10]
+  iconSize:[24,24],
+  iconAnchor:[12,12]
  });
 
  lightningActiveMarker=L.marker([item.point.lat,item.point.lon],{
@@ -1943,6 +1966,32 @@ function renderLightning(data){
   medium:lightningQuantile(energies,.50),
   high:lightningQuantile(energies,.75)
  };
+
+ // Pontos permanentes: todas as descargas ficam visíveis, como no mapa de referência.
+ // O loop acrescenta um brilho temporário sobre o ponto correspondente.
+ lightningStaticLayers.forEach(layer=>lightningGroup.removeLayer(layer));
+ lightningStaticLayers=[];
+ const markerOpacity=Number(document.getElementById("lightningOpacity").value)/100;
+ valid.forEach(item=>{
+  const color=lightningColor(item.energy,lightningAnimationLimits);
+  const radius=item.energy===null?5:
+   (item.energy>=lightningAnimationLimits.high?7:
+    item.energy>=lightningAnimationLimits.medium?6:
+    item.energy>=lightningAnimationLimits.low?5:4);
+  const marker=L.circleMarker([item.point.lat,item.point.lon],{
+   radius, color:"#ffffff", weight:1.1,
+   fillColor:color, fillOpacity:Math.max(.2,markerOpacity),
+   opacity:markerOpacity, className:"lightning-static-point",
+   interactive:true, bubblingMouseEvents:false
+  });
+  const energyText=item.energy===null?"Energia não informada":`Energia GLM: ${item.energy.toExponential(2)} J`;
+  const props=item.feature?.properties||{};
+  const time=props.time??props.timestamp??props.flash_time??"Horário não informado";
+  marker.bindPopup(`<b>Descarga elétrica detectada</b><br>${energyText}<br>${time}`);
+  marker.addTo(lightningGroup);
+  lightningStaticLayers.push(marker);
+ });
+ lightningLayers=lightningStaticLayers.slice();
 
  // Quando a fonte informa horário, os flashes são reproduzidos do mais antigo ao mais recente.
  valid.sort((a,b)=>lightningTimestamp(a)-lightningTimestamp(b));
@@ -2047,6 +2096,7 @@ function toggleLightning(){
   stopLightningLoop();
   lightningGroup.clearLayers();
   lightningLayers=[];
+  lightningStaticLayers=[];
   lightningFeatures=[];
   lightningLastSignature="";
   map.removeLayer(lightningGroup);
@@ -2059,7 +2109,11 @@ function toggleLightning(){
 
 document.getElementById("lightningOpacity").addEventListener("input",event=>{
  const opacity=Number(event.target.value)/100;
- lightningLayers.forEach(layer=>layer.setOpacity(opacity));
+ lightningLayers.forEach(layer=>{
+  if(layer.setOpacity)layer.setOpacity(opacity);
+  if(layer.setStyle)layer.setStyle({opacity,fillOpacity:Math.max(.2,opacity)});
+ });
+ lightningStaticLayers.forEach(layer=>layer.setStyle({opacity,fillOpacity:Math.max(.2,opacity)}));
 });
 
 // ============================================
