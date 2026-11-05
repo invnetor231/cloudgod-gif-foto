@@ -715,8 +715,7 @@ const map=L.map("map",{
 
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
  attribution:"© OpenStreetMap contributors",
- maxZoom:19,
- crossOrigin:"anonymous"
+ maxZoom:19
 }).addTo(map);
 
 const radarGroup=L.layerGroup().addTo(map);
@@ -1480,50 +1479,107 @@ function buildURL(){
 // Imagens REDEMET passam pelo backend do mesmo domínio. Isso permite
 // que o Leaflet e o html2canvas leiam o raster real durante PNG/GIF.
 function radarImageProxyUrl(originalUrl){
- const absolute=new URL(originalUrl,"https://api-redemet.decea.mil.br").href;
- return "/api/radar-image?url="+encodeURIComponent(absolute);
+ // A URL original da REDEMET deve ser preservada para exibição no Leaflet.
+ // Redirecionar para /api/radar-image no domínio estático quebra a imagem
+ // quando esse endpoint de proxy não existe no servidor de hospedagem.
+ const source=String(originalUrl||"").trim();
+ if(!source)return "";
+ try{
+  return new URL(source,"https://api-redemet.decea.mil.br").href;
+ }catch(error){
+  return source;
+ }
 }
 
-// Normaliza imagens de radar e recolhe coordenadas das estações mesmo
-// quando a API não disponibiliza uma imagem naquele horário.
+// Normaliza respostas da REDEMET sem presumir que "radar" seja sempre array.
+// A API pode entregar os grupos temporais como arrays ou objetos indexados.
 function parseRadarResponse(json){
- const data=json?.data;
- const radar=data?.radar;
- if(!Array.isArray(radar))return {frames:[],stations:[]};
- // A REDEMET organiza a resposta em grupos temporais. Cada grupo contém
- // várias estações; manter o grupo inteiro evita uma estação por quadro.
- const groups=Array.isArray(radar[0])?radar:[radar];
+ const data=json?.data||{};
+ const radar=data.radar??data.RADAR??data.imagens??data;
+ if(!radar)return {frames:[],stations:[]};
+
+ const isImageNode=value=>value&&typeof value==="object"&&
+  ["path","url","imagem","image","arquivo","imagem_url","image_url","arquivo_url","url_imagem"].some(k=>value[k]);
+
+ let groups;
+ if(Array.isArray(radar)){
+  groups=Array.isArray(radar[0])?radar:[radar];
+ }else if(isImageNode(radar)){
+  groups=[[radar]];
+ }else if(typeof radar==="object"){
+  const values=Object.values(radar);
+  groups=values.length&&values.every(v=>Array.isArray(v)||isImageNode(v))?[values]:values;
+ }else{
+  return {frames:[],stations:[]};
+ }
+
  const stations=[];
  const parsedFrames=[];
+ const sharedBox=data.lat_lon||data.latLon||data.bounds||{};
+ const numberFrom=(obj,keys)=>{
+  for(const key of keys){
+   const value=Number(obj?.[key]);
+   if(Number.isFinite(value))return value;
+  }
+  return NaN;
+ };
+
  groups.forEach((group,index)=>{
   const nodes=[];
   function flatten(value){
    if(Array.isArray(value)){value.forEach(flatten);return;}
    if(value&&typeof value==="object"){
-    if(value.path||value.url||value.imagem||value.image||value.arquivo)nodes.push(value);
+    if(isImageNode(value))nodes.push(value);
     else Object.values(value).forEach(flatten);
    }
   }
   flatten(group);
+
   const images=[];
   nodes.forEach(node=>{
-   const centerLat=Number(node.lat_center??node.latitude_center??node.latCenter);
-   const centerLon=Number(node.lon_center??node.longitude_center??node.lonCenter);
+   const centerLat=numberFrom(node,["lat_center","latitude_center","latCenter","latitude","lat"]);
+   const centerLon=numberFrom(node,["lon_center","longitude_center","lonCenter","longitude","lon"]);
    if(Number.isFinite(centerLat)&&Number.isFinite(centerLon)){
-    stations.push({id:String(node.id??node.localidade??node.nome??(index+1)),name:node.nome||node.localidade||"Radar meteorológico",lat:centerLat,lon:centerLon});
+    stations.push({
+     id:String(node.id??node.codigo??node.localidade??node.nome??(index+1)),
+     name:node.nome||node.localidade||node.estacao||"Radar meteorológico",
+     lat:centerLat,lon:centerLon
+    });
    }
-   const path=node.path||node.url||node.imagem||node.image||node.arquivo;
-   const south=Number(node.lat_min??node.latitude_min??node.latMin);
-   const north=Number(node.lat_max??node.latitude_max??node.latMax);
-   const west=Number(node.lon_min??node.longitude_min??node.lonMin);
-   const east=Number(node.lon_max??node.longitude_max??node.lonMax);
-   if(path&&[south,north,west,east].every(Number.isFinite)){
-    images.push({url:radarImageProxyUrl(path),bounds:[[south,west],[north,east]]});
+
+   const rawPath=node.path||node.url||node.imagem||node.image||node.arquivo||
+    node.imagem_url||node.image_url||node.arquivo_url||node.url_imagem;
+   const south=numberFrom(node,["lat_min","latitude_min","latMin","south"]) ;
+   const north=numberFrom(node,["lat_max","latitude_max","latMax","north"]);
+   const west=numberFrom(node,["lon_min","longitude_min","lonMin","west"]);
+   const east=numberFrom(node,["lon_max","longitude_max","lonMax","east"]);
+   const boxSouth=numberFrom(sharedBox,["lat_min","latitude_min","south"]);
+   const boxNorth=numberFrom(sharedBox,["lat_max","latitude_max","north"]);
+   const boxWest=numberFrom(sharedBox,["lon_min","longitude_min","west"]);
+   const boxEast=numberFrom(sharedBox,["lon_max","longitude_max","east"]);
+   const boundsValues=[
+    Number.isFinite(south)?south:boxSouth,
+    Number.isFinite(north)?north:boxNorth,
+    Number.isFinite(west)?west:boxWest,
+    Number.isFinite(east)?east:boxEast
+   ];
+
+   if(rawPath&&boundsValues.every(Number.isFinite)){
+    images.push({
+     url:radarImageProxyUrl(rawPath),
+     bounds:[[boundsValues[0],boundsValues[2]],[boundsValues[1],boundsValues[3]]]
+    });
    }
   });
-  const time=data?.anima?.[index]||nodes.find(n=>n.data)?.data||("Quadro "+(index+1));
+
+  const time=data?.anima?.[index]||data?.horarios?.[index]||
+   nodes.find(n=>n.data||n.datahora||n.horario)?.data||
+   nodes.find(n=>n.datahora)?.datahora||
+   nodes.find(n=>n.horario)?.horario||
+   ("Quadro "+(index+1));
   if(images.length)parsedFrames.push({time,images});
  });
+
  return {frames:parsedFrames,stations};
 }
 
@@ -1566,6 +1622,12 @@ function clearRadarLayers(){
  radarLayers=[];
 }
 
+// Usa o proxy do mesmo domínio Render para carregar o raster REDEMET.
+function radarExportSafeUrl(sourceUrl){
+ // Não redirecionar para /api/radar-image: o site estático não possui esse endpoint.
+ return String(sourceUrl||"");
+}
+
 async function showFrame(index){
  if(!frames.length) return;
  const renderToken=++frameRenderToken;
@@ -1579,7 +1641,7 @@ async function showFrame(index){
  // sem Access-Control-Allow-Origin. Com crossorigin=anonymous o navegador
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
  const nextLayers=frame.images.map(image=>L.imageOverlay(
-  image.url,image.bounds,
+  radarExportSafeUrl(image.url),image.bounds,
   {opacity,interactive:false,className:"leaflet-radar-raster"}
  ));
 
@@ -2183,10 +2245,13 @@ async function exportSouthAmericaGif(){
  }
  const originalCenter=map.getCenter(),originalZoom=map.getZoom(),originalFrame=currentFrame;
  const wasLoop=!!loopTimer;
+ // Os ícones 📡 continuam no mapa normal, mas não entram nos quadros exportados.
+ const stationsWereVisible=map.hasLayer(radarStationGroup);
  let workerUrl=null;
  pauseLoop();
  button.disabled=true;button.textContent="GERANDO GIF…";
  try{
+  if(stationsWereVisible)map.removeLayer(radarStationGroup);
   map.fitBounds(SOUTH_AMERICA_EXPORT_BOUNDS,{padding:[18,18],animate:false});
   map.invalidateSize({pan:false,animate:false});
   await waitForFrame(1100);
@@ -2228,6 +2293,8 @@ async function exportSouthAmericaGif(){
   setExportStatus("Não foi possível gerar o GIF: "+error.message+". Verifique a conexão e a permissão CORS das imagens externas.",false);
  }finally{
   if(workerUrl)URL.revokeObjectURL(workerUrl);
+  // Restaura os ícones das estações no mapa depois de terminar (ou falhar) o GIF.
+  if(stationsWereVisible&&!map.hasLayer(radarStationGroup))radarStationGroup.addTo(map);
   map.setView(originalCenter,originalZoom,{animate:false});
   await waitForFrame(250);
   map.invalidateSize({pan:false,animate:false});
