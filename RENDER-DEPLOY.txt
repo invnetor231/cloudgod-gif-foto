@@ -1,0 +1,15 @@
+CLOUDGOD — DEPLOY NO RENDER
+
+Este pacote precisa ser publicado como Render Web Service (Node), não como Static Site, porque o PNG/GIF exige o endpoint /api/radar-image.
+
+1. Coloque index.html, server.js e package.json na raiz do repositório Git.
+2. No Render, crie New > Web Service e conecte esse repositório.
+3. Runtime: Node.
+4. Build Command: npm install
+5. Start Command: npm start
+6. Não defina PORT manualmente. O Render fornece PORT automaticamente.
+7. Faça o deploy e abra a URL do Web Service. O próprio serviço entrega o index.html e o proxy.
+
+O proxy aceita somente HTTPS de domínios DECEA, limita imagens a 25 MB e devolve o raster no mesmo domínio do app. A API JSON da REDEMET continua sendo consultada pelo navegador como antes.
+
+Se hoje o CLOUDGOD estiver publicado como Static Site, publique este pacote como Web Service e passe a usar a URL do novo Web Service. O serviço antigo pode permanecer ativo até validar o novo.
