@@ -1584,16 +1584,19 @@ function buildURL(){
 
 // Imagens REDEMET passam pelo backend do mesmo domínio. Isso permite
 // que o Leaflet e o html2canvas leiam o raster real durante PNG/GIF.
+const RADAR_IMAGE_PROXY="https://cloudgod-gif-foto.onrender.com/api/radar-image";
 function radarImageProxyUrl(originalUrl){
- // A URL original da REDEMET deve ser preservada para exibição no Leaflet.
- // Redirecionar para /api/radar-image no domínio estático quebra a imagem
- // quando esse endpoint de proxy não existe no servidor de hospedagem.
  const source=String(originalUrl||"").trim();
  if(!source)return "";
+ let absolute;
  try{
-  return new URL(source,"https://api-redemet.decea.mil.br").href;
+  absolute=new URL(source,"https://api-redemet.decea.mil.br").href;
+  const proxy=new URL(RADAR_IMAGE_PROXY);
+  proxy.searchParams.set("url",absolute);
+  return proxy.href;
  }catch(error){
-  return source;
+  console.error("URL de raster REDEMET inválida:",error);
+  return "";
  }
 }
 
@@ -1730,8 +1733,9 @@ function clearRadarLayers(){
 
 // Usa o proxy do mesmo domínio Render para carregar o raster REDEMET.
 function radarExportSafeUrl(sourceUrl){
- // Não redirecionar para /api/radar-image: o site estático não possui esse endpoint.
- return String(sourceUrl||"");
+ // O proxy Render devolve os bytes da REDEMET com Access-Control-Allow-Origin,
+ // permitindo ao Leaflet e ao html2canvas lerem os mesmos pixels do raster.
+ return radarImageProxyUrl(sourceUrl);
 }
 
 async function showFrame(index){
@@ -1748,7 +1752,7 @@ async function showFrame(index){
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
  const nextLayers=frame.images.map(image=>L.imageOverlay(
   radarExportSafeUrl(image.url),image.bounds,
-  {opacity:0,interactive:false,className:"leaflet-radar-raster"}
+  {opacity:0,interactive:false,crossOrigin:true,className:"leaflet-radar-raster"}
   ));
 
  // Registrar os eventos ANTES de adicionar as imagens evita perder o evento
