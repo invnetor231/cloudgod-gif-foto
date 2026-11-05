@@ -133,7 +133,14 @@ input[type=range]{width:100%;accent-color:var(--blue)}
 .tornado-risk-label{font: bold 9px Arial,sans-serif;color:#fff;text-shadow:0 1px 3px #000,1px 0 3px #000;text-align:center;white-space:nowrap}
 .radar-station-icon{background:transparent;border:0;text-align:center;font-size:23px;line-height:30px;filter:drop-shadow(0 1px 2px #fff)}
 /* RAIOS E RELÂMPAGOS */
-.lightning-marker{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 7px #182b45aa;font-size:17px;line-height:1;color:#fff}
+.lightning-flash-icon{background:transparent!important;border:0!important}
+.lightning-flash-dot{display:block;width:10px;height:10px;border-radius:50%;background:var(--flash-color,#f4d43b);border:1px solid #fff;box-shadow:0 0 5px 2px var(--flash-color,#f4d43b),0 0 15px 6px var(--flash-color,#f4d43b);opacity:0;transform:scale(.2);animation:lightningFlash .85s ease-out forwards}
+@keyframes lightningFlash{
+ 0%{opacity:0;transform:scale(.2);box-shadow:0 0 0 0 transparent}
+ 12%{opacity:1;transform:scale(1.35);box-shadow:0 0 7px 4px var(--flash-color),0 0 22px 10px var(--flash-color)}
+ 38%{opacity:1;transform:scale(1);box-shadow:0 0 5px 2px var(--flash-color),0 0 15px 7px var(--flash-color)}
+ 100%{opacity:0;transform:scale(.35);box-shadow:0 0 0 0 transparent}
+}
 .lightning-legend{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:9px;font-size:9px;color:#647b95}
 .lightning-legend span{display:inline-flex;align-items:center;gap:3px}
 .lightning-dot{width:9px;height:9px;border-radius:50%;display:inline-block;border:1px solid #0002}
@@ -479,6 +486,15 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <h3>RAIOS E RELÂMPAGOS</h3>
 <div class="info">Exibe detecções reais de descargas elétricas no mapa. O símbolo ⚡ identifica cada descarga; a cor representa a energia relativa detectada.</div>
 <button class="primary" id="lightningToggle" style="width:100%;margin-top:10px" onclick="toggleLightning()">ATIVAR RAIOS E RELÂMPAGOS</button>
+<button class="secondary" id="lightningLoopToggle" style="width:100%;margin-top:8px" onclick="toggleLightningLoop()" disabled>INICIAR LOOP DOS RAIOS</button>
+<label for="lightningSpeed">VELOCIDADE DO LOOP</label>
+<select id="lightningSpeed" onchange="updateLightningSpeed(this.value)" style="margin-top:5px;margin-bottom:10px">
+<option value="2000">Muito lento · 1 raio a cada 2 s</option>
+<option value="1500">Lento · 1 raio a cada 1,5 s</option>
+<option value="1000" selected>Normal · 1 raio por segundo</option>
+<option value="750">Rápido · 1 raio a cada 0,75 s</option>
+<option value="500">Muito rápido · 2 raios por segundo</option>
+</select>
 <label>OPACIDADE DOS MARCADORES</label>
 <input type="range" id="lightningOpacity" min="20" max="100" value="100">
 <div class="lightning-legend">
@@ -690,6 +706,14 @@ let lightningFeatures=[];
 let lightningLayers=[];
 let lightningRequest=null;
 let lightningLastSignature="";
+let lightningAnimationTimer=null;
+let lightningFlashTimeout=null;
+let lightningAnimationIndex=0;
+let lightningLoopRunning=false;
+let lightningActiveMarker=null;
+let LIGHTNING_LOOP_INTERVAL=1000; // Intervalo configurável entre as descargas reproduzidas.
+let LIGHTNING_FLASH_DURATION=850; // Duração do brilho, ajustada conforme a velocidade.
+let lightningAnimationLimits={low:0,medium:0,high:0};
 const lightningCanvas=L.canvas({padding:0.5});
 
 // Sistema de Tempo Severo Convectivo (STSC) da REDEMET/DECEA.
@@ -1812,6 +1836,89 @@ function lightningQuantile(sorted,ratio){
  return sorted[Math.min(sorted.length-1,Math.floor((sorted.length-1)*ratio))];
 }
 
+function lightningTimestamp(item){
+ const props=item.feature?.properties||{};
+ const raw=props.time??props.timestamp??props.flash_time??props.event_time??null;
+ if(raw===null||raw==="")return 0;
+ if(typeof raw==="number"){
+  // Epoch em segundos ou milissegundos.
+  return raw<1e12?raw*1000:raw;
+ }
+ const parsed=Date.parse(raw);
+ return Number.isFinite(parsed)?parsed:0;
+}
+
+function stopLightningAnimation(){
+ if(lightningAnimationTimer){
+  clearInterval(lightningAnimationTimer);
+  lightningAnimationTimer=null;
+ }
+ if(lightningFlashTimeout){
+  clearTimeout(lightningFlashTimeout);
+  lightningFlashTimeout=null;
+ }
+ if(lightningActiveMarker){
+  lightningGroup.removeLayer(lightningActiveMarker);
+  lightningActiveMarker=null;
+ }
+ lightningLayers=[];
+ lightningAnimationIndex=0;
+}
+
+function showNextLightningFlash(){
+ if(!lightningEnabled||!lightningFeatures.length)return;
+
+ if(lightningFlashTimeout){
+  clearTimeout(lightningFlashTimeout);
+  lightningFlashTimeout=null;
+ }
+ if(lightningActiveMarker){
+  lightningGroup.removeLayer(lightningActiveMarker);
+  lightningActiveMarker=null;
+ }
+
+ const item=lightningFeatures[lightningAnimationIndex];
+ lightningAnimationIndex=(lightningAnimationIndex+1)%lightningFeatures.length;
+
+ const opacity=Number(document.getElementById("lightningOpacity").value)/100;
+ const color=lightningColor(item.energy,lightningAnimationLimits);
+ const icon=L.divIcon({
+  className:"lightning-flash-icon",
+  html:`<span class="lightning-flash-dot" style="--flash-color:${color};animation-duration:${LIGHTNING_FLASH_DURATION}ms"></span>`,
+  iconSize:[20,20],
+  iconAnchor:[10,10]
+ });
+
+ lightningActiveMarker=L.marker([item.point.lat,item.point.lon],{
+  icon,
+  opacity,
+  interactive:true,
+  keyboard:false,
+  zIndexOffset:1200,
+  bubblingMouseEvents:false
+ }).addTo(lightningGroup);
+
+ const energyText=item.energy===null
+  ?"Energia não informada"
+  :`Energia GLM: ${item.energy.toExponential(2)} J`;
+ const props=item.feature?.properties||{};
+ const time=props.time??props.timestamp??"Horário não informado";
+ lightningActiveMarker.bindPopup(
+  `<b>Descarga elétrica detectada</b><br>${energyText}<br>${time}`
+ );
+ lightningLayers=[lightningActiveMarker];
+
+ // Remove o marcador ao fim do brilho.
+ lightningFlashTimeout=setTimeout(()=>{
+  if(lightningActiveMarker){
+   lightningGroup.removeLayer(lightningActiveMarker);
+   lightningActiveMarker=null;
+   lightningLayers=[];
+  }
+  lightningFlashTimeout=null;
+ },LIGHTNING_FLASH_DURATION);
+}
+
 function renderLightning(data){
  const features=Array.isArray(data)?data:(data?.features||data?.data||[]);
  const valid=[];
@@ -1828,39 +1935,76 @@ function renderLightning(data){
  if(signature===lightningLastSignature)return;
  lightningLastSignature=signature;
 
+ const resumeLoop=lightningLoopRunning;
+ stopLightningAnimation();
  const energies=valid.map(item=>item.energy).filter(value=>value!==null).sort((a,b)=>a-b);
- const limits={
+ lightningAnimationLimits={
   low:lightningQuantile(energies,.25),
   medium:lightningQuantile(energies,.50),
   high:lightningQuantile(energies,.75)
  };
- const opacity=Number(document.getElementById("lightningOpacity").value)/100;
 
- lightningGroup.clearLayers();
- lightningLayers=[];
- for(const item of valid){
-  const color=lightningColor(item.energy,limits);
-  const marker=L.circleMarker([item.point.lat,item.point.lon],{
-   renderer:lightningCanvas,
-   radius:5,
-   color,
-   weight:1,
-   opacity,
-   fillColor:color,
-   fillOpacity:opacity,
-   bubblingMouseEvents:false
-  });
-  const energyText=item.energy===null?"Energia não informada":`Energia GLM: ${item.energy.toExponential(2)} J`;
-  const props=item.feature?.properties||{};
-  const time=props.time??props.timestamp??"Horário não informado";
-  marker.bindPopup(`<b>Descarga elétrica detectada</b><br>${energyText}<br>${time}`);
-  marker.addTo(lightningGroup);
-  lightningLayers.push(marker);
- }
+ // Quando a fonte informa horário, os flashes são reproduzidos do mais antigo ao mais recente.
+ valid.sort((a,b)=>lightningTimestamp(a)-lightningTimestamp(b));
  lightningFeatures=valid;
- document.getElementById("lightningStatus").textContent=valid.length
-  ?`${valid.length} descarga(s) recebida(s) do GOES-19 GLM. Cores indicam energia relativa entre as descargas do conjunto.`
-  :"Nenhuma descarga retornada no período consultado.";
+
+ if(valid.length){
+  document.getElementById("lightningLoopToggle").disabled=false;
+  document.getElementById("lightningStatus").textContent=
+   `${valid.length} descarga(s) recebida(s) do GOES-19 GLM. Dados prontos. Clique em INICIAR LOOP DOS RAIOS para iniciar a reprodução na velocidade selecionada.`;
+  if(resumeLoop)startLightningLoop();
+ }else{
+  document.getElementById("lightningLoopToggle").disabled=true;
+  document.getElementById("lightningStatus").textContent="Nenhuma descarga retornada no período consultado.";
+ }
+}
+function updateLightningSpeed(value){
+ const requested=Number(value);
+ if(!Number.isFinite(requested)||requested<250)return;
+ LIGHTNING_LOOP_INTERVAL=requested;
+ LIGHTNING_FLASH_DURATION=Math.max(180,Math.round(requested*.85));
+ if(lightningLoopRunning){
+  if(lightningAnimationTimer)clearInterval(lightningAnimationTimer);
+  lightningAnimationTimer=setInterval(showNextLightningFlash,LIGHTNING_LOOP_INTERVAL);
+ }
+ const speedText=`${(1000/LIGHTNING_LOOP_INTERVAL).toFixed(2).replace(/\.?0+$/,'')} raio(s) por segundo`;
+ const status=document.getElementById("lightningStatus");
+ if(lightningLoopRunning){
+  status.textContent=`${lightningFeatures.length} descarga(s) no loop. Velocidade: ${speedText}.`;
+ }
+}
+
+function startLightningLoop(){
+ if(!lightningEnabled||!lightningFeatures.length)return;
+ updateLightningSpeed(document.getElementById("lightningSpeed").value);
+ stopLightningAnimation();
+ lightningLoopRunning=true;
+ const button=document.getElementById("lightningLoopToggle");
+ button.textContent="PARAR LOOP DOS RAIOS";
+ button.classList.remove("secondary");
+ button.classList.add("danger");
+ showNextLightningFlash();
+ lightningAnimationTimer=setInterval(showNextLightningFlash,LIGHTNING_LOOP_INTERVAL);
+ document.getElementById("lightningStatus").textContent=
+  `${lightningFeatures.length} descarga(s) no loop. Velocidade: ${(1000/LIGHTNING_LOOP_INTERVAL).toFixed(2).replace(/\.?0+$/,'')} raio(s) por segundo.`;
+}
+
+function stopLightningLoop(){
+ stopLightningAnimation();
+ lightningLoopRunning=false;
+ const button=document.getElementById("lightningLoopToggle");
+ button.textContent="INICIAR LOOP DOS RAIOS";
+ button.classList.remove("danger");
+ button.classList.add("secondary");
+ if(lightningEnabled&&lightningFeatures.length){
+  document.getElementById("lightningStatus").textContent=
+   `${lightningFeatures.length} descarga(s) carregada(s). Loop pausado.`;
+ }
+}
+
+function toggleLightningLoop(){
+ if(lightningLoopRunning)stopLightningLoop();
+ else startLightningLoop();
 }
 
 async function refreshLightning(){
@@ -1900,6 +2044,7 @@ function toggleLightning(){
   lightningTimer=null;
   if(lightningRequest)lightningRequest.abort();
   lightningRequest=null;
+  stopLightningLoop();
   lightningGroup.clearLayers();
   lightningLayers=[];
   lightningFeatures=[];
@@ -1907,13 +2052,14 @@ function toggleLightning(){
   map.removeLayer(lightningGroup);
   button.textContent="ATIVAR RAIOS E RELÂMPAGOS";
   button.classList.remove("danger");button.classList.add("primary");
+  document.getElementById("lightningLoopToggle").disabled=true;
   document.getElementById("lightningStatus").textContent="Camada desligada.";
  }
 }
 
 document.getElementById("lightningOpacity").addEventListener("input",event=>{
  const opacity=Number(event.target.value)/100;
- lightningLayers.forEach(layer=>layer.setStyle({opacity,fillOpacity:opacity}));
+ lightningLayers.forEach(layer=>layer.setOpacity(opacity));
 });
 
 // ============================================
