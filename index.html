@@ -682,7 +682,7 @@ let radarStationsLoaded=false;
 // Descargas elétricas: o endpoint deve ser servido por uma função backend.
 // O backend consulta/decodifica os arquivos oficiais GOES-19 GLM-L2-LCFA
 // e devolve GeoJSON: {"type":"FeatureCollection","features":[...]}
-const LIGHTNING_API="/api/lightning";
+const LIGHTNING_API="https://cloudgod-gif-foto.onrender.com/api/lightning";
 let lightningEnabled=false;
 let lightningTimer=null;
 let lightningGroup=L.layerGroup();
