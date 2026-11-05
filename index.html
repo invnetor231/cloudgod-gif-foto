@@ -314,15 +314,93 @@ body.economy ~ .footer{display:none!important}
   filter:none!important;
 }
 
+/* ACABAMENTO VISUAL CLOUDGOD · painel meteorológico */
+:root{
+ --blue:#1677ff;
+ --bg:#f3f7fd;
+ --text:#172f4c;
+ --muted:#8293a8;
+ --border:#e3ebf5;
+}
+body{background:linear-gradient(180deg,#f8fbff 0%,#edf4fc 100%)}
+header{
+ height:82px;
+ padding:0 24px;
+ box-shadow:0 3px 18px #244d7410;
+}
+.logo{
+ width:54px;height:54px;border-radius:17px;
+ box-shadow:0 5px 16px #1677ff2a;
+}
+.brand h1{font-size:22px;letter-spacing:2px}
+.brand small{font-size:10px;letter-spacing:1.2px}
+.status{padding:11px 15px;font-size:11px}
+main{padding:20px}
+.dashboard{grid-template-columns:minmax(0,1fr) 320px;gap:17px}
+.map-card,.panel,.loop{
+ border-radius:20px;
+ box-shadow:0 8px 28px #244d7412;
+}
+.map-head{height:76px;padding:14px 19px}
+.map-head h2{font-size:16px}
+.map-head small{font-size:11px}
+button{border-radius:11px;padding:12px 15px;font-size:12px}
+.primary{background:linear-gradient(115deg,#0875ff,#36a2ff)}
+.panel{padding:17px}
+.panel h3{font-size:13px}
+.product{padding:14px;border-radius:13px;min-height:66px}
+.product strong{font-size:12px}
+.product small{font-size:10px}
+.info{border:1px solid #e5eef9;background:#f1f7ff}
+#map{height:calc(100vh - 245px);min-height:500px}
+.lightning-legend{
+ display:grid;
+ grid-template-columns:repeat(4,minmax(0,1fr));
+ gap:6px;
+ padding:12px 9px;
+ border:1px solid #d8e7fb;
+ border-radius:12px;
+ background:#f8fbff;
+}
+.lightning-legend span{
+ justify-content:center;
+ flex-direction:column;
+ gap:5px;
+ font-size:10px;
+ font-weight:700;
+ color:#405875;
+ text-align:center;
+}
+.lightning-dot{width:15px;height:15px;border:1px solid #ffffff;box-shadow:0 1px 4px #233b5528}
+.lightning-status{padding:8px 9px;background:#f5f8fc;border-radius:9px}
+#lightningSpeed{font-weight:700}
+.lightning-static-point{filter:drop-shadow(0 1px 3px #172f4c66)}
+.lightning-flash-dot{width:12px;height:12px}
+.loop{padding:18px}
+.loop h3{font-size:14px}
 @media(max-width:850px){
 header{padding:0 12px}
 .brand h1{font-size:18px}
 .dashboard{grid-template-columns:1fr}
-#map{height:58vh;min-height:390px}
+#map{height:64vh;min-height:420px}
+.map-head{height:auto;min-height:72px;gap:8px}
+.mode-buttons{flex-wrap:wrap;justify-content:flex-end}
+.mode-button{padding:9px 10px}
 .side{display:grid;grid-template-columns:1fr 1fr}
 .side .panel:last-child{grid-column:1/-1}
 }
 @media(max-width:480px){
+header{height:72px}
+.logo{width:45px;height:45px}
+.brand h1{font-size:18px}
+.brand small{font-size:8px}
+.status{font-size:9px;padding:8px 9px}
+main{padding:12px}
+.map-head{align-items:flex-start;flex-direction:column}
+.mode-buttons{width:100%;justify-content:stretch}
+.mode-buttons button{flex:1}
+#map{height:62vh;min-height:380px}
+.panel{padding:14px}
 .side{grid-template-columns:1fr}
 .side .panel:last-child{grid-column:auto}
 }
@@ -491,11 +569,11 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <button class="secondary" id="lightningLoopToggle" style="width:100%;margin-top:8px" onclick="toggleLightningLoop()" disabled>INICIAR LOOP DOS RAIOS</button>
 <label for="lightningSpeed">VELOCIDADE DO LOOP</label>
 <select id="lightningSpeed" onchange="updateLightningSpeed(this.value)" style="margin-top:5px;margin-bottom:10px">
-<option value="2000">Muito lento · 1 raio a cada 2 s</option>
-<option value="1500">Lento · 1 raio a cada 1,5 s</option>
-<option value="1000" selected>Normal · 1 raio por segundo</option>
-<option value="750">Rápido · 1 raio a cada 0,75 s</option>
-<option value="500">Muito rápido · 2 raios por segundo</option>
+<option value="1200">Lento · 0,8 raio/s</option>
+<option value="700">Normal · 1,4 raio/s</option>
+<option value="350">Rápido · 2,9 raios/s</option>
+<option value="180">Muito rápido · 5,6 raios/s</option>
+<option value="100" selected>ULTRA RÁPIDO · 10 raios/s</option>
 </select>
 <label>OPACIDADE DOS MARCADORES</label>
 <input type="range" id="lightningOpacity" min="20" max="100" value="100">
@@ -2000,7 +2078,7 @@ function renderLightning(data){
  if(valid.length){
   document.getElementById("lightningLoopToggle").disabled=false;
   document.getElementById("lightningStatus").textContent=
-   `${valid.length} descarga(s) recebida(s) do GOES-19 GLM. Dados prontos. Clique em INICIAR LOOP DOS RAIOS para iniciar a reprodução na velocidade selecionada.`;
+   `${valid.length} descargas visíveis no mapa. Os pontos ficam parados com o loop desligado; ative o loop para animar os flashes.`;
   if(resumeLoop)startLightningLoop();
  }else{
   document.getElementById("lightningLoopToggle").disabled=true;
@@ -2009,17 +2087,19 @@ function renderLightning(data){
 }
 function updateLightningSpeed(value){
  const requested=Number(value);
- if(!Number.isFinite(requested)||requested<250)return;
+ if(!Number.isFinite(requested)||requested<80)return;
  LIGHTNING_LOOP_INTERVAL=requested;
- LIGHTNING_FLASH_DURATION=Math.max(180,Math.round(requested*.85));
+ // Pulso curto para acompanhar a frequência sem deixar flashes antigos acumulados.
+ LIGHTNING_FLASH_DURATION=Math.max(65,Math.min(260,Math.round(requested*.78)));
  if(lightningLoopRunning){
   if(lightningAnimationTimer)clearInterval(lightningAnimationTimer);
+  if(lightningFlashTimeout){clearTimeout(lightningFlashTimeout);lightningFlashTimeout=null;}
   lightningAnimationTimer=setInterval(showNextLightningFlash,LIGHTNING_LOOP_INTERVAL);
  }
- const speedText=`${(1000/LIGHTNING_LOOP_INTERVAL).toFixed(2).replace(/\.?0+$/,'')} raio(s) por segundo`;
+ const speedText=`${(1000/LIGHTNING_LOOP_INTERVAL).toFixed(1).replace(/\.?0+$/,'')} descarga(s) por segundo`;
  const status=document.getElementById("lightningStatus");
  if(lightningLoopRunning){
-  status.textContent=`${lightningFeatures.length} descarga(s) no loop. Velocidade: ${speedText}.`;
+  status.textContent=`${lightningFeatures.length} descargas no loop. Velocidade: ${speedText}.`;
  }
 }
 
@@ -2047,7 +2127,7 @@ function stopLightningLoop(){
  button.classList.add("secondary");
  if(lightningEnabled&&lightningFeatures.length){
   document.getElementById("lightningStatus").textContent=
-   `${lightningFeatures.length} descarga(s) carregada(s). Loop pausado.`;
+   `${lightningFeatures.length} descargas paradas e visíveis no mapa. Loop pausado.`;
  }
 }
 
