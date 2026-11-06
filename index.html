@@ -433,6 +433,61 @@ main{padding:12px}
 .export-state.active{color:#13834b}
 body.photo-pick #map{cursor:crosshair!important}
 body.photo-pick #map .leaflet-grab{cursor:crosshair!important}
+
+/* MODELOS NUMERICOS - CLOUDGOD */
+.mn-panel{margin-top:15px;background:#fff;border:1px solid var(--border);border-radius:17px;overflow:hidden;box-shadow:0 8px 30px #234b7710}
+.mn-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.mn-head h2{font-size:15px;margin:0 0 5px}
+.mn-head small{font-size:10px;color:var(--muted)}
+.mn-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px 18px;background:#fbfdff}
+.mn-controls label{margin:0 0 6px}
+.mn-frame-wrap{position:relative;background:#edf3f8;min-height:560px}
+#mnFrame{width:100%;height:560px;border:0;display:block;background:#fff}
+.mn-fallback{padding:13px 18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--border)}
+.mn-fallback small{font-size:9px;color:var(--muted);flex:1;min-width:190px;line-height:1.5}
+.mn-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;padding:14px 18px}
+.mn-item{border:1px solid var(--border);border-radius:11px;padding:11px;background:#fbfdff;min-height:75px}
+.mn-item b{font-size:10px;display:block;margin-bottom:5px}
+.mn-item span{font-size:9px;color:var(--muted);line-height:1.4}
+.mn-note{margin:0 18px 15px;padding:11px;border-radius:10px;background:#fff8e9;color:#856327;font-size:10px;line-height:1.55}
+.mn-source{font-size:9px;color:var(--muted);padding:0 18px 14px;line-height:1.5}
+@media(max-width:850px){.mn-controls{grid-template-columns:1fr 1fr}.mn-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mn-frame-wrap,#mnFrame{min-height:500px;height:500px}}
+@media(max-width:480px){.mn-controls{grid-template-columns:1fr}.mn-head{align-items:flex-start;flex-direction:column}.mn-grid{grid-template-columns:1fr 1fr}.mn-frame-wrap,#mnFrame{min-height:440px;height:440px}}
+
+/* RADIOSSONDAGEM SKEW-T - CLOUDGOD */
+.rs-panel{margin-top:15px;background:#fff;border:1px solid var(--border);border-radius:17px;overflow:hidden;box-shadow:0 8px 30px #234b7710}
+.rs-head{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.rs-head h2{font-size:15px;margin:0 0 5px}
+.rs-head small{font-size:10px;color:var(--muted)}
+.rs-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:14px 18px;background:#fbfdff}
+.rs-controls label{margin:0 0 6px}
+.rs-controls input,.rs-controls select,.rs-paste textarea{width:100%;padding:10px;border:1px solid var(--border);border-radius:9px;background:#f8faff;color:#29415d;font:11px Arial,sans-serif}
+.rs-actions{display:flex;gap:8px;flex-wrap:wrap;padding:0 18px 14px}
+.rs-actions button{flex:1;min-width:145px}
+.rs-source-note{margin:0 18px 14px;padding:11px;border-radius:10px;background:#eef6ff;color:#42617f;font-size:10px;line-height:1.55}
+.rs-chart-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(220px,.8fr);gap:12px;padding:0 18px 14px}
+.rs-chart-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#fbfdff;min-width:0}
+.rs-chart-title{padding:10px 12px;font-size:10px;font-weight:bold;color:#29415d;border-bottom:1px solid var(--border)}
+.rs-chart-card canvas{width:100%;height:auto;display:block;background:#fff}
+.rs-chart-empty{padding:14px;font-size:10px;color:var(--muted);line-height:1.5}
+.rs-paste{padding:0 18px 14px}
+.rs-paste summary{font-size:10px;font-weight:bold;color:#315477;cursor:pointer;padding:9px 0}
+.rs-paste textarea{min-height:130px;resize:vertical;line-height:1.45;font-family:monospace;font-size:10px}
+.rs-paste button{margin-top:8px}
+.rs-status{padding:0 18px 14px;font-size:10px;line-height:1.5;color:#60748b;overflow-wrap:anywhere}
+.rs-status.good{color:#13834b}
+.rs-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:0 18px 14px}
+.rs-metric{padding:10px;border:1px solid var(--border);border-radius:10px;background:#fbfdff}
+.rs-metric b{display:block;font-size:9px;color:#71849b;margin-bottom:4px}
+.rs-metric span{font-size:14px;font-weight:bold;color:#23496e}
+.rs-table-wrap{max-height:240px;overflow:auto;margin:0 18px 16px;border:1px solid var(--border);border-radius:10px}
+.rs-table{width:100%;border-collapse:collapse;font-size:9px}
+.rs-table th,.rs-table td{padding:7px 6px;text-align:right;border-bottom:1px solid #edf1f6;white-space:nowrap}
+.rs-table th{position:sticky;top:0;background:#edf4fb;color:#34506d}
+.rs-table th:first-child,.rs-table td:first-child{text-align:left}
+@media(max-width:760px){.rs-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.rs-chart-grid{grid-template-columns:1fr}.rs-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:430px){.rs-controls{grid-template-columns:1fr}.rs-head{align-items:flex-start;flex-direction:column}.rs-actions button{min-width:100%}}
+
 </style>
 </head>
 
@@ -668,6 +723,141 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 
 </aside>
 </div>
+
+<section class="mn-panel" id="modelosNumericos">
+ <div class="mn-head">
+  <div>
+   <h2>MODELOS NUMÉRICOS · PREVISÃO DE CHUVA</h2>
+   <small>Produtos oficiais do CPTEC/INPE · WRF 7 km e MONAN</small>
+  </div>
+  <span class="status" style="font-size:9px">● FONTE OFICIAL</span>
+ </div>
+ <div class="mn-controls">
+  <div>
+   <label for="mnModel">MODELO</label>
+   <select id="mnModel" onchange="changeMNModel()">
+    <option value="wrf">WRF · 7 km (padrão)</option>
+    <option value="monan">MONAN</option>
+   </select>
+  </div>
+  <div>
+   <label for="mnVariable">PRODUTO</label>
+   <select id="mnVariable" onchange="changeMNVariable()">
+    <option value="aprec">Precipitação acumulada</option>
+   </select>
+  </div>
+  <div>
+   <label for="mnRegion">DOMÍNIO</label>
+   <select id="mnRegion" onchange="changeMNRegion()">
+    <option value="ams">América do Sul</option>
+   </select>
+  </div>
+ </div>
+ <div class="mn-frame-wrap">
+  <iframe id="mnFrame" title="Previsão numérica oficial do CPTEC/INPE" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/"></iframe>
+ </div>
+ <div class="mn-fallback">
+  <button class="primary" type="button" onclick="openMNOfficial()">ABRIR PRODUTO OFICIAL EM NOVA ABA</button>
+  <small id="mnStatus">WRF 7 km · Precipitação acumulada. Se o portal não aparecer incorporado, use o botão para abrir diretamente.</small>
+ </div>
+ <div class="mn-grid">
+  <div class="mn-item"><b>PRECIPITAÇÃO ACUMULADA</b><span>Produto selecionado · mapas de previsão em milímetros.</span></div>
+  <div class="mn-item"><b>TEMPERATURA E PONTO DE ORVALHO</b><span>Próxima integração: campos meteorológicos do GRIB2.</span></div>
+  <div class="mn-item"><b>UMIDADE E CONVERGÊNCIA</b><span>Próxima integração: níveis de pressão e convergência de umidade.</span></div>
+  <div class="mn-item"><b>CAPE, CIN E PWAT</b><span>Próxima integração: índices convectivos e água precipitável.</span></div>
+  <div class="mn-item"><b>MOVIMENTO VERTICAL (OMEGA)</b><span>Próxima integração: levantamento em 850, 700 e 500 hPa.</span></div>
+  <div class="mn-item"><b>CISALHAMENTO E SRH</b><span>Próxima integração: perfis de vento e helicidade relativa à tempestade.</span></div>
+  <div class="mn-item"><b>VENTO E PRESSÃO</b><span>Próxima integração: vento em superfície e altitude, pressão ao nível do mar.</span></div>
+  <div class="mn-item"><b>FRAMES DA PREVISÃO</b><span>Controles de animação disponíveis no visualizador oficial do modelo.</span></div>
+ </div>
+ <div class="mn-note"><b>Transparência dos dados:</b> nesta versão, o mapa incorporado usa o produto oficial de precipitação acumulada do CPTEC. As demais variáveis aparecem como próximas integrações; não são simuladas nem exibidas como se já estivessem disponíveis. Para ativá-las no CLOUDGOD será necessário processar os campos GRIB2 do WRF/MONAN.</div>
+ <div class="mn-source">Fontes: <a href="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/" target="_blank" rel="noopener">WRF · CPTEC/INPE</a> · <a href="https://previsaonumerica.cptec.inpe.br/monan/aprec/ams/" target="_blank" rel="noopener">MONAN · CPTEC/INPE</a> · <a href="https://dataserver.cptec.inpe.br/dataserver_modelos/wrf/ams_07km/" target="_blank" rel="noopener">Arquivo de dados WRF 7 km</a>.</div>
+</section>
+
+
+<section class="rs-panel" id="radiossondagem">
+ <div class="rs-head">
+  <div>
+   <h2>RADIOSSONDAGEM · SKEW-T / LOG-P</h2>
+   <small>Perfil vertical observado · temperatura, ponto de orvalho e vento</small>
+  </div>
+  <span class="status" style="font-size:9px">● ANÁLISE VERTICAL</span>
+ </div>
+ <div class="rs-controls">
+  <div>
+   <label for="rsStation">ESTAÇÃO (WMO)</label>
+   <select id="rsStation">
+    <option value="83779" selected>São Paulo / Marte · 83779</option>
+    <option value="83746">Rio de Janeiro / Galeão · 83746</option>
+    <option value="83378">Brasília · 83378</option>
+    <option value="82332">Manaus · 82332</option>
+    <option value="82193">Belém · 82193</option>
+    <option value="82900">Recife · 82900</option>
+    <option value="83229">Salvador · 83229</option>
+    <option value="83612">Campo Grande · 83612</option>
+    <option value="83840">Curitiba · 83840</option>
+    <option value="83971">Porto Alegre · 83971</option>
+   </select>
+  </div>
+  <div>
+   <label for="rsDate">DATA (OPCIONAL)</label>
+   <input type="date" id="rsDate">
+  </div>
+  <div>
+   <label for="rsHour">HORÁRIO UTC</label>
+   <select id="rsHour">
+    <option value="all" selected>Mais recente (qualquer horário)</option>
+    <option value="00">00Z</option>
+    <option value="12">12Z</option>
+   </select>
+  </div>
+  <div>
+   <label for="rsUnits">UNIDADE DO VENTO</label>
+   <select id="rsUnits">
+    <option value="kt" selected> nós (kt)</option>
+    <option value="ms"> m/s</option>
+   </select>
+  </div>
+ </div>
+ <div class="rs-actions">
+  <button class="primary" id="rsFetchBtn" type="button" onclick="fetchLatestRadiosonde()">BUSCAR SONDAGEM AUTOMATICAMENTE</button>
+  <button class="secondary" type="button" onclick="downloadRadiosondeCSV()">BAIXAR CSV</button>
+  <button class="secondary" type="button" onclick="clearRadiosonde()">LIMPAR GRÁFICOS</button>
+ </div>
+ <div class="rs-source-note">
+  <b>Carregamento automático:</b> o CLOUDGOD consulta o arquivo de radiossondagens da NOAA/IGRA, seleciona a última observação disponível da estação e converte os níveis para o Skew-T e o hodógrafo. Você não precisa copiar nem colar dados. A disponibilidade e a atualização dependem dos envios recebidos pela NOAA.
+ </div>
+ <div class="rs-chart-grid">
+  <div class="rs-chart-card">
+   <div class="rs-chart-title">SKEW-T / LOG-P · T (vermelho) · Td (verde)</div>
+   <canvas id="rsSkewCanvas" width="900" height="760" aria-label="Diagrama Skew-T"></canvas>
+   <div class="rs-chart-empty" id="rsSkewEmpty">Aguardando dados reais da radiossondagem. Cole um arquivo Text: List para gerar o diagrama.</div>
+  </div>
+  <div class="rs-chart-card">
+   <div class="rs-chart-title">HODÓGRAFO · PERFIL DO VENTO</div>
+   <canvas id="rsHodoCanvas" width="520" height="520" aria-label="Hodógrafo"></canvas>
+   <div class="rs-chart-empty" id="rsHodoEmpty">O hodógrafo será desenhado quando houver direção e velocidade do vento nos níveis da sondagem.</div>
+  </div>
+ </div>
+ <div class="rs-metrics" id="rsMetrics">
+  <div class="rs-metric"><b>NÍVEIS LIDOS</b><span>—</span></div>
+  <div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>—</span></div>
+  <div class="rs-metric"><b>TEMPERATURA SUPERFÍCIE</b><span>—</span></div>
+  <div class="rs-metric"><b>TOPO DO PERFIL</b><span>—</span></div>
+ </div>
+ <div class="rs-status" id="rsStatus">Fonte automática: NOAA/NCEI · Integrated Global Radiosonde Archive (IGRA 2.2). Clique em “Buscar sondagem automaticamente”.</div>
+ <div class="rs-table-wrap" id="rsTableWrap" hidden>
+  <table class="rs-table">
+   <thead><tr><th>Pressão (hPa)</th><th>Altitude (m)</th><th>Temp. (°C)</th><th>Ponto orvalho (°C)</th><th>UR (%)</th><th>Vento (°)</th><th>Velocidade (kt)</th></tr></thead>
+   <tbody id="rsTableBody"></tbody>
+  </table>
+ </div>
+ <div class="mn-source">
+  Fontes: <a href="https://weather.uwyo.edu/upperair/sounding.shtml" target="_blank" rel="noopener">University of Wyoming · Upper Air</a> ·
+  <a href="https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive" target="_blank" rel="noopener">NOAA · IGRA</a> ·
+  <a href="https://wis2bra.inmet.gov.br/oapi/collections/discovery-metadata/items/urn%3Awmo%3Amd%3Abr-inmet%3Aupper-air?f=html" target="_blank" rel="noopener">INMET · dados TEMP em BUFR</a>.
+ </div>
+</section>
 
 <section class="loop">
 <div class="loop-head">
@@ -2674,6 +2864,288 @@ map.on("moveend",()=>{
  clearTimeout(tornadoRiskMoveTimer);
  tornadoRiskMoveTimer=setTimeout(()=>refreshTornadoRisk(),900);
 });
+
+
+// MODELOS NUMERICOS CPTEC/INPE
+const MN_URLS = {
+ wrf: "https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/",
+ monan: "https://previsaonumerica.cptec.inpe.br/monan/aprec/ams/"
+};
+function changeMNModel(){
+ const model=document.getElementById("mnModel")?.value||"wrf";
+ const frame=document.getElementById("mnFrame");
+ const status=document.getElementById("mnStatus");
+ if(frame) frame.src=MN_URLS[model]||MN_URLS.wrf;
+ if(status) status.textContent=(model==="wrf"?"WRF 7 km":"MONAN")+" · Precipitação acumulada. Fonte oficial CPTEC/INPE.";
+}
+function changeMNVariable(){
+ const status=document.getElementById("mnStatus");
+ if(status) status.textContent="Produto disponível nesta integração: precipitação acumulada. As demais variáveis serão liberadas quando os campos GRIB2 forem processados.";
+}
+function changeMNRegion(){
+ const status=document.getElementById("mnStatus");
+ if(status) status.textContent="Domínio disponível nesta integração: América do Sul.";
+}
+function openMNOfficial(){
+ const model=document.getElementById("mnModel")?.value||"wrf";
+ const url=MN_URLS[model]||MN_URLS.wrf;
+ window.open(url,"_blank","noopener");
+}
+
+// RADIOSSONDAGEM CLOUDGOD: parser Text:List, Skew-T/Log-P e hodógrafo.
+function openRadiosondeSource(){
+ const station=document.getElementById("rsStation")?.value||"83779";
+ window.open("https://weather.uwyo.edu/upperair/sounding.shtml","_blank","noopener");
+ const status=document.getElementById("rsStatus");
+ if(status)status.textContent="Consulta oficial aberta. Selecione a data, "+document.getElementById("rsHour").value+"Z e a estação WMO "+station+"; escolha Text: List e cole os dados aqui.";
+}
+function clearRadiosonde(){
+ document.getElementById("rsRawText").value="";
+ document.getElementById("rsTableWrap").hidden=true;
+ document.getElementById("rsTableBody").innerHTML="";
+ document.getElementById("rsMetrics").innerHTML='<div class="rs-metric"><b>NÍVEIS LIDOS</b><span>—</span></div><div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>—</span></div><div class="rs-metric"><b>TEMPERATURA SUPERFÍCIE</b><span>—</span></div><div class="rs-metric"><b>TOPO DO PERFIL</b><span>—</span></div>';
+ document.getElementById("rsSkewEmpty").textContent="Aguardando dados reais da radiossondagem. Cole um arquivo Text: List para gerar o diagrama.";
+ document.getElementById("rsHodoEmpty").textContent="O hodógrafo será desenhado quando houver direção e velocidade do vento nos níveis da sondagem.";
+ document.getElementById("rsStatus").textContent="Gráficos limpos. Nenhum dado de sondagem está carregado.";
+ const a=document.getElementById("rsSkewCanvas").getContext("2d");a.clearRect(0,0,900,760);
+ const b=document.getElementById("rsHodoCanvas").getContext("2d");b.clearRect(0,0,520,520);
+}
+function parseRadiosondeText(raw){
+ const rows=[];
+ const lines=String(raw||"").split(/\r?\n/);
+ for(const line of lines){
+  const t=line.trim().split(/\s+/);
+  if(t.length<7)continue;
+  const p=Number(t[0]),z=Number(t[1]),temp=Number(t[2]),dew=Number(t[3]),rh=Number(t[4]),dir=Number(t[6]),speed=Number(t[7]);
+  if(!Number.isFinite(p)||p<1||p>1100||!Number.isFinite(temp)||temp<-120||temp>65)continue;
+  rows.push({p,z:Number.isFinite(z)?z:null,temp,dew:Number.isFinite(dew)&&dew>-150?dew:null,rh:Number.isFinite(rh)?rh:null,dir:Number.isFinite(dir)?dir:null,speed:Number.isFinite(speed)?speed:null});
+ }
+ const unique=new Map();rows.forEach(r=>unique.set(r.p,r));
+ return [...unique.values()].sort((a,b)=>b.p-a.p);
+}
+function plotRadiosondeText(){
+ const raw=document.getElementById("rsRawText").value;
+ const rows=parseRadiosondeText(raw);
+ const status=document.getElementById("rsStatus");
+ if(rows.length<4){status.className="rs-status";status.textContent="Não encontrei níveis suficientes. Cole o conteúdo completo da saída Text: List, incluindo as linhas numéricas com PRES, HGHT, TEMP, DWPT, RELH, DRCT e SKNT.";return;}
+ drawSkewT(rows);
+ drawHodograph(rows);
+ renderRadiosondeTable(rows);
+ const top=rows[rows.length-1],surface=rows[0];
+ document.getElementById("rsMetrics").innerHTML=
+  `<div class="rs-metric"><b>NÍVEIS LIDOS</b><span>${rows.length}</span></div>
+   <div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>${top.p.toFixed(1)} hPa</span></div>
+   <div class="rs-metric"><b>TEMP. NO NÍVEL MAIS BAIXO</b><span>${surface.temp.toFixed(1)} °C</span></div>
+   <div class="rs-metric"><b>ALTITUDE MÁX. INFORMADA</b><span>${top.z===null?"—":Math.round(top.z)+" m"}</span></div>`;
+ status.className="rs-status good";
+ status.textContent=`Diagrama gerado com ${rows.length} níveis observados. Estação WMO ${document.getElementById("rsStation").value} · ${document.getElementById("rsDate").value||"data não informada"} · ${document.getElementById("rsHour").value}Z. Valores derivados diretamente do texto colado; sem cálculo de CAPE/LCL nesta versão.`;
+ document.getElementById("rsSkewEmpty").style.display="none";
+ document.getElementById("rsHodoEmpty").style.display="none";
+ document.getElementById("rsTableWrap").hidden=false;
+}
+function drawSkewT(rows){
+ const c=document.getElementById("rsSkewCanvas"),ctx=c.getContext("2d"),W=c.width,H=c.height;
+ ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+ const L=85,R=35,T=35,B=65,pmin=100,pmax=1050,tmin=-90,tmax=50,skew=28;
+ const x=(temp,p)=>L+((temp+skew*Math.log(1000/p)-tmin)/(tmax-tmin))*(W-L-R);
+ const y=p=>T+(Math.log(pmax)-Math.log(p))/(Math.log(pmax)-Math.log(pmin))*(H-T-B);
+ ctx.font="15px Arial";ctx.fillStyle="#29415d";ctx.textAlign="center";ctx.fillText("Pressão (hPa) × Temperatura (°C)",W/2,22);
+ // Isóbaras
+ [1000,925,850,700,600,500,400,300,250,200,150,100].forEach(p=>{
+  const yy=y(p);ctx.strokeStyle="#d8e1eb";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(W-R,yy);ctx.stroke();
+  ctx.fillStyle="#526a83";ctx.textAlign="right";ctx.font="13px Arial";ctx.fillText(String(p),L-10,yy+4);
+ });
+ // Isotermas oblíquas
+ for(let temp=-80;temp<=50;temp+=10){
+  ctx.beginPath();ctx.strokeStyle=temp===0?"#aab8c8":"#e7edf3";ctx.lineWidth=temp===0?2:1;
+  for(let p=1050;p>=100;p-=10){const xx=x(temp,p),yy=y(p);if(p===1050)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+  ctx.stroke();
+  const xx=x(temp,1000);ctx.fillStyle="#526a83";ctx.textAlign="center";ctx.font="12px Arial";ctx.fillText(String(temp),xx,H-B+22);
+ }
+ // Moldura
+ ctx.strokeStyle="#7890a8";ctx.lineWidth=2;ctx.strokeRect(L,T,W-L-R,H-T-B);
+ function trace(key,color){
+  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=4;ctx.lineJoin="round";let started=false;
+  rows.forEach(r=>{const value=r[key];if(value===null||!Number.isFinite(value)){started=false;return;}const xx=x(value,r.p),yy=y(r.p);if(!started){ctx.moveTo(xx,yy);started=true;}else ctx.lineTo(xx,yy);});
+  ctx.stroke();
+ }
+ trace("temp","#e33c3c");trace("dew","#159b67");
+ ctx.font="bold 14px Arial";ctx.textAlign="left";ctx.fillStyle="#e33c3c";ctx.fillText("T",W-62,55);ctx.fillStyle="#159b67";ctx.fillText("Td",W-62,76);
+ ctx.font="12px Arial";ctx.fillStyle="#526a83";ctx.textAlign="center";ctx.fillText("Temperatura (°C)",(L+W-R)/2,H-15);
+}
+function drawHodograph(rows){
+ const c=document.getElementById("rsHodoCanvas"),ctx=c.getContext("2d"),W=c.width,H=c.height;
+ ctx.clearRect(0,0,W,H);ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+ const cx=W/2,cy=H/2+5,scale=3.1;
+ ctx.font="12px Arial";ctx.fillStyle="#29415d";ctx.textAlign="center";ctx.fillText("U (kt) →",cx,20);
+ [10,20,30,40,50,60].forEach(v=>{ctx.beginPath();ctx.strokeStyle="#e1e8ef";ctx.lineWidth=1;ctx.arc(cx,cy,v*scale,0,Math.PI*2);ctx.stroke();ctx.fillStyle="#75879a";ctx.fillText(String(v),cx+v*scale-8,cy-4);});
+ ctx.beginPath();ctx.strokeStyle="#a9b8c8";ctx.moveTo(30,cy);ctx.lineTo(W-30,cy);ctx.moveTo(cx,35);ctx.lineTo(cx,H-35);ctx.stroke();
+ const pts=rows.filter(r=>r.dir!==null&&r.speed!==null).map(r=>{const rad=r.dir*Math.PI/180;return{x:cx+(-r.speed*Math.sin(rad))*scale,y:cy-(-r.speed*Math.cos(rad))*scale,z:r.z,p:r.p};});
+ if(pts.length){
+  ctx.beginPath();ctx.strokeStyle="#2778c7";ctx.lineWidth=3;pts.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();
+  pts.forEach((p,i)=>{ctx.beginPath();ctx.fillStyle=i===0?"#e34b4b":"#2778c7";ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();});
+  const last=pts[pts.length-1];ctx.font="12px Arial";ctx.fillStyle="#29415d";ctx.textAlign="left";ctx.fillText("Topo",Math.min(W-50,last.x+8),Math.max(38,last.y-7));
+ }else{ctx.font="13px Arial";ctx.fillStyle="#8293a8";ctx.textAlign="center";ctx.fillText("Sem dados de vento no texto",cx,cy);}
+ ctx.font="11px Arial";ctx.fillStyle="#526a83";ctx.textAlign="center";ctx.fillText("V (kt)",cx,H-14);
+}
+function renderRadiosondeTable(rows){
+ const body=document.getElementById("rsTableBody");
+ body.innerHTML=rows.map(r=>`<tr><td>${r.p.toFixed(1)}</td><td>${r.z===null?"—":r.z.toFixed(0)}</td><td>${r.temp.toFixed(1)}</td><td>${r.dew===null?"—":r.dew.toFixed(1)}</td><td>${r.rh===null?"—":r.rh.toFixed(0)}</td><td>${r.dir===null?"—":r.dir.toFixed(0)}</td><td>${r.speed===null?"—":r.speed.toFixed(1)}</td></tr>`).join("");
+}
+// Data vazia significa buscar a última sondagem disponível.
+
+
+// Consulta automática da NOAA/IGRA. O arquivo oficial é texto fixo compactado em ZIP;
+// os níveis são convertidos para unidades meteorológicas e podem ser exportados em CSV.
+let rsLoadedRows=[];
+let rsLoadedMeta=null;
+async function loadJSZipLibrary(){
+ if(window.JSZip)return window.JSZip;
+ await new Promise((resolve,reject)=>{
+  const script=document.createElement("script");
+  script.src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+  script.onload=resolve;script.onerror=()=>reject(new Error("Não foi possível carregar o leitor ZIP."));
+  document.head.appendChild(script);
+ });
+ if(!window.JSZip)throw new Error("Biblioteca ZIP indisponível.");
+ return window.JSZip;
+}
+function rsValidNumber(raw,scale=1){
+ const n=Number(String(raw||"").trim());
+ return Number.isFinite(n)&&n!==-9999&&n!==-8888&&n>-9000?n/scale:null;
+}
+function parseIGRAStationFile(text,stationId){
+ const lines=String(text||"").split(/\r?\n/);
+ const soundings=[];
+ let current=null;
+ for(const line of lines){
+  if(line.startsWith("#")){
+   if(current&&current.rows.length)soundings.push(current);
+   const id=line.slice(1,12).trim();
+   if(id!==stationId){current=null;continue;}
+   current={
+    id,year:Number(line.slice(13,17)),month:Number(line.slice(18,20)),
+    day:Number(line.slice(21,23)),hour:Number(line.slice(24,26)),
+    release:line.slice(27,31).trim(),expected:Number(line.slice(32,36)),
+    rows:[]
+   };
+  }else if(current&&line.trim()){
+   // IGRA2 fixed-width fields: pressure Pa, temperature/depression tenths °C,
+   // RH tenths %, wind speed tenths m/s.
+   const p=rsValidNumber(line.slice(9,15),100);
+   const z=rsValidNumber(line.slice(16,21),1);
+   const temp=rsValidNumber(line.slice(22,27),10);
+   const rh=rsValidNumber(line.slice(28,33),10);
+   const dpdp=rsValidNumber(line.slice(34,39),10);
+   const dir=rsValidNumber(line.slice(40,45),1);
+   const speedMS=rsValidNumber(line.slice(46,51),10);
+   if(p!==null&&p>0&&temp!==null){
+    current.rows.push({
+     p,z,temp,dew:dpdp===null?null:temp-dpdp,
+     rh,dir,speed:speedMS===null?null:speedMS*1.943844,
+     speedMS
+    });
+   }
+  }
+ }
+ if(current&&current.rows.length)soundings.push(current);
+ return soundings.filter(s=>s.rows.length>=4);
+}
+async function fetchIGRAStationYear(stationId,year){
+ const url=`https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/access/data-y2d/${stationId}-data-beg${year}.txt.zip`;
+ const response=await fetch(url,{cache:"no-store"});
+ if(!response.ok)throw new Error(`NOAA respondeu HTTP ${response.status} para ${year}.`);
+ const blob=await response.blob();
+ const JSZip=await loadJSZipLibrary();
+ const zip=await JSZip.loadAsync(blob);
+ const filename=Object.keys(zip.files).find(n=>n.toLowerCase().endsWith(".txt"));
+ if(!filename)throw new Error("O ZIP da NOAA não contém arquivo TXT.");
+ return await zip.files[filename].async("string");
+}
+function rsStationLabel(){
+ const el=document.getElementById("rsStation");
+ return el?.selectedOptions?.[0]?.textContent||el?.value||"Estação";
+}
+async function fetchLatestRadiosonde(){
+ const btn=document.getElementById("rsFetchBtn");
+ const status=document.getElementById("rsStatus");
+ const stationWMO=document.getElementById("rsStation").value;
+ const stationId="BRM000"+stationWMO;
+ const chosenDate=document.getElementById("rsDate").value;
+ const chosenHour=document.getElementById("rsHour").value;
+ const nowYear=new Date().getUTCFullYear();
+ btn.disabled=true;btn.textContent="CONSULTANDO NOAA…";
+ status.className="rs-status";status.textContent="Baixando o arquivo da NOAA/IGRA e procurando a sondagem solicitada…";
+ try{
+  let soundings=[],usedYear=null,lastError=null;
+  const years=chosenDate?[Number(chosenDate.slice(0,4))]:[nowYear,nowYear-1];
+  for(const year of years){
+   try{
+    const txt=await fetchIGRAStationYear(stationId,year);
+    soundings=parseIGRAStationFile(txt,stationId);
+    usedYear=year;
+    if(soundings.length)break;
+   }catch(err){lastError=err;}
+  }
+  if(!soundings.length)throw lastError||new Error("Não há sondagens disponíveis para essa estação no arquivo recente da NOAA.");
+  let matches=soundings;
+  if(chosenDate){
+   matches=matches.filter(s=>`${s.year}-${String(s.month).padStart(2,"0")}-${String(s.day).padStart(2,"0")}`===chosenDate);
+  }
+  if(chosenHour!=="all")matches=matches.filter(s=>String(s.hour).padStart(2,"0")===chosenHour);
+  if(!matches.length)throw new Error("Não encontrei sondagem para essa data/horário. Apague a data para buscar a última disponível ou escolha outro horário.");
+  matches.sort((a,b)=>new Date(Date.UTC(b.year,b.month-1,b.day,b.hour))-new Date(Date.UTC(a.year,a.month-1,a.day,a.hour)));
+  const selected=matches[matches.length-1];
+  // A lista foi ordenada de mais recente para mais antiga? Corrige seleção explicitamente.
+  const latest=matches.reduce((a,b)=>new Date(Date.UTC(a.year,a.month-1,a.day,a.hour))>=new Date(Date.UTC(b.year,b.month-1,b.day,b.hour))?a:b);
+  rsLoadedRows=latest.rows;
+  rsLoadedMeta={...latest,stationId,stationWMO,stationLabel:rsStationLabel(),source:"NOAA IGRA 2.2",fileYear:usedYear};
+  drawSkewT(rsLoadedRows);drawHodograph(rsLoadedRows);renderRadiosondeTable(rsLoadedRows);
+  const surface=rsLoadedRows[0],top=rsLoadedRows[rsLoadedRows.length-1];
+  document.getElementById("rsMetrics").innerHTML=
+   `<div class="rs-metric"><b>NÍVEIS LIDOS</b><span>${rsLoadedRows.length}</span></div>
+    <div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>${top.p.toFixed(1)} hPa</span></div>
+    <div class="rs-metric"><b>TEMP. NO NÍVEL MAIS BAIXO</b><span>${surface.temp.toFixed(1)} °C</span></div>
+    <div class="rs-metric"><b>ALTITUDE MÁX. INFORMADA</b><span>${top.z===null?"—":Math.round(top.z)+" m"}</span></div>`;
+  document.getElementById("rsSkewEmpty").style.display="none";
+  document.getElementById("rsHodoEmpty").style.display="none";
+  document.getElementById("rsTableWrap").hidden=false;
+  status.className="rs-status good";
+  status.textContent=`Sondagem carregada automaticamente da NOAA/IGRA: ${rsLoadedMeta.stationLabel} · ${latest.year}-${String(latest.month).padStart(2,"0")}-${String(latest.day).padStart(2,"0")} às ${String(latest.hour).padStart(2,"0")}Z · ${rsLoadedRows.length} níveis. O IGRA é atualizado diariamente; os dados mais recentes podem ter atraso de até cerca de dois dias.`;
+ }catch(err){
+  status.className="rs-status";
+  status.textContent=`Não foi possível carregar a sondagem: ${err.message} Se o navegador bloquear o acesso à NOAA, será necessário liberar CORS por um proxy/Edge Function; não foi desenhado nenhum perfil fictício.`;
+ }finally{
+  btn.disabled=false;btn.textContent="BUSCAR SONDAGEM AUTOMATICAMENTE";
+ }
+}
+function downloadRadiosondeCSV(){
+ if(!rsLoadedRows.length||!rsLoadedMeta){document.getElementById("rsStatus").textContent="Carregue uma sondagem antes de baixar o CSV.";return;}
+ const headers=["station_id","station_name","date_utc","hour_utc","pressure_hpa","height_m","temperature_c","dewpoint_c","relative_humidity_pct","wind_direction_deg","wind_speed_kt","wind_speed_ms"];
+ const date=`${rsLoadedMeta.year}-${String(rsLoadedMeta.month).padStart(2,"0")}-${String(rsLoadedMeta.day).padStart(2,"0")}`;
+ const lines=[headers.join(",")];
+ rsLoadedRows.forEach(r=>lines.push([
+  rsLoadedMeta.stationId,`"${String(rsLoadedMeta.stationLabel).replace(/"/g,'""')}"`,date,
+  rsLoadedMeta.hour,r.p,r.z??"",r.temp,r.dew??"",r.rh??"",r.dir??"",r.speed??"",r.speedMS??""
+ ].join(",")));
+ const blob=new Blob(["\uFEFF"+lines.join("\r\n")],{type:"text/csv;charset=utf-8"});
+ const url=URL.createObjectURL(blob),a=document.createElement("a");
+ a.href=url;a.download=`CLOUDGOD_radiossondagem_${rsLoadedMeta.stationWMO}_${date}_${String(rsLoadedMeta.hour).padStart(2,"0")}Z.csv`;
+ document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+}
+clearRadiosonde=function(){
+ rsLoadedRows=[];rsLoadedMeta=null;
+ document.getElementById("rsTableWrap").hidden=true;
+ document.getElementById("rsTableBody").innerHTML="";
+ document.getElementById("rsMetrics").innerHTML='<div class="rs-metric"><b>NÍVEIS LIDOS</b><span>—</span></div><div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>—</span></div><div class="rs-metric"><b>TEMP. NO NÍVEL MAIS BAIXO</b><span>—</span></div><div class="rs-metric"><b>TOPO DO PERFIL</b><span>—</span></div>';
+ document.getElementById("rsSkewEmpty").style.display="block";
+ document.getElementById("rsHodoEmpty").style.display="block";
+ document.getElementById("rsSkewEmpty").textContent="Aguardando dados automáticos da NOAA/IGRA.";
+ document.getElementById("rsHodoEmpty").textContent="O hodógrafo será exibido após carregar uma sondagem.";
+ document.getElementById("rsStatus").textContent="Gráficos limpos. Clique em buscar sondagem automaticamente.";
+ document.getElementById("rsSkewCanvas").getContext("2d").clearRect(0,0,900,760);
+ document.getElementById("rsHodoCanvas").getContext("2d").clearRect(0,0,520,520);
+};
 
 </script>
 </body>
