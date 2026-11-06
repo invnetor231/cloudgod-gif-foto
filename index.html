@@ -691,8 +691,19 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <select id="speed">
 <option value="1500">Lenta</option>
 <option value="800" selected>Normal</option>
-<option value="400">Rápida</option>
-<option value="200">Muito rápida</option>
+<option value="250">Rápida</option>
+<option value="50">Muito rápida</option>
+</select>
+<label for="loopFrameCount">QUANTIDADE DE FRAMES NO LOOP</label>
+<select id="loopFrameCount">
+<option value="all" selected>Todos os frames disponíveis</option>
+<option value="5">5 frames</option>
+<option value="10">10 frames</option>
+<option value="15">15 frames</option>
+<option value="20">20 frames</option>
+<option value="30">30 frames</option>
+<option value="45">45 frames</option>
+<option value="60">60 frames</option>
 </select>
 <label><input type="checkbox" id="autoRefresh"> Atualização automática</label>
 </div>
@@ -1674,10 +1685,18 @@ function parseRadarResponse(json){
    ];
 
    if(rawPath&&boundsValues.every(Number.isFinite)){
-    images.push({
-     url:radarImageProxyUrl(rawPath),
-     bounds:[[boundsValues[0],boundsValues[2]],[boundsValues[1],boundsValues[3]]]
-    });
+    let absoluteImageUrl="";
+    try{
+     absoluteImageUrl=new URL(String(rawPath),"https://api-redemet.decea.mil.br").href;
+    }catch(error){
+     console.warn("URL de imagem REDEMET inválida:",rawPath,error);
+    }
+    if(absoluteImageUrl){
+     images.push({
+      url:absoluteImageUrl,
+      bounds:[[boundsValues[0],boundsValues[2]],[boundsValues[1],boundsValues[3]]]
+     });
+    }
    }
   });
 
@@ -1752,7 +1771,7 @@ async function showFrame(index){
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
  const nextLayers=frame.images.map(image=>L.imageOverlay(
   radarExportSafeUrl(image.url),image.bounds,
-  {opacity:0,interactive:false,crossOrigin:true,className:"leaflet-radar-raster"}
+  {opacity:0,interactive:false,crossOrigin:false,className:"leaflet-radar-raster"}
   ));
 
  // Registrar os eventos ANTES de adicionar as imagens evita perder o evento
@@ -1778,7 +1797,37 @@ async function showFrame(index){
   },15000);
  }));
  nextLayers.forEach(layer=>layer.addTo(radarGroup));
- const loadResults=await Promise.all(loadPromises);
+ let loadResults=await Promise.all(loadPromises);
+
+ // Se o proxy estiver indisponível, tenta a URL oficial diretamente.
+ // A imagem continua visível no mapa; exportação pode exigir CORS do servidor.
+ const failedIndexes=loadResults.map((ok,i)=>ok?-1:i).filter(i=>i>=0);
+ if(failedIndexes.length){
+  const fallbackPromises=failedIndexes.map(i=>new Promise(resolve=>{
+   const layer=nextLayers[i];
+   let finished=false;
+   let timer;
+   const finish=ok=>{
+    if(finished)return;
+    finished=true;
+    clearTimeout(timer);
+    layer.off("load",onLoad);
+    layer.off("error",onError);
+    resolve(ok);
+   };
+   const onLoad=()=>finish(true);
+   const onError=()=>finish(false);
+   layer.once("load",onLoad);
+   layer.once("error",onError);
+   timer=setTimeout(()=>{
+    const element=layer.getElement();
+    finish(Boolean(element&&element.complete&&element.naturalWidth>0));
+   },12000);
+   layer.setUrl(frames[currentFrame].images[i].url);
+  }));
+  const fallbackResults=await Promise.all(fallbackPromises);
+  fallbackResults.forEach((ok,j)=>{loadResults[failedIndexes[j]]=ok;});
+ }
 
  // Descarta carregamentos antigos quando o usuário avança rapidamente.
  if(renderToken!==frameRenderToken){
@@ -1786,23 +1835,29 @@ async function showFrame(index){
   return;
  }
 
- if(loadResults.every(Boolean)){
-  // Transição curta entre quadros: os pixels originais são preservados,
-  // sem filtros de cor ou interpolação que alterem os valores meteorológicos.
-  nextLayers.forEach(layer=>layer.setOpacity(opacity));
+ const successfulLayers=nextLayers.filter((layer,i)=>loadResults[i]);
+ const failedCount=nextLayers.length-successfulLayers.length;
+ if(successfulLayers.length){
+  // Exibe todos os radares que carregaram, mesmo se uma estação falhar.
+  successfulLayers.forEach(layer=>layer.setOpacity(opacity));
   radarLayers.forEach(layer=>layer.setOpacity(0));
-  await new Promise(resolve=>setTimeout(resolve,190));
+  await new Promise(resolve=>setTimeout(resolve,60));
   if(renderToken!==frameRenderToken){
    nextLayers.forEach(layer=>radarGroup.removeLayer(layer));
    return;
   }
   radarLayers.forEach(layer=>radarGroup.removeLayer(layer));
-  radarLayers=nextLayers;
+  nextLayers.filter((layer,i)=>!loadResults[i]).forEach(layer=>radarGroup.removeLayer(layer));
+  radarLayers=successfulLayers;
   lastRenderedFrame=currentFrame;
+  if(failedCount){
+   document.getElementById("message").textContent=
+    successfulLayers.length+" imagem(ns) de radar carregadas; "+failedCount+" falharam nesta atualização.";
+  }
  }else{
   nextLayers.forEach(layer=>radarGroup.removeLayer(layer));
   document.getElementById("message").textContent=
-   "Falha ao carregar uma ou mais imagens. O quadro anterior foi mantido.";
+   "As imagens de radar não carregaram. O quadro anterior foi mantido.";
  }
 
  document.getElementById("timeline").max=Math.max(0,frames.length-1);
@@ -1869,11 +1924,23 @@ function pauseLoop(){
  loopRunToken++;
  if(loopTimer){clearTimeout(loopTimer);loopTimer=null;}
 }
+function getLoopFrameIndexes(){
+ const selector=document.getElementById("loopFrameCount");
+ const requested=selector?.value||"all";
+ const count=requested==="all"?frames.length:Math.min(frames.length,Math.max(1,Number(requested)||frames.length));
+ // Usa os quadros mais recentes quando o usuário escolhe uma quantidade menor.
+ const first=Math.max(0,frames.length-count);
+ return Array.from({length:count},(_,i)=>first+i);
+}
 async function runRadarLoop(token){
  if(token!==loopRunToken||!frames.length)return;
- const speed=Math.max(100,Number(document.getElementById("speed").value)||800);
- // Aguarda o carregamento do quadro antes de programar o próximo.
- await showFrame(currentFrame+1);
+ const speed=Math.max(20,Number(document.getElementById("speed").value)||800);
+ const indexes=getLoopFrameIndexes();
+ if(!indexes.length)return;
+ const currentPosition=indexes.indexOf(currentFrame);
+ const nextIndex=indexes[(currentPosition+1+indexes.length)%indexes.length];
+ // Aguarda o quadro terminar de carregar para não pular imagens ainda não exibidas.
+ await showFrame(nextIndex);
  if(token!==loopRunToken||!frames.length)return;
  loopTimer=setTimeout(()=>runRadarLoop(token),speed);
 }
@@ -1899,6 +1966,9 @@ document.getElementById("opacity").addEventListener("input",event=>{
  if(goes13Layer&&currentProduct==="brightness")goes13Layer.setOpacity(opacity);
 });
 document.getElementById("speed").addEventListener("change",()=>{
+ if(loopTimer) startLoop();
+});
+document.getElementById("loopFrameCount").addEventListener("change",()=>{
  if(loopTimer) startLoop();
 });
 document.getElementById("autoRefresh").addEventListener("change",event=>{
