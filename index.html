@@ -307,12 +307,8 @@ body.economy .leaflet-control-attribution{font-size:8px!important}
 body.economy .map-head{display:none}
 body.economy ~ .footer{display:none!important}
 
-/* Renderização raster sem filtros que alterem a aparência dos dados */
-.leaflet-image-layer,
-.leaflet-radar-raster{
-  image-rendering:auto!important;
-  filter:none!important;
-}
+/* A qualidade do raster é processada em canvas antes de chegar ao Leaflet. */
+.leaflet-image-layer,.leaflet-radar-raster{image-rendering:auto;filter:none;}
 
 /* ACABAMENTO VISUAL CLOUDGOD · painel meteorológico */
 :root{
@@ -488,10 +484,156 @@ body.photo-pick #map .leaflet-grab{cursor:crosshair!important}
 @media(max-width:760px){.rs-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.rs-chart-grid{grid-template-columns:1fr}.rs-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:430px){.rs-controls{grid-template-columns:1fr}.rs-head{align-items:flex-start;flex-direction:column}.rs-actions button{min-width:100%}}
 
+
+/* TELA INICIAL CLOUDGOD */
+.startup-screen{position:fixed;inset:0;z-index:5000;display:grid;place-items:center;padding:22px;background:radial-gradient(circle at 20% 10%,#183d68 0%,#081a31 48%,#050d19 100%);color:#fff}
+.startup-screen[hidden]{display:none}
+.startup-card{width:min(720px,100%);padding:26px;border:1px solid #ffffff24;border-radius:24px;background:linear-gradient(145deg,#102b49ed,#09182bed);box-shadow:0 24px 90px #0008}
+.startup-brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.startup-logo{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(140deg,#0875ff,#50c6ff);font-size:27px}
+.startup-brand h1{margin:0;font-size:22px;letter-spacing:3px}
+.startup-brand small{display:block;margin-top:4px;color:#9bb8d7;font-size:9px;letter-spacing:1.4px}
+.startup-card h2{font-size:18px;margin:0 0 7px}
+.startup-intro{font-size:11px;line-height:1.6;color:#a9bfd7;margin:0 0 17px}
+.render-presets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.render-preset{min-height:135px;text-align:left;padding:14px;border:1px solid #ffffff25;border-radius:15px;background:#ffffff0b;color:#fff}
+.render-preset strong{display:block;font-size:12px;margin-bottom:8px}
+.render-preset small{display:block;color:#adc1d8;font-size:10px;line-height:1.55;font-weight:400}
+.render-preset.selected{border-color:#55baff;background:#1677ff2b;box-shadow:inset 0 0 0 1px #55baff55}
+.startup-note{font-size:9px;line-height:1.55;color:#8ea9c5;margin:13px 0}
+.startup-actions{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px;flex-wrap:wrap}
+.startup-actions label{display:flex;align-items:center;gap:8px;margin:0;color:#c1d4e8;font-size:10px}
+.startup-actions select{width:auto;min-width:150px;background:#102b49;color:#fff;border-color:#ffffff30}
+.startup-enter{min-width:180px;background:linear-gradient(110deg,#0875ff,#3bb5ff);color:#fff}
+.render-quality-panel{margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#f8fbff}
+.render-quality-panel .render-presets{grid-template-columns:1fr}
+.render-quality-panel .render-preset{min-height:0;background:#fff;color:#29415d;border-color:#e2eaf4}
+.render-quality-panel .render-preset small{color:#71839a}
+.render-quality-panel .render-preset.selected{background:#eff6ff;border-color:#72afff}
+#map .leaflet-radar-raster{transition:opacity .32s ease; image-rendering:auto; backface-visibility:hidden}
+body.render-smooth #map .leaflet-radar-raster{image-rendering:auto;filter:none}
+body.render-ultra #map .leaflet-radar-raster{image-rendering:auto;filter:none}
+body.render-realgod #map .leaflet-radar-raster{image-rendering:auto;filter:none}
+@media(max-width:560px){.startup-card{padding:19px}.render-presets{grid-template-columns:1fr}.render-preset{min-height:0}.startup-actions{align-items:stretch}.startup-enter{width:100%}}
+
+
+.dbz-professional{margin-top:10px;padding:11px;border:1px solid #dce6f2;border-radius:12px;background:#fff}
+.dbz-professional strong{display:block;font-size:12px;margin-bottom:7px;color:#29415d}
+.dbz-bar{height:13px;border-radius:8px;background:linear-gradient(90deg,#6b7280 0%,#1748d1 12%,#00a8ff 25%,#00c878 40%,#d5e600 55%,#ffb000 68%,#f04424 82%,#d000a8 92%,#fff 100%);border:1px solid #d4dce7}
+.dbz-labels{display:flex;justify-content:space-between;font-size:10px;color:#60738a;margin-top:4px}
+
+
+/* CLOUDGOD · nuvens volumétricas 3D */
+.cloud3d-control{background:#fff;border:1px solid #cbd8e8;border-radius:10px;box-shadow:0 2px 12px #18395d30;padding:8px 10px;min-width:154px}
+.cloud3d-control button{width:100%;background:#12395f;color:#fff;padding:9px 10px}
+.cloud3d-control button.active{background:#087fbd}
+.cloud3d-control small{display:block;margin-top:6px;color:#52677e;font-size:9px;line-height:1.4}
+.cloud3d-panel{position:absolute;z-index:650;left:12px;bottom:14px;width:min(280px,calc(100% - 24px));background:#071a2ddd;color:#eef7ff;border:1px solid #8bb9d866;border-radius:13px;padding:12px;backdrop-filter:blur(8px);box-shadow:0 8px 28px #00142655;display:none;pointer-events:auto}
+.cloud3d-panel.open{display:block}
+.cloud3d-panel h4{margin:0 0 8px;font-size:11px;letter-spacing:.8px}
+.cloud3d-panel .cloud3d-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:8px 0}
+.cloud3d-panel .cloud3d-stat{background:#ffffff12;border-radius:8px;padding:7px}
+.cloud3d-panel .cloud3d-stat b{display:block;font-size:14px;color:#8bdcff}
+.cloud3d-panel .cloud3d-stat span{font-size:8px;color:#b9cddd}
+.cloud3d-panel p{font-size:9px;line-height:1.45;color:#c2d4e5;margin:7px 0 0}
+.cloud3d-panel input{width:100%;accent-color:#63caff}
+.cloud3d-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:420}
+
+
+#cloud3dModal{position:fixed;inset:0;z-index:99999;background:rgba(2,10,22,.82);display:none;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(7px)}
+#cloud3dModal.open{display:flex}
+.cloud3d-window{width:min(1100px,100%);height:min(760px,94dvh);background:#07182b;border:1px solid #7fb9df66;border-radius:18px;overflow:hidden;box-shadow:0 24px 90px #0009;display:flex;flex-direction:column;color:#eff8ff}
+.cloud3d-head{display:flex;align-items:center;gap:10px;padding:12px 15px;background:linear-gradient(110deg,#0b2948,#123c61);flex-shrink:0}
+.cloud3d-head strong{font-size:12px;letter-spacing:1px}
+.cloud3d-head small{display:block;color:#a9c6dc;font-size:9px;margin-top:3px}
+.cloud3d-close{margin-left:auto;background:#ffffff18;border:1px solid #ffffff33;color:white;border-radius:9px;padding:8px 12px;font-size:11px}
+.cloud3d-stage{position:relative;flex:1;min-height:0;overflow:hidden;background:#071321;perspective:1100px;perspective-origin:50% 45%;}
+/* O mapa e a camada volumétrica recebem a mesma perspectiva: o efeito 3D fica restrito ao recorte da área medida no pop-up. */
+#cloud3dAreaMap,#cloud3dAreaCanvas{position:absolute;inset:0;width:100%;height:100%;transform:rotateX(38deg) scale(1.12);transform-origin:50% 58%;backface-visibility:hidden}
+#cloud3dAreaMap{filter:saturate(1.05) contrast(1.08);}
+#cloud3dAreaCanvas{pointer-events:auto;z-index:500;touch-action:none;cursor:grab;}
+.cloud3d-toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 14px;background:#0b2035;border-top:1px solid #ffffff18;font-size:10px;flex-shrink:0}
+.cloud3d-toolbar label{display:flex;align-items:center;gap:7px;color:#c7d9e8}
+.cloud3d-toolbar input{width:100px;accent-color:#53c8ff}
+.cloud3d-readouts{display:flex;gap:7px;margin-left:auto}
+.cloud3d-readout{padding:6px 9px;border-radius:8px;background:#ffffff12;min-width:82px}
+.cloud3d-readout b{display:block;color:#8cdbff;font-size:13px}
+.cloud3d-readout span{font-size:8px;color:#b5cada}
+.cloud3d-note{width:100%;font-size:9px;color:#9fb5c8;line-height:1.4}
+@media(max-width:600px){.cloud3d-window{height:94dvh}.cloud3d-toolbar{gap:8px}.cloud3d-readouts{width:100%;margin-left:0}.cloud3d-readout{flex:1}.cloud3d-toolbar input{width:75px}}
+
+
+.cloud3d-launch-top{background:linear-gradient(135deg,#087fbd,#164d83);color:#fff;border:1px solid #70d5ff;border-radius:9px;padding:9px 13px;font-size:10px;font-weight:800;letter-spacing:.3px;box-shadow:0 3px 12px #0b4c7a44;min-height:38px;white-space:nowrap}
+.cloud3d-launch-top:disabled{opacity:.48;filter:grayscale(.65);cursor:not-allowed}
+@media(max-width:760px){.map-head{flex-wrap:wrap}.map-head .mode-buttons{width:100%;display:flex;flex-wrap:wrap;gap:6px}.cloud3d-launch-top{flex:1;min-width:100%;font-size:11px}}
+
+
+
+
+/* ALERTAS AUTOMÁTICOS CLOUDGOD */
+.auto-alert-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:12px 0}
+.auto-alert-status{color:#55e6ff;font-size:10px;font-weight:800;letter-spacing:.5px}
+.auto-alert-card{background:linear-gradient(145deg,#071b30,#061222);border:1px solid #176083;border-radius:11px;padding:12px;margin-top:11px;overflow:hidden}
+.auto-alert-card strong{display:block;color:#69dcff;font-size:12px;margin-bottom:8px}
+.auto-alert-description{color:#b5cad9;font-size:11px;line-height:1.5;margin:7px 0}
+.auto-alert-metrics{display:flex;gap:10px;margin:12px 0}
+.auto-alert-metrics div{flex:1;background:#0b2942;border:1px solid #174968;border-radius:8px;padding:10px;text-align:center}
+.auto-alert-metrics b{display:block;font-size:20px;color:#61e5ff}
+.auto-alert-metrics small{display:block;font-size:9px;color:#9ab9cc;margin-top:4px}
+.auto-alert-card button{width:100%;margin-top:7px}
+.auto-alert-link{display:block;color:#63dcff;font-size:10px;font-weight:800;text-decoration:none;border:1px solid #176083;border-radius:7px;padding:10px;text-align:center;margin:10px 0}
+.auto-prevots-image{display:block;width:100%;height:auto;min-height:100px;object-fit:contain;background:#06111e;border-radius:8px;border:1px solid #1a4059}
+.auto-alert-warning{margin-top:12px;padding:11px;border:1px solid #80632a;border-left:4px solid #e5b83e;border-radius:8px;background:#211c10}
+.auto-alert-warning b{color:#ffd36b;font-size:10px}
+.auto-alert-warning p{color:#d5c7a5;font-size:10px;line-height:1.5;margin:6px 0 0}
+.auto-alert-footer{color:#829eb2;font-size:9px;margin-top:12px;text-align:center}
+
+
+/* PALETA APOCS BR · reflectividade */
+.apocs-control{margin-top:11px;padding:11px;border:1px solid #d7e2ef;border-radius:12px;background:#f8fbff}
+.apocs-control label{margin:0 0 7px}
+.apocs-control select{width:100%}
+.apocs-preview{height:220px;width:18px;flex:0 0 18px;margin:0;border-radius:5px;border:1px solid #718096;background:linear-gradient(to bottom,#000000 0.000%, #0000c8 4.000%, #005ac8 8.000%, #00f4ff 16.000%, #ffffff 20.000%, #000000 24.800%, #610057 28.000%, #ff7dff 32.000%, #c100c1 35.200%, #7d0000 40.000%, #c90000 46.400%, #c84600 48.800%, #ff5f22 50.400%, #ffd500 54.400%, #ffb52b 56.800%, #d6bf31 57.920%, #c0a31a 58.400%, #9c8f0a 60.000%, #09604f 61.600%, #038e0e 64.800%, #41a948 68.560%, #00a6a9 70.400%, #005a6e 72.000%, #57456e 74.400%, #464646 76.000%, #000000 100.000%)}
+.apocs-legend-wrap{display:flex;align-items:stretch;gap:8px;margin-top:10px;height:220px}
+.apocs-ticks{display:flex;flex-direction:column;justify-content:space-between;font:10px/1 monospace;color:#dbe7f2;padding:1px 0}
+.apocs-control{background:#081522!important;border-color:#24445d!important;color:#e5eef7}
+.apocs-control label{color:#e5eef7}
+.apocs-control select{background:#0d2233;color:#e5eef7;border:1px solid #31536b;border-radius:6px;padding:8px}
+
+
 </style>
 </head>
 
 <body>
+
+<div class="startup-screen" id="startupScreen">
+ <div class="startup-card">
+  <div class="startup-brand">
+   <div class="startup-logo">☁</div>
+   <div><h1>CLOUDGOD</h1><small>RADAR METEOROLÓGICO · CENTRAL DE INICIALIZAÇÃO</small></div>
+  </div>
+  <h2>Configuração de renderização da reflectividade</h2>
+  <p class="startup-intro">Escolha como o CLOUDGOD deve apresentar os quadros de radar. A opção pode ser alterada depois, sem trocar a fonte meteorológica.</p>
+  <div class="render-presets" id="startupPresets">
+   <button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')">
+    <strong>SUAVE</strong><small>Imagem normal, sem processamento extra.</small>
+   </button>
+   <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')">
+    <strong>ULTRA CLOUD</strong><small>Interpolação avançada para reduzir o aspecto quadriculado.</small>
+   </button>
+   <button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')">
+    <strong>REALGOD</strong><small>Suavização máxima em tempo real, para uma imagem visualmente muito limpa.</small>
+   </button>
+  </div>
+  <p class="startup-note">ULTRA CLOUD e REALGOD reprocessam os pixels recebidos para reduzir blocos visíveis. Não criam medições meteorológicas nem aumentam a resolução nativa do radar.</p>
+  <div class="startup-actions">
+   <label for="startupMapMode">MAPA BASE
+    <select id="startupMapMode"><option value="street">OpenStreetMap</option><option value="satellite">Satélite (Esri)</option></select>
+   </label>
+   <button class="startup-enter" onclick="enterCloudgod()">INICIAR CLOUDGOD →</button>
+  </div>
+ </div>
+</div>
 
 <header>
 <div class="brand">
@@ -511,14 +653,28 @@ body.photo-pick #map .leaflet-grab{cursor:crosshair!important}
 <div class="map-head">
 <div>
 <h2>Radar meteorológico brasileiro</h2>
-<small id="subtitle">OPENSTREETMAP · BRASIL</small>
+<small id="subtitle">OPENSTREETMAP · BRASIL · MAPA 2D</small>
 </div>
 <div class="mode-buttons">
 <button class="mode-button" onclick="requestLocation()">⌖ MINHA POSIÇÃO</button>
 <button class="primary" onclick="toggleEconomy()">MODO ECONOMIA</button>
 </div>
 </div>
-<div id="map"></div>
+<div id="map">
+<div id="cloud3dPanel" class="cloud3d-panel">
+ <h4>☁ NUVENS VOLUMÉTRICAS · 3D</h4>
+ <div class="cloud3d-stats">
+  <div class="cloud3d-stat"><b id="cloud3dPanelMin">—</b><span>BASE ESTIMADA</span></div>
+  <div class="cloud3d-stat"><b id="cloud3dPanelAvg">—</b><span>ALTURA MÉDIA</span></div>
+  <div class="cloud3d-stat"><b id="cloud3dPanelMax">—</b><span>TOPO ESTIMADO</span></div>
+ </div>
+ <label for="cloud3dPanelDensity">DENSIDADE VISUAL</label>
+ <input id="cloud3dPanelDensity" type="range" min="35" max="100" value="75">
+ <label for="cloud3dPanelHeight">EXAGERO VERTICAL</label>
+ <input id="cloud3dPanelHeight" type="range" min="50" max="200" value="100">
+ <p>Altitudes em metros são estimativas visuais derivadas do realce infravermelho, não medições de altura. Para altitude real calibrada é necessário perfil atmosférico ou produto de altura de topo de nuvem.</p>
+</div>
+</div>
 </section>
 
 <aside class="side">
@@ -572,6 +728,37 @@ body.photo-pick #map .leaflet-grab{cursor:crosshair!important}
 
 <label>OPACIDADE DA IMAGEM</label>
 <input type="range" id="opacity" min="10" max="100" value="90">
+
+<div class="render-quality-panel">
+ <label style="margin-top:0">QUALIDADE DE RENDERIZAÇÃO DA REFLECTIVIDADE</label>
+ <div class="render-presets">
+  <button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')"><strong>SUAVE</strong><small>Reflectividade normal, sem suavização adicional.</small></button>
+  <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')"><strong>ULTRA CLOUD</strong><small>Suavização avançada e transições de cor mais limpas.</small></button>
+  <button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')"><strong>REALGOD</strong><small>Suavização máxima e interpolação de alta qualidade, sem lupa ou ampliação.</small></button>
+ </div>
+ <div class="apocs-control">
+  <label for="reflectivityPalette">PALETA DE CORES DA REFLECTIVIDADE</label>
+  <select id="reflectivityPalette" onchange="setReflectivityPalette(this.value)">
+   <option value="original" selected>CORES ORIGINAIS REDEMET · SEGURO</option>
+   <option value="apocs">APOCS BR · LEGENDA WxTools</option>
+  </select>
+  <div class="apocs-legend-wrap">
+   <div class="apocs-preview" aria-label="Escala APOCS BR: 100 dBZ no topo até menos 25 dBZ na base"></div>
+   <div class="apocs-ticks">
+    <span>100</span><span>95</span><span>90</span><span>80</span><span>75</span><span>69</span><span>65</span><span>60</span><span>56</span><span>50</span><span>42</span><span>39</span><span>37</span><span>32</span><span>29</span><span>27,6</span><span>27</span><span>25</span><span>23</span><span>19</span><span>14,3</span><span>12</span><span>10</span><span>7</span><span>5</span><span>−25</span>
+   </div>
+  </div>
+  <div class="bt-note">APOCS BR · WxTools · ordem da legenda: 100 dBZ no topo e −25 dBZ na base. Valores e RGB preservados do arquivo Apocs_BR.pal.</div>
+ </div>
+ <div class="bt-note">REALGOD reduz ao máximo o aspecto quadriculado, mas não cria medições ou detalhes que não existam na fonte.</div>
+ <div class="dbz-professional" aria-label="Escala profissional de referência de reflectividade">
+  <strong>ESCALA PROFISSIONAL · REFERÊNCIA dBZ</strong>
+  <div class="dbz-bar"></div>
+  <div class="dbz-labels"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span><span>90 dBZ</span></div>
+  <div class="bt-note">Escala de referência visual. A imagem PNG colorida da REDEMET não fornece necessariamente os valores numéricos de cada pixel; portanto, esta faixa não recalibra os ecos nem atribui dBZ medidos.</div>
+ </div>
+</div>
+
 
 <button class="primary" style="width:100%;margin-top:12px" onclick="refreshRadar()">ATUALIZAR REFLECTIVIDADE</button>
 <div id="message">Preparando radar...</div>
@@ -681,6 +868,48 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
  <span><i style="background:#d93434"></i>Extrema</span>
 </div>
 <button class="secondary" style="width:100%;margin-top:8px" onclick="refreshForecastProduct('rain')">ATUALIZAR PREVISÃO</button>
+</section>
+
+
+<section class="panel" id="areaAlertsPanel">
+ <h3>ALERTAS AUTOMÁTICOS · TEMPO SEVERO</h3>
+ <div class="info">Monitoramento de atividade convectiva e previsão de tempestades. Os dados são apresentados conforme a fonte original. Uma ocorrência STSC ou uma previsão convectiva não confirma, por si só, tornado, mesociclone ou wall cloud.</div>
+ <div class="auto-alert-header">
+  <span id="autoAlertConnection" class="auto-alert-status">INICIALIZANDO MONITORAMENTO...</span>
+  <button class="secondary" type="button" onclick="refreshAutomaticAlerts(true)">ATUALIZAR</button>
+ </div>
+ <div class="auto-alert-card">
+  <strong>STSC · REDEMET / DECEA</strong>
+  <div id="autoSTSCStatus" class="auto-alert-description">Aguardando consulta...</div>
+  <div class="auto-alert-metrics">
+   <div><b id="autoSTSCPositions">--</b><small>POSIÇÕES</small></div>
+   <div><b id="autoSTSCFrames">--</b><small>QUADROS</small></div>
+  </div>
+  <button class="secondary" type="button" onclick="activateAutomaticSTSC()">EXIBIR OCORRÊNCIAS NO MAPA</button>
+ </div>
+ <div class="auto-alert-card">
+  <strong>PREVOTS · PREVISÃO CONVECTIVA</strong>
+  <div id="autoPrevotsStatus" class="auto-alert-description">Carregando previsão...</div>
+  <a href="https://prevots.org/previsao-convectiva/" target="_blank" rel="noopener" class="auto-alert-link">ABRIR PREVISÃO OFICIAL</a>
+  <img id="autoPrevotsImage" class="auto-prevots-image" src="https://prevots.org/wp-content/uploads/previsao/previsao.png" alt="Mapa de previsão convectiva da PREVOTS" loading="lazy">
+  <div id="prevotsMapStatus" class="auto-alert-description" role="status">Camada vetorial aguardando uma fonte GeoJSON oficial.</div>
+  <label for="prevotsGeoJsonUrl" class="auto-alert-description" style="display:block">Endpoint GeoJSON oficial (se disponibilizado pela PREVOTS)</label>
+  <input id="prevotsGeoJsonUrl" type="url" placeholder="https://.../prevots.geojson" autocomplete="off" style="width:100%;box-sizing:border-box;background:#06111e;color:#eaf7ff;border:1px solid #1a5875;border-radius:8px;padding:10px;font-size:11px">
+  <button class="secondary" type="button" onclick="connectPrevotsGeoJSON()">CONECTAR ÁREAS GEOJSON</button>
+  <button class="secondary" type="button" onclick="togglePrevotsMapLayer()">MOSTRAR / OCULTAR ÁREAS NO MAPA</button>
+  <div class="auto-alert-description">Os retângulos serão criados somente a partir de coordenadas recebidas no GeoJSON. A imagem oficial, sozinha, não fornece coordenadas individuais de wall cloud ou tornado.</div>
+ </div>
+ <div class="auto-alert-card">
+  <strong>INMET · AVISOS METEOROLÓGICOS</strong>
+  <div class="auto-alert-description">Consulte os avisos meteorológicos oficiais e suas áreas de validade.</div>
+  <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener" class="auto-alert-link">ABRIR AVISOS DO INMET</a>
+  <div class="auto-alert-description">A consulta é aberta no portal oficial; esta versão não declara que existe um feed automático do INMET conectado.</div>
+ </div>
+ <div class="auto-alert-warning">
+  <b>IMPORTANTE</b>
+  <p>STSC indica atividade convectiva conforme os dados recebidos da REDEMET. Não é confirmação de tornado ou mesociclone. A PREVOTS apresenta previsão, não observação confirmada. Fenômenos específicos exigem evidências e fontes apropriadas.</p>
+ </div>
+ <div class="auto-alert-footer" id="autoAlertLastUpdate">Última atualização: aguardando dados.</div>
 </section>
 
 <section class="panel" id="tornadoRiskPanel">
@@ -950,7 +1179,34 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.152.2/three.min.js"></script>
 
+
+<div id="cloud3dModal" aria-hidden="true">
+ <section class="cloud3d-window">
+  <header class="cloud3d-head">
+   <div><strong>CLOUDGOD · MAPEAMENTO METEOROLÓGICO 3D</strong><small id="cloud3dAreaLabel">Área selecionada no mapa</small></div>
+   <button class="cloud3d-close" id="cloud3dClose" type="button">FECHAR ✕</button>
+  </header>
+  <div class="cloud3d-stage">
+   <div id="cloud3dAreaMap"></div>
+   <canvas id="cloud3dAreaCanvas"></canvas>
+  </div>
+  <footer class="cloud3d-toolbar">
+   <label>Densidade da nuvem <input id="cloud3dDensity" type="range" min="20" max="100" value="75"></label>
+   <label>Exagero vertical <input id="cloud3dHeight" type="range" min="50" max="200" value="100"></label>
+   <button id="cloud3dRadarVolumeBtn" type="button" style="background:#087fbd;color:#fff;border:1px solid #65cfff;border-radius:8px;padding:8px 11px;font-weight:800">RECONSTRUIR NUVEM PELO RADAR</button>
+   <button id="cloud3dRadarVolumeClear" type="button" style="background:#ffffff18;color:#d9edff;border:1px solid #ffffff35;border-radius:8px;padding:8px 11px">LIMPAR VOLUME</button>
+
+   <div class="cloud3d-readouts">
+    <div class="cloud3d-readout"><b id="cloud3dMin">—</b><span>BASE ESTIMADA</span></div>
+    <div class="cloud3d-readout"><b id="cloud3dAvg">—</b><span>ALTURA MÉDIA</span></div>
+    <div class="cloud3d-readout"><b id="cloud3dMax">—</b><span>TOPO ESTIMADO</span></div>
+   </div>
+   <div class="cloud3d-note">Nuvens volumétricas derivadas do GOES-19 ABI canal 2 (luz visível). Altitudes são ilustrativas, não medições calibradas; o canal visível não identifica nuvens à noite. A área inicial corresponde ao recorte medido, mas o mapa pode ser movido e ampliado livremente. A reconstrução transforma ecos raster do MAXCAPPI e cortes CAPPI 5,5/7,3 km em volumes cumuliformes suavizados. A forma é uma interpretação visual dos ecos, não uma tomografia radar completa nem dBZ calibrado por pixel.</div>
+  </footer>
+ </section>
+</div>
 <script>
 // ============================================
 // CONFIGURAÇÃO REDEMET
@@ -1020,10 +1276,23 @@ const map=L.map("map",{
  preferCanvas:true
 });
 
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+let baseMapLayer=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
  attribution:"© OpenStreetMap contributors",
  maxZoom:19
 }).addTo(map);
+
+function setBaseMap(mode){
+ if(baseMapLayer)map.removeLayer(baseMapLayer);
+ if(mode==="satellite"){
+  baseMapLayer=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
+   attribution:"Tiles © Esri",maxZoom:19
+  }).addTo(map);
+ }else{
+  baseMapLayer=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+   attribution:"© OpenStreetMap contributors",maxZoom:19
+  }).addTo(map);
+ }
+}
 
 const radarGroup=L.layerGroup().addTo(map);
 radarStationGroup.addTo(map);
@@ -1591,9 +1860,9 @@ map.on("click",function(event){
   const point={lat:event.latlng.lat,lng:event.latlng.lng};
   if(!areaStart){
    areaStart=point;
-   areaEnd=point;
+   areaEnd=null;
    areaStartMarker=L.circleMarker(event.latlng,{radius:5,color:"#fff",weight:2,fillColor:"#1677ff",fillOpacity:1}).addTo(map);
-   document.getElementById("areaStatus").textContent="Primeiro ponto marcado. Toque em outro ponto para definir e calcular a área.";
+   document.getElementById("areaStatus").textContent="Primeiro ponto marcado. Toque em outro ponto para concluir a medição da área.";
   }else{
    areaEnd=point;
    if(areaEndMarker)map.removeLayer(areaEndMarker);
@@ -1640,7 +1909,24 @@ function updateAreaMeasurement(){
  const area=height*width;
  document.getElementById("areaValue").textContent=area.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});
  document.getElementById("areaDimensions").textContent=`Dimensões aproximadas: ${width.toFixed(2)} km × ${height.toFixed(2)} km`;
+ document.getElementById("areaStatus").textContent="Área calculada. Você pode ajustar os dois pontos ou limpar a medição.";
  document.getElementById("areaCard").classList.add("visible");
+}
+
+function launchAreaCloud3D(){
+ const status=document.getElementById("areaStatus");
+ if(!areaStart||!areaEnd){
+  if(status)status.textContent="Primeiro selecione dois pontos usando MEDIR ÁREA NO MAPA.";
+  return;
+ }
+ const south=Math.min(areaStart.lat,areaEnd.lat), north=Math.max(areaStart.lat,areaEnd.lat);
+ const west=Math.min(areaStart.lng,areaEnd.lng), east=Math.max(areaStart.lng,areaEnd.lng);
+ if(typeof window.openCloudGod3DForArea==="function"){
+  window.openCloudGod3DForArea([[south,west],[north,east]]);
+ }else{
+  if(status)status.textContent="O módulo 3D não iniciou. Recarregue a página e confira a conexão com a internet.";
+  console.error("CLOUDGOD 3D: openCloudGod3DForArea não está disponível.");
+ }
 }
 
 function clearAreaMeasurement(){
@@ -1728,6 +2014,46 @@ function closeEconomyMenu(){
 
  document.getElementById("economyMenu").classList.remove("open");
 }
+
+// ============================================
+ // PERFIS DE RENDERIZAÇÃO E TELA INICIAL
+ // ============================================
+const RENDER_PROFILES={
+ smooth:{className:"render-smooth",speed:800,description:"Suave — raster original"},
+ ultra:{className:"render-ultra",speed:800,description:"Ultra Cloud — suavização real dos pixels"},
+ realgod:{className:"render-realgod",speed:800,description:"Realgod — suavização e reforço de detalhes"}
+};
+let currentRenderQuality="smooth";
+function setRenderQuality(name){
+ const profile=RENDER_PROFILES[name]||RENDER_PROFILES.smooth;
+ currentRenderQuality=RENDER_PROFILES[name]?name:"smooth";
+ if(typeof radarRasterCache!=="undefined")radarRasterCache.clear();
+ document.body.classList.remove("render-smooth","render-ultra","render-realgod");
+ document.body.classList.add(profile.className);
+ document.querySelectorAll("[data-quality]").forEach(button=>{
+  button.classList.toggle("selected",button.dataset.quality===currentRenderQuality);
+ });
+ const speed=document.getElementById("speed");
+ if(speed)speed.value=String(profile.speed);
+ const message=document.getElementById("message");
+ if(message)message.textContent="Perfil de pixels ativo: "+profile.description+". Reprocessando o quadro atual…";
+ // O quadro atual é recarregado para que a troca de qualidade afete a reflectividade imediatamente.
+ if(typeof frames!=="undefined"&&frames.length&&typeof showFrame==="function")showFrame(currentFrame);
+ if(loopTimer)startLoop();
+}
+function enterCloudgod(){
+ const mode=document.getElementById("startupMapMode")?.value||"street";
+ setBaseMap(mode);
+ document.getElementById("startupScreen").hidden=true;
+ requestAnimationFrame(()=>map.invalidateSize({pan:false,animate:false}));
+}
+document.addEventListener("DOMContentLoaded",()=>{
+ const paletteControl=document.getElementById("reflectivityPalette");
+ if(paletteControl)paletteControl.value=reflectivityPalette;
+ setRenderQuality("smooth");
+ const startMap=document.getElementById("startupMapMode");
+ if(startMap)startMap.value="street";
+});
 
 // ============================================
 // PRODUTOS
@@ -1947,6 +2273,146 @@ function radarExportSafeUrl(sourceUrl){
  return radarImageProxyUrl(sourceUrl);
 }
 
+// Processamento visual real dos pixels do raster recebido da REDEMET.
+// A interpolação reduz o aspecto quadriculado; o reforço de bordas é apenas visual.
+
+// APOCS BR: níveis dBZ e RGB extraídos do arquivo Apocs_BR.pal.
+const APOCS_BR_STOPS=[
+ [-25,[0,0,0]],[5,[70,70,70]],[7,[87,69,110]],[10,[0,90,110]],
+ [12,[0,166,169]],[14.3,[65,169,72]],[19,[3,142,14]],[23,[9,96,79]],
+ [25,[156,143,10]],[27,[192,163,26]],[27.6,[214,191,49]],[29,[255,181,43]],
+ [32,[255,213,0]],[37,[255,95,34]],[39,[200,70,0]],[42,[201,0,0]],
+ [50,[125,0,0]],[56,[193,0,193]],[60,[255,125,255]],[65,[97,0,87]],
+ [69,[0,0,0]],[75,[255,255,255]],[80,[0,244,255]],[90,[0,90,200]],
+ [95,[0,0,200]],[100,[0,0,0]]
+];
+// Âncoras aproximadas da legenda de cores existente no HTML.
+// PNG colorido não contém necessariamente dBZ por pixel: remapeamento visual estimado.
+// Não há âncoras RGB da paleta-fonte da REDEMET confirmadas.
+// Não remapear pixels de um PNG colorido por aproximação: isso distorce a reflectividade.
+let reflectivityPalette="original";
+function apocsColorAt(dbz){
+ const n=APOCS_BR_STOPS.length;
+ if(dbz<=APOCS_BR_STOPS[0][0])return APOCS_BR_STOPS[0][1];
+ if(dbz>=APOCS_BR_STOPS[n-1][0])return APOCS_BR_STOPS[n-1][1];
+ for(let i=1;i<n;i++){
+  const a=APOCS_BR_STOPS[i-1],b=APOCS_BR_STOPS[i];
+  if(dbz<=b[0]){
+   const t=(dbz-a[0])/(b[0]-a[0]);
+   return a[1].map((v,k)=>Math.round(v+(b[1][k]-v)*t));
+  }
+ }
+ return [0,0,0];
+}
+function remapApocsPixels(data){
+ // O PNG da REDEMET já chega colorido e não carrega dBZ por pixel.
+ // Sem a tabela RGB original da fonte, não existe conversão confiável.
+ // Mantém os pixels intactos para impedir desaparecimento ou cores falsas.
+ return data;
+}
+function setReflectivityPalette(mode){
+ reflectivityPalette=mode==="original"?"original":"apocs";
+ radarRasterCache.clear();
+ const message=document.getElementById("message");
+ const control=document.getElementById("reflectivityPalette");
+ if(control)control.value=reflectivityPalette;
+ if(message)message.textContent=reflectivityPalette==="apocs"?"Legenda APOCS BR WxTools selecionada. Os pixels do radar permanecem intactos sem dados dBZ por pixel.":"Reflectividade REDEMET restaurada com as cores originais…";
+ if(frames.length&&typeof showFrame==="function")showFrame(currentFrame);
+ if(loopTimer)startLoop();
+}
+
+const radarRasterCache=new Map();
+const RASTER_QUALITY={
+ smooth:{mode:"original"},
+ ultra:{mode:"smooth",strength:0.42},
+ realgod:{mode:"enhance",strength:0.30,detail:0.55}
+};
+
+// Suavização espacial real, aplicada aos pixels do raster antes de exibi-lo.
+// A transparência é preservada para não criar manchas no fundo do radar.
+function processRadarPixels(canvas,profile){
+ if(!profile)profile={mode:"original"};
+ const needsPalette=reflectivityPalette==="apocs"&&["maxcappi","07km","05km"].includes(currentProduct);
+ if(profile.mode==="original"&&!needsPalette)return;
+ const ctx=canvas.getContext("2d",{willReadFrequently:true});
+ if(!ctx)return;
+ let image;
+ try{image=ctx.getImageData(0,0,canvas.width,canvas.height);}catch(e){return;}
+ const src=image.data, w=canvas.width, h=canvas.height;
+ if(needsPalette)remapApocsPixels(src);
+ const original=new Uint8ClampedArray(src);
+ const strength=profile.strength||0;
+ const detail=profile.detail||0;
+ if(profile.mode==="original"){
+  ctx.putImageData(image,0,0);
+  return;
+ }
+
+ // Filtro gaussiano 3x3 com pesos 1-2-1 / 2-4-2 / 1-2-1.
+ // Mistura o resultado com o original para controlar a intensidade.
+ for(let y=1;y<h-1;y++){
+  for(let x=1;x<w-1;x++){
+   const i=(y*w+x)*4, alpha=original[i+3];
+   if(alpha<8)continue;
+   for(let c=0;c<3;c++){
+    let sum=0,weight=0;
+    for(let dy=-1;dy<=1;dy++){
+     for(let dx=-1;dx<=1;dx++){
+      const j=((y+dy)*w+x+dx)*4, a=original[j+3]/255;
+      if(a<0.04)continue;
+      const k=(dx===0?2:1)*(dy===0?2:1);
+      sum+=original[j+c]*k*a;weight+=k*a;
+     }
+    }
+    if(weight){
+     const blurred=sum/weight;
+     let value=original[i+c]*(1-strength)+blurred*strength;
+     if(detail){
+      const laplace=(original[i+c]*4-
+       original[((y-1)*w+x)*4+c]-
+       original[((y+1)*w+x)*4+c]-
+       original[(y*w+x-1)*4+c]-
+       original[(y*w+x+1)*4+c]);
+      value+=laplace*detail;
+     }
+     src[i+c]=Math.max(0,Math.min(255,value));
+    }
+   }
+  }
+ }
+ ctx.putImageData(image,0,0);
+}
+function prepareRadarRaster(sourceUrl){
+ const quality=currentRenderQuality||"smooth";
+ const cacheKey=quality+"|"+reflectivityPalette+"|"+sourceUrl;
+ if(radarRasterCache.has(cacheKey))return radarRasterCache.get(cacheKey);
+ const task=new Promise(resolve=>{
+  const img=new Image();
+  img.crossOrigin="anonymous";
+  img.onload=()=>{
+   try{
+    const profile=RASTER_QUALITY[quality]||RASTER_QUALITY.smooth;
+    // Mantém a resolução original: os modos agora alteram os pixels de verdade,
+    // em vez de apenas ampliar a imagem ou mudar a velocidade da animação.
+    const canvas=document.createElement("canvas");
+    canvas.width=Math.max(1,img.naturalWidth);
+    canvas.height=Math.max(1,img.naturalHeight);
+    const ctx=canvas.getContext("2d",{alpha:true,willReadFrequently:true});
+    if(!ctx)throw new Error("Canvas indisponível");
+    ctx.drawImage(img,0,0);
+    processRadarPixels(canvas,profile);
+    resolve(canvas.toDataURL("image/png"));
+   }catch(error){console.warn("Raster sem processamento de pixels (CORS/memória):",error);resolve(sourceUrl);}
+  };
+  img.onerror=()=>resolve(sourceUrl);
+  img.src=sourceUrl;
+ });
+ radarRasterCache.set(cacheKey,task);
+ if(radarRasterCache.size>90){const first=radarRasterCache.keys().next().value;radarRasterCache.delete(first);}
+ return task;
+}
+
+
 async function showFrame(index){
  if(!frames.length) return;
  const renderToken=++frameRenderToken;
@@ -1959,8 +2425,12 @@ async function showFrame(index){
  // Não força CORS nas imagens REDEMET: alguns servidores entregam o raster
  // sem Access-Control-Allow-Origin. Com crossorigin=anonymous o navegador
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
- const nextLayers=frame.images.map(image=>L.imageOverlay(
-  radarExportSafeUrl(image.url),image.bounds,
+ const preparedSources=await Promise.all(frame.images.map(image=>
+  prepareRadarRaster(radarExportSafeUrl(image.url))
+  ));
+ if(renderToken!==frameRenderToken)return;
+ const nextLayers=frame.images.map((image,i)=>L.imageOverlay(
+  preparedSources[i]||radarExportSafeUrl(image.url),image.bounds,
   {opacity:0,interactive:false,crossOrigin:false,className:"leaflet-radar-raster"}
   ));
 
@@ -2055,6 +2525,10 @@ async function showFrame(index){
  document.getElementById("frameCounter").textContent=frames.length+" quadro(s)";
  document.getElementById("frameNumber").textContent=(currentFrame+1)+" / "+frames.length;
  document.getElementById("frameDate").textContent=String(frame.time);
+ if(document.getElementById("cloud3dModal")?.classList.contains("open")&&window.cloud3dReflectivityGroup){
+  window.cloud3dReflectivityGroup.clearLayers();
+  frame.images.forEach(im=>{if(im.bounds&&im.url)L.imageOverlay(radarExportSafeUrl(im.url),im.bounds,{opacity:.88,interactive:false,crossOrigin:false}).addTo(window.cloud3dReflectivityGroup);});
+ }
  document.getElementById("message").textContent=
   frame.images.length+(currentProduct==="infrared"?" imagem(ns) de satélite Infravermelho realçado no quadro selecionado.":" imagem(ns) de radar no quadro selecionado.");
 }
@@ -3147,6 +3621,716 @@ clearRadiosonde=function(){
  document.getElementById("rsHodoCanvas").getContext("2d").clearRect(0,0,520,520);
 };
 
+
+// ============================================
+// CLOUDGOD · ÁREA SELECIONADA -> POP-UP FIXO COM MAPA + NUVENS 3D
+// ============================================
+(function initAreaCloud3D(){
+ if(typeof THREE==="undefined" || !window.L || !map){
+  console.error("CLOUDGOD 3D: dependências ausentes", {THREE:typeof THREE, Leaflet:typeof L});
+  return;
+ }
+ let areaMap=null,renderer=null,scene=null,camera=null,cloudGroup=null,raf=0;
+ let cloudObjects=[],selectedBounds=null,active=false,loadTimeout=null,liveRefreshTimer=null;
+ let orbitYaw=0,orbitPitch=.48,orbitDistance=1.2,dragState=null;
+ const modal=document.getElementById("cloud3dModal");
+ const canvas=document.getElementById("cloud3dAreaCanvas");
+ const stage=canvas.parentElement;
+ const density=document.getElementById("cloud3dDensity");
+ const vertical=document.getElementById("cloud3dHeight");
+
+ function setReadouts(values){
+  if(!values.length)return;
+  const min=Math.min(...values),max=Math.max(...values);
+  const avg=values.reduce((a,b)=>a+b,0)/values.length;
+  const fmt=n=>(Math.round(n/100)*100).toLocaleString("pt-BR")+" m";
+  document.getElementById("cloud3dMin").textContent=(Math.round(min/100)*100).toLocaleString("pt-BR")+" m";
+  document.getElementById("cloud3dAvg").textContent=(Math.round(avg/100)*100).toLocaleString("pt-BR")+" m";
+  document.getElementById("cloud3dMax").textContent=(Math.round(max/100)*100).toLocaleString("pt-BR")+" m";
+ }
+ let cloudSphereGeometry=null;
+ let cloudMaterials=[];
+ function clearClouds(){
+  cloudObjects.forEach(o=>cloudGroup.remove(o));
+  cloudObjects=[];
+ }
+ function mapPoint(lat,lon){
+  const p=areaMap.latLngToContainerPoint([lat,lon]);
+  const size=areaMap.getSize();
+  return {x:p.x-size.x/2,y:size.y/2-p.y};
+ }
+ function addCloud(lat,lon,alt,signal,seed){
+  const p=mapPoint(lat,lon),g=new THREE.Group();
+  const scale=Number(vertical.value)/100;
+  g.position.set(p.x,p.y,alt/22*scale);
+  const strength=Math.max(.2,Math.min(1,signal));
+  const radius=12+strength*20;
+  // Cluster irregular lobes to form one connected cumulus cloud, not isolated cotton balls.
+  const lobes=6+Math.round(strength*3);
+  for(let i=0;i<lobes;i++){
+   const angle=(i/lobes)*Math.PI*2+(seed%97)*.013;
+   const ring=i===0?0:.30+((i%3)*.075);
+   const variation=.78+(((seed*(i+5)*.071)%100)/100)*.42;
+   const mesh=new THREE.Mesh(cloudSphereGeometry,cloudMaterials);
+   mesh.position.set(Math.cos(angle)*radius*ring,Math.sin(angle)*radius*ring*.58,
+     (i===0?0:((i%3)-1)*radius*.12));
+   mesh.scale.set(radius*variation*1.55,radius*variation*.94,radius*variation*(.78+strength*.45));
+   g.add(mesh);
+  }
+  // Taller turret in the center gives the cloud a rising convective silhouette.
+  const turret=new THREE.Mesh(cloudSphereGeometry,cloudMaterials);
+  turret.position.set(0,0,radius*.46);
+  turret.scale.set(radius*.82,radius*.72,radius*1.02);
+  g.add(turret);
+  g.userData={lat,lon,alt,seed};
+  cloudGroup.add(g);cloudObjects.push(g);
+ }
+ function updateCloudPositions(){
+  cloudObjects.forEach(g=>{
+   const p=mapPoint(g.userData.lat,g.userData.lon);
+   g.position.x=p.x;g.position.y=p.y;
+  });
+ }
+ function createFallbackField(reason){
+  clearClouds();
+  document.getElementById("cloud3dMin").textContent="—";
+  document.getElementById("cloud3dAvg").textContent="—";
+  document.getElementById("cloud3dMax").textContent="—";
+  const note=document.querySelector(".cloud3d-note");
+  if(note)note.textContent=(reason||"Não foi possível ler a imagem visível do satélite GOES-19.")+" Nenhuma nuvem fictícia será desenhada.";
+ }
+ // GOES-19 ABI canal 2 (0,64 µm): luz visível, sem depender do infravermelho.
+ const GOES19_VISIBLE_URL="https://cdn.star.nesdis.noaa.gov/GOES19/ABI/FD/02/1808x1808.jpg";
+ const GOES_LON=-75.2,GOES_H=42164160,GOES_A=6378137,GOES_B=6356752.31414;
+ const GOES_GRID_LIMIT=.151844;
+ function geoToGoesPixel(lat,lon,width,height){
+  const p=lat*Math.PI/180,l=(lon-GOES_LON)*Math.PI/180;
+  const e2=(GOES_A*GOES_A-GOES_B*GOES_B)/(GOES_A*GOES_A);
+  const pc=Math.atan((GOES_B*GOES_B/(GOES_A*GOES_A))*Math.tan(p));
+  const rc=GOES_B/Math.sqrt(1-e2*Math.cos(pc)*Math.cos(pc));
+  const r1=GOES_H-rc*Math.cos(pc)*Math.cos(l);
+  const r2=-rc*Math.cos(pc)*Math.sin(l);
+  const r3=rc*Math.sin(pc);
+  const x=Math.atan(-r2/r1);
+  const y=Math.atan(r3/Math.sqrt(r1*r1+r2*r2));
+  return {
+   x:(x+GOES_GRID_LIMIT)/(2*GOES_GRID_LIMIT)*width,
+   y:(GOES_GRID_LIMIT-y)/(2*GOES_GRID_LIMIT)*height
+  };
+ }
+ function goesPixelToGeo(px,py,width,height){
+  const x=(px/width*2-1)*GOES_GRID_LIMIT;
+  const y=(1-py/height*2)*GOES_GRID_LIMIT;
+  const a=Math.sin(x)*Math.sin(x)+Math.cos(x)*Math.cos(x)*(Math.cos(y)*Math.cos(y)+(GOES_A*GOES_A/(GOES_B*GOES_B))*Math.sin(y)*Math.sin(y));
+  const b=-2*GOES_H*Math.cos(x)*Math.cos(y);
+  const c=GOES_H*GOES_H-GOES_A*GOES_A;
+  const disc=b*b-4*a*c;
+  if(disc<0)return null;
+  const rs=(-b-Math.sqrt(disc))/(2*a);
+  const sx=rs*Math.cos(x)*Math.cos(y);
+  const sy=-rs*Math.sin(x);
+  const sz=rs*Math.cos(x)*Math.sin(y);
+  const lat=Math.atan((GOES_A*GOES_A/(GOES_B*GOES_B))*sz/Math.sqrt((GOES_H-sx)*(GOES_H-sx)+sy*sy))*180/Math.PI;
+  const lon=GOES_LON-Math.atan2(sy,GOES_H-sx)*180/Math.PI;
+  return {lat,lon};
+ }
+ function buildCloudsFromImages(visibleImg,irImg){
+  clearClouds();
+  if(!visibleImg.naturalWidth||!irImg.naturalWidth){createFallbackField("Uma das imagens GOES-19 não foi carregada.");return;}
+  const b=selectedBounds,sw=geoToGoesPixel(b.getSouth(),b.getWest(),visibleImg.naturalWidth,visibleImg.naturalHeight);
+  const ne=geoToGoesPixel(b.getNorth(),b.getEast(),visibleImg.naturalWidth,visibleImg.naturalHeight);
+  const nw=geoToGoesPixel(b.getNorth(),b.getWest(),visibleImg.naturalWidth,visibleImg.naturalHeight);
+  const se=geoToGoesPixel(b.getSouth(),b.getEast(),visibleImg.naturalWidth,visibleImg.naturalHeight);
+  const sx=Math.max(0,Math.floor(Math.min(sw.x,nw.x))),ex=Math.min(visibleImg.naturalWidth,Math.ceil(Math.max(ne.x,se.x)));
+  const sy=Math.max(0,Math.floor(Math.min(nw.y,ne.y))),ey=Math.min(visibleImg.naturalHeight,Math.ceil(Math.max(sw.y,se.y)));
+  if(ex<=sx||ey<=sy){createFallbackField("A área selecionada está fora da parte visível do disco GOES-19.");return;}
+  const w=96,h=72,cv=document.createElement("canvas"),ci=document.createElement("canvas");
+  cv.width=ci.width=w;cv.height=ci.height=h;
+  const vx=cv.getContext("2d",{willReadFrequently:true}),ix=ci.getContext("2d",{willReadFrequently:true});
+  try{
+   vx.drawImage(visibleImg,sx,sy,ex-sx,ey-sy,0,0,w,h);
+   ix.drawImage(irImg,sx,sy,ex-sx,ey-sy,0,0,w,h);
+  }catch(e){createFallbackField("Não foi possível recortar as imagens GOES-19.");return;}
+  let vd,id;try{vd=vx.getImageData(0,0,w,h).data;id=ix.getImageData(0,0,w,h).data;}
+  catch(e){createFallbackField("A NOAA não liberou CORS para leitura das imagens GOES-19.");return;}
+  const vals=[];let seed=17,created=0;
+  // A imagem IR realça o contraste térmico; altura é estimativa relativa, não o produto oficial ACHA.
+  for(let y=2;y<h-2;y+=2){
+   for(let x=2;x<w-2;x+=2){
+    if(created>=220)break;
+    const k=(y*w+x)*4;
+    if(vd[k+3]<35||id[k+3]<35)continue;
+    const vr=vd[k],vg=vd[k+1],vb=vd[k+2];
+    const vis=(vr*.299+vg*.587+vb*.114)/255;
+    const vchrom=(Math.max(vr,vg,vb)-Math.min(vr,vg,vb))/255;
+    const irLum=(id[k]*.299+id[k+1]*.587+id[k+2]*.114)/255;
+    if(vis<.53||vchrom>.38)continue;
+    seed=(seed*9301+49297)%233280;
+    if(seed/233280>Number(density.value)/100)continue;
+    const px=sx+(x/(w-1))*(ex-sx),py=sy+(y/(h-1))*(ey-sy);
+    const geo=goesPixelToGeo(px,py,visibleImg.naturalWidth,visibleImg.naturalHeight);
+    if(!geo||!b.contains([geo.lat,geo.lon]))continue;
+    const thermal=Math.max(0,Math.min(1,irLum));
+    const confidence=Math.max(.22,Math.min(1,(vis-.45)*1.5));
+    // Estimativa visual baseada no contraste do canal IR: faixa aproximada 2–16 km.
+    const alt=(2000+thermal*14000);
+    addCloud(geo.lat,geo.lon,alt,confidence,seed);
+    vals.push(alt);created++;
+   }
+  }
+  if(vals.length){
+   setReadouts(vals);
+   const note=document.querySelector(".cloud3d-note");
+   if(note)note.textContent=`${vals.length} volumes de nuvens posicionados geograficamente. Textura: GOES-19 visível canal 2. Estrutura vertical: estimativa relativa pelo canal infravermelho 13; não equivale ao produto oficial Cloud Top Height/ACHA. Arraste para orbitar; Shift + arraste para mover o mapa; pinça para zoom.`;
+  }else createFallbackField("Não foram detectadas nuvens diurnas suficientes na imagem visível dessa área.");
+ }
+ function loadVisibleSatellite(){
+  const note=document.querySelector(".cloud3d-note");
+  if(note)note.textContent="Carregando textura visível e canal infravermelho GOES-19 para estimar o volume…";
+  clearTimeout(loadTimeout);
+  let pending=2,failed=false,vis=null,ir=null;
+  const finish=()=>{
+   if(failed||pending)return;
+   clearTimeout(loadTimeout);
+   buildCloudsFromImages(vis,ir);
+  };
+  const fail=msg=>{
+   if(failed)return;failed=true;clearTimeout(loadTimeout);createFallbackField(msg);
+  };
+  loadTimeout=setTimeout(()=>fail("A NOAA demorou mais de 30 segundos para responder."),30000);
+  const load=(url,assign)=>{
+   const img=new Image();img.crossOrigin="anonymous";
+   img.onload=()=>{assign(img);pending--;finish();};
+   img.onerror=()=>fail("Falha ao carregar uma das imagens GOES-19 (visível/IR).");
+   img.src=url+"?t="+Date.now();
+  };
+  load(GOES19_VISIBLE_URL,img=>vis=img);
+  load("https://cdn.star.nesdis.noaa.gov/GOES19/ABI/FD/13/1808x1808.jpg",img=>ir=img);
+ }
+
+ let radarVolumeObjects=[];
+ let radarVolumeBusy=false;
+ function clearRadarVolume(){
+  radarVolumeObjects.forEach(o=>{
+   scene.remove(o);
+   if(o.geometry)o.geometry.dispose();
+   if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose();}
+  });
+  radarVolumeObjects=[];
+ }
+ function radarBoundsValues(bounds){
+  if(Array.isArray(bounds)&&Array.isArray(bounds[0])){
+   return {south:Number(bounds[0][0]),west:Number(bounds[0][1]),north:Number(bounds[1][0]),east:Number(bounds[1][1])};
+  }
+  if(bounds&&typeof bounds==='object'){
+   return {south:Number(bounds.lat_min??bounds.south),west:Number(bounds.lon_min??bounds.west),north:Number(bounds.lat_max??bounds.north),east:Number(bounds.lon_max??bounds.east)};
+  }
+  return null;
+ }
+ function radarColorSignal(r,g,b,a){
+  if(a<35)return 0;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b),sat=max?((max-min)/max):0;
+  const lum=(r*.299+g*.587+b*.114)/255;
+  // REDEMET overlays use saturated colors for precipitation echoes.
+  // This rejects most transparent/background/map pixels without pretending
+  // that the source raster contains calibrated numeric dBZ values.
+  if(sat<.22||lum<.12)return 0;
+  return Math.max(.12,Math.min(1,(sat*.68+lum*.32)));
+ }
+ function loadRadarRaster(url){
+  return new Promise((resolve,reject)=>{
+   const img=new Image();img.crossOrigin='anonymous';
+   img.onload=()=>{
+    try{
+     const w=img.naturalWidth,h=img.naturalHeight;
+     if(!w||!h)throw new Error('Imagem radar vazia');
+     const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+     const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
+     const data=ctx.getImageData(0,0,w,h).data;
+     resolve({width:w,height:h,data});
+    }catch(e){reject(new Error('A imagem radar não permite leitura dos pixels (CORS): '+e.message));}
+   };
+   img.onerror=()=>reject(new Error('Falha ao carregar imagem radar'));
+   img.src=radarExportSafeUrl(url);
+  });
+ }
+ function radarPixelToWorld(bounds,x,y,w,h){
+  const lat=bounds.north-(y/(h-1))* (bounds.north-bounds.south);
+  const lon=bounds.west+(x/(w-1))* (bounds.east-bounds.west);
+  const pos=mapPoint(lat,lon);
+  return {x:pos.x,y:pos.y};
+ }
+ function makeRadarVoxelLayer(cells,altitude,layerName){
+  if(!cells.length)return null;
+  // Nuvem contínua estilizada: cada amostra radar vira um pequeno conjunto de
+  // lóbulos elipsoidais sobrepostos. Isso suaviza o aspecto de pontos/bolinhas
+  // sem inventar uma tomografia que a imagem raster não contém.
+  const geometry=new THREE.SphereGeometry(1,14,10);
+  const material=new THREE.MeshPhongMaterial({
+   vertexColors:true,transparent:true,opacity:.48,depthWrite:false,
+   shininess:12,specular:new THREE.Color(0x6b7780),
+   side:THREE.DoubleSide
+  });
+  const shellMaterial=new THREE.MeshPhongMaterial({
+   color:0xeaf4f8,transparent:true,opacity:.105,depthWrite:false,
+   shininess:5,side:THREE.DoubleSide
+  });
+  const mesh=new THREE.InstancedMesh(geometry,material,cells.length*3);
+  const shell=new THREE.InstancedMesh(geometry,shellMaterial,cells.length);
+  const dummy=new THREE.Object3D(),color=new THREE.Color();
+  let index=0;
+  cells.forEach((c)=>{
+   const radius=Math.max(3.2,Math.min(c.size*1.45,19));
+   const z=altitude/22*(Number(vertical.value)/100);
+   // Corpo principal e duas protuberâncias: silhueta mais cumuliforme.
+   const lobes=[
+    {x:0,y:0,z:0,sx:2.15,sy:1.48,sz:.82},
+    {x:radius*.48,y:radius*.10,z:radius*.12,sx:1.28,sy:1.08,sz:.70},
+    {x:-radius*.42,y:-radius*.16,z:radius*.08,sx:1.18,sy:1.02,sz:.64}
+   ];
+   lobes.forEach((l,j)=>{
+    dummy.position.set(c.x+l.x,c.y+l.y,z+l.z);
+    dummy.scale.set(radius*l.sx,radius*l.sy,Math.max(2.8,radius*l.sz));
+    dummy.updateMatrix();mesh.setMatrixAt(index,dummy.matrix);
+    // Tons suaves de eco; as cores não são valores dBZ calibrados.
+    if(c.signal>.78)color.setRGB(1,.48,.53);
+    else if(c.signal>.62)color.setRGB(1,.76,.48);
+    else if(c.signal>.43)color.setRGB(.94,.91,.68);
+    else color.setRGB(.72,.91,.88);
+    mesh.setColorAt(index,color);index++;
+   });
+  });
+  // InstancedMesh.count é capacidade; atualiza a matriz da casca por índice.
+  cells.forEach((c,i)=>{
+   const radius=Math.max(3.2,Math.min(c.size*1.45,19)),dummy2=new THREE.Object3D();
+   dummy2.position.set(c.x,c.y,altitude/22*(Number(vertical.value)/100));
+   dummy2.scale.set(radius*2.5,radius*1.9,Math.max(3.2,radius*1.05));
+   dummy2.updateMatrix();shell.setMatrixAt(i,dummy2.matrix);
+  });
+  mesh.count=index;mesh.instanceMatrix.needsUpdate=true;
+  shell.count=cells.length;shell.instanceMatrix.needsUpdate=true;
+  if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+  mesh.userData={kind:'radar-cloud-billows',layer:layerName,altitude};
+  shell.userData={kind:'radar-cloud-soft-shell',layer:layerName,altitude};
+  scene.add(shell);scene.add(mesh);radarVolumeObjects.push(shell,mesh);
+  return cells.length*3;
+ }
+ function sampleRadarImage(raster,bounds,step=3){
+  const cells=[],w=raster.width,h=raster.height,d=raster.data;
+  const sx=Math.max(1,Math.ceil(w/step)),sy=Math.max(1,Math.ceil(h/step));
+  for(let y=1;y<h-1;y+=sy){
+   for(let x=1;x<w-1;x+=sx){
+    const k=(y*w+x)*4,signal=radarColorSignal(d[k],d[k+1],d[k+2],d[k+3]);
+    if(!signal)continue;
+    const geo=radarPixelToWorld(bounds,x,y,w,h);
+    const cellSize=Math.max(3,Math.min(12,Math.abs(mapPoint(bounds.north,bounds.east).x-mapPoint(bounds.north,bounds.west).x)/sx));
+    cells.push({x:geo.x,y:geo.y,signal,size:cellSize});
+   }
+  }
+  return cells;
+ }
+ async function fetchRadarVolumeProduct(product){
+  const endpoint=API[product];
+  if(!endpoint)throw new Error('Produto radar não configurado: '+product);
+  const params=new URLSearchParams({api_key:API_KEY,data:utcHour(),anima:'1'});
+  const response=await fetch(endpoint+'?'+params.toString(),{cache:'no-store'});
+  if(!response.ok)throw new Error(product+' respondeu HTTP '+response.status);
+  const json=await response.json();
+  if(json?.error||json?.status===false)throw new Error(json.message||'Falha ao consultar '+product);
+  const parsed=parseRadarResponse(json);
+  if(!parsed.frames.length)throw new Error('Sem imagens georreferenciadas para '+product);
+  return parsed.frames[parsed.frames.length-1].images;
+ }
+ async function mountRadarVolume(){
+  if(radarVolumeBusy||!areaMap||!scene)return;
+  radarVolumeBusy=true;
+  const btn=document.getElementById('cloud3dRadarVolumeBtn');
+  const note=document.querySelector('.cloud3d-note');
+  if(btn){btn.disabled=true;btn.textContent='RECONSTRUINDO NUVEM…';}
+  if(note)note.textContent='Lendo os pixels dos produtos REDEMET e convertendo ecos de precipitação em uma malha de voxels 3D…';
+  clearRadarVolume();
+  // MAXCAPPI supplies the horizontal storm footprint; CAPPI 5.5 and 7.3 km
+  // constrain the upper part of the echo column. Lower intermediate levels
+  // are an explicitly estimated bridge, not direct radar elevation scans.
+  const products=[
+   {id:'maxcappi',label:'base/coluna estimada',levels:[900,2300,3900]},
+   {id:'05km',label:'corte CAPPI 5,5 km',levels:[5500]},
+   {id:'07km',label:'corte CAPPI 7,3 km',levels:[7300]}
+  ];
+  let total=0,loadedProducts=0,errors=[];
+  try{
+   for(const product of products){
+    try{
+     const images=await fetchRadarVolumeProduct(product.id);
+     let productCells=0;
+     for(const image of images){
+      const bounds=radarBoundsValues(image.bounds);
+      if(!bounds||![bounds.south,bounds.west,bounds.north,bounds.east].every(Number.isFinite)||!image.url)continue;
+      const raster=await loadRadarRaster(image.url);
+      const cells=sampleRadarImage(raster,bounds,product.id==='maxcappi'?3:4);
+      if(!cells.length)continue;
+      for(const level of product.levels){
+       // Slightly taper the inferred lower column to create a cloud-like envelope.
+       const adjusted=product.id==='maxcappi'&&level<3900
+        ?cells.filter(c=>c.signal>(level<1500?.24:.18))
+        :cells;
+       productCells+=makeRadarVoxelLayer(adjusted,level,product.label)||0;
+      }
+     }
+     if(productCells){loadedProducts++;total+=productCells;}
+     else errors.push(product.id+': sem pixels de eco reconhecíveis');
+    }catch(err){errors.push(product.id+': '+err.message);}
+   }
+   if(note){
+    note.textContent=total
+     ?`Reconstrução 3D gerada com ${total.toLocaleString('pt-BR')} voxels em ${loadedProducts} produto(s) radar. A forma representa a distribuição espacial dos ecos: MAXCAPPI define a área/coluna estimada e CAPPI 5,5/7,3 km ancora os níveis superiores. Não é uma tomografia física completa nem uma medição direta do topo da nuvem; os níveis intermediários são estimados. As cores indicam classes visuais de eco, não dBZ calibrado. Arraste para orbitar e use roda/pinça para zoom.${errors.length?' Fontes sem leitura: '+errors.join(' | '):''}`
+     :'Não foi possível reconstruir o volume. '+errors.join(' | ')+'. A leitura dos pixels depende de CORS permitido pela fonte REDEMET.';
+   }
+  }finally{
+   radarVolumeBusy=false;
+   if(btn){btn.disabled=false;btn.textContent='RECONSTRUIR NUVEM PELO RADAR';}
+  }
+ }
+
+ function applyCamera(){
+  if(!camera)return;
+  const size=Math.max(canvas.clientWidth,canvas.clientHeight);
+  const distance=size*orbitDistance;
+  const cp=Math.cos(orbitPitch);
+  camera.position.set(
+   Math.sin(orbitYaw)*cp*distance,
+   Math.cos(orbitYaw)*cp*distance,
+   Math.sin(orbitPitch)*distance
+  );
+  camera.up.set(0,0,1);
+  camera.lookAt(0,0,0);
+ }
+ function bindFreeControls(){
+  const pointers=new Map();let pinchStart=null;
+  canvas.style.touchAction="none";
+  canvas.addEventListener("pointerdown",e=>{
+   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+   try{canvas.setPointerCapture(e.pointerId);}catch(_){}
+   if(pointers.size===1)dragState={x:e.clientX,y:e.clientY,button:e.button};
+   if(pointers.size===2){
+    const q=[...pointers.values()],dx=q[0].x-q[1].x,dy=q[0].y-q[1].y;
+    pinchStart={distance:Math.hypot(dx,dy),midX:(q[0].x+q[1].x)/2,midY:(q[0].y+q[1].y)/2};
+    dragState=null;
+   }
+   canvas.style.cursor="grabbing";
+  });
+  canvas.addEventListener("pointermove",e=>{
+   if(!pointers.has(e.pointerId))return;
+   const prev=pointers.get(e.pointerId),dx=e.clientX-prev.x,dy=e.clientY-prev.y;
+   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+   if(pointers.size>=2){
+    const q=[...pointers.values()],vx=q[0].x-q[1].x,vy=q[0].y-q[1].y;
+    const dist=Math.hypot(vx,vy),midX=(q[0].x+q[1].x)/2,midY=(q[0].y+q[1].y)/2;
+    if(pinchStart){
+     orbitDistance=Math.max(.42,Math.min(3.5,orbitDistance*(pinchStart.distance/Math.max(1,dist))));
+     areaMap.panBy([pinchStart.midX-midX,pinchStart.midY-midY],{animate:false});
+    }
+    pinchStart={distance:dist,midX,midY};applyCamera();return;
+   }
+   if(!dragState)return;
+   if(dragState.button===2||e.shiftKey)areaMap.panBy([-dx,-dy],{animate:false});
+   else{orbitYaw-=dx*.006;orbitPitch=Math.max(-.15,Math.min(1.25,orbitPitch+dy*.005));applyCamera();}
+   dragState={x:e.clientX,y:e.clientY,button:dragState.button};
+  });
+  const stop=e=>{
+   pointers.delete(e.pointerId);
+   if(pointers.size<2)pinchStart=null;
+   if(!pointers.size)dragState=null;
+   canvas.style.cursor="grab";
+  };
+  canvas.addEventListener("pointerup",stop);
+  canvas.addEventListener("pointercancel",stop);
+  canvas.addEventListener("contextmenu",e=>e.preventDefault());
+  canvas.addEventListener("wheel",e=>{
+   e.preventDefault();orbitDistance=Math.max(.42,Math.min(3.5,orbitDistance*(e.deltaY>0?1.10:.90)));applyCamera();
+  },{passive:false});
+ }
+ function addReflectivityAtBottom(){
+  if(!areaMap)return;
+  if(window.cloud3dReflectivityGroup)window.cloud3dReflectivityGroup.clearLayers();
+  else window.cloud3dReflectivityGroup=L.layerGroup();
+  const frame=frames[currentFrame];
+  if(frame&&Array.isArray(frame.images)){
+   frame.images.forEach(im=>{
+    if(im.bounds&&im.url){
+     L.imageOverlay(radarExportSafeUrl(im.url),im.bounds,{opacity:.88,interactive:false,crossOrigin:false}).addTo(window.cloud3dReflectivityGroup);
+    }
+   });
+   if(frame.images.length)window.cloud3dReflectivityGroup.addTo(areaMap);
+  }
+  const note=document.querySelector(".cloud3d-note");
+  if(note){
+   note.textContent=frame&&frame.images?.length
+    ?"Reflectividade REDEMET do quadro selecionado exibida na base, sob o volume de nuvens GOES-19 derivado do canal visível. Arraste para orbitar, Shift + arraste para deslocar o mapa e use a roda para aproximar."
+    :"Nenhum quadro de reflectividade REDEMET está carregado. A camada inferior aparecerá quando houver um quadro radar disponível.";
+  }
+ }
+ function resize3D(){
+  if(!renderer||!areaMap)return;
+  const w=canvas.clientWidth,h=canvas.clientHeight;
+  renderer.setSize(w,h,false);camera.aspect=w/Math.max(1,h);
+  applyCamera();camera.updateProjectionMatrix();
+ }
+ let lastRender=0;
+ function animate(now=0){
+  if(!active)return;
+  raf=requestAnimationFrame(animate);
+  if(now-lastRender<33)return;
+  lastRender=now;
+  const t=now*.0002;
+  cloudObjects.forEach((g,i)=>{
+   g.rotation.z=Math.sin(t+i*.7)*.006;
+   cloudMaterials.uniforms.uSeed.value=(g.userData.seed||i)*.01;
+   cloudMaterials.uniforms.uTime.value=t;
+  });
+  renderer.render(scene,camera);
+ }
+ function initMap3D(){
+  if(areaMap)return;
+  areaMap=L.map("cloud3dAreaMap",{zoomControl:true,attributionControl:true,preferCanvas:true,zoomSnap:0.1,zoomDelta:0.2});
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(areaMap);
+  renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true,powerPreference:"low-power"});
+  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.1));
+  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(43,1,1,50000);
+  cloudGroup=new THREE.Group();scene.add(cloudGroup);
+  // Recursos compartilhados reduzem drasticamente o uso de memória e CPU.
+  cloudSphereGeometry=new THREE.SphereGeometry(1,12,9);
+  cloudMaterials=new THREE.ShaderMaterial({
+   transparent:true,depthWrite:false,
+   uniforms:{uTime:{value:0},uSeed:{value:0}},
+   vertexShader:`
+    varying vec3 vPos;
+    varying vec3 vNormalView;
+    void main(){
+     vPos=position;
+     vNormalView=normalize(normalMatrix*normal);
+     gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);
+    }
+   `,
+   fragmentShader:`
+    varying vec3 vPos;
+    varying vec3 vNormalView;
+    uniform float uTime;
+    uniform float uSeed;
+    float hash31(vec3 p){
+     p=fract(p*0.1031);
+     p+=dot(p,p.yzx+33.33);
+     return fract((p.x+p.y)*p.z);
+    }
+    float noise3(vec3 x){
+     vec3 i=floor(x),f=fract(x);
+     f=f*f*(3.0-2.0*f);
+     return mix(mix(mix(hash31(i),hash31(i+vec3(1,0,0)),f.x),
+                    mix(hash31(i+vec3(0,1,0)),hash31(i+vec3(1,1,0)),f.x),f.y),
+                mix(mix(hash31(i+vec3(0,0,1)),hash31(i+vec3(1,0,1)),f.x),
+                    mix(hash31(i+vec3(0,1,1)),hash31(i+vec3(1,1,1)),f.x),f.y),f.z);
+    }
+    float fbm(vec3 p){
+     float v=0.0,a=.55;
+     for(int i=0;i<4;i++){v+=a*noise3(p);p*=2.03;a*=.5;}
+     return v;
+    }
+    void main(){
+     vec3 p=vPos*2.25+vec3(uSeed*.013);
+     float n=fbm(p);
+     float edge=length(vPos);
+     float cloudShape=1.0-smoothstep(.42,1.08,edge+(n-.5)*.34);
+     float billow=mix(.72,1.0,smoothstep(.12,.72,n));
+     float density=cloudShape*billow;
+     if(density<.018)discard;
+     vec3 lightDir=normalize(vec3(-.45,.35,.82));
+     float diffuse=max(0.0,dot(normalize(vNormalView),lightDir));
+     float silver=pow(max(0.0,dot(normalize(vNormalView),normalize(vec3(-.6,.5,.7)))),3.0);
+     vec3 shadow=vec3(.42,.49,.57);
+     vec3 sunlit=vec3(1.0,.995,.97);
+     vec3 col=mix(shadow,sunlit,clamp(.58+diffuse*.52+silver*.24,0.0,1.0));
+     float alpha=clamp(density*1.28,0.0,.97);
+     gl_FragColor=vec4(col,alpha);
+    }
+   `
+  });
+  scene.add(new THREE.AmbientLight(0xffffff,1.2));
+  const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(-400,600,1000);scene.add(light);
+  resize3D();
+  bindFreeControls();
+  areaMap.on("move zoom",updateCloudPositions);
+  areaMap.on("resize",resize3D);
+ }
+ window.openCloudGod3DForArea=function(bounds){
+  selectedBounds=L.latLngBounds(bounds);
+  active=true;
+  modal.classList.add("open");modal.setAttribute("aria-hidden","false");
+  const sw=selectedBounds.getSouthWest(),ne=selectedBounds.getNorthEast();
+  document.getElementById("cloud3dAreaLabel").textContent=
+   "Área selecionada · "+sw.lat.toFixed(2)+"°, "+sw.lng.toFixed(2)+" até "+ne.lat.toFixed(2)+"°, "+ne.lng.toFixed(2);
+  initMap3D();
+  orbitYaw=0;orbitPitch=.48;orbitDistance=1.2;applyCamera();
+  setTimeout(()=>{
+   areaMap.invalidateSize();
+   areaMap.setMaxBounds(null);
+   areaMap.setMinZoom(2);
+   areaMap.setMaxZoom(19);
+   areaMap.fitBounds(selectedBounds,{animate:false,padding:[24,24]});
+   resize3D();addReflectivityAtBottom();loadVisibleSatellite();
+  clearInterval(liveRefreshTimer);
+  liveRefreshTimer=setInterval(()=>{
+   if(!active)return;
+   // NOAA full-disk GOES imagery updates periodically; refresh the live cloud field.
+   loadVisibleSatellite();
+   addReflectivityAtBottom(); // uses the radar frame currently selected by the main map
+  },5*60*1000);
+  cancelAnimationFrame(raf);animate();
+  },100);
+ };
+ function closeModal(){
+  clearInterval(liveRefreshTimer);liveRefreshTimer=null;
+  active=false;cancelAnimationFrame(raf);clearTimeout(loadTimeout);modal.classList.remove("open");modal.setAttribute("aria-hidden","true");
+ }
+ document.getElementById("cloud3dClose").addEventListener("click",closeModal);
+ document.getElementById("cloud3dRadarVolumeBtn")?.addEventListener("click",mountRadarVolume);
+ document.getElementById("cloud3dRadarVolumeClear")?.addEventListener("click",()=>{
+  clearRadarVolume();
+  const note=document.querySelector(".cloud3d-note");
+  if(note)note.textContent="Camadas volumétricas de radar removidas. O volume de nuvens GOES-19 permanece independente.";
+ });
+ modal.addEventListener("click",e=>{if(e.target===modal)closeModal();});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modal.classList.contains("open"))closeModal();});
+ density.addEventListener("input",()=>{if(active)loadVisibleSatellite();});
+ vertical.addEventListener("input",()=>{if(active)loadVisibleSatellite();});
+})();
 </script>
+
+
+
+
+<script>
+/* CLOUDGOD — MONITORAMENTO AUTOMÁTICO DE FONTES */
+(function(){
+ const connection=document.getElementById("autoAlertConnection");
+ const stscStatus=document.getElementById("autoSTSCStatus");
+ const positionsNode=document.getElementById("autoSTSCPositions");
+ const framesNode=document.getElementById("autoSTSCFrames");
+ const prevotsStatus=document.getElementById("autoPrevotsStatus");
+ const prevotsImage=document.getElementById("autoPrevotsImage");
+ const lastUpdate=document.getElementById("autoAlertLastUpdate");
+ if(!connection||!stscStatus||!positionsNode||!framesNode)return;
+ let request=null;
+ let timer=null;
+ function updateTime(){if(lastUpdate)lastUpdate.textContent="Última atualização: "+new Date().toLocaleString("pt-BR");}
+ function refreshPrevots(){
+  if(!prevotsImage||!prevotsStatus)return;
+  prevotsStatus.textContent="Solicitando a imagem de previsão convectiva da PREVOTS...";
+  const base="https://prevots.org/wp-content/uploads/previsao/previsao.png";
+  prevotsImage.src=base+"?v="+Date.now();
+  prevotsImage.onload=()=>{prevotsStatus.textContent="Imagem da previsão convectiva carregada.";};
+  prevotsImage.onerror=()=>{prevotsStatus.textContent="Não foi possível carregar a imagem. Consulte a página oficial da PREVOTS.";};
+ }
+ async function refreshSTSCPanel(manual){
+  if(request){if(!manual)return;request.abort();}
+  const controller=new AbortController();request=controller;
+  const timeout=setTimeout(()=>controller.abort(),20000);
+  connection.textContent="CONSULTANDO REDEMET...";
+  stscStatus.textContent="Consultando os quadros recentes do STSC...";
+  try{
+   const params=new URLSearchParams({api_key:API_KEY,data:utcHour(),anima:String(STSC_ANIMATION_FRAMES)});
+   const response=await fetch(`${STSC_API}?${params.toString()}`,{cache:"no-store",signal:controller.signal});
+   if(!response.ok)throw new Error("HTTP "+response.status);
+   const json=await response.json();
+   const frames=normalizeSTSCResponse(json);
+   const total=frames.reduce((sum,frame)=>sum+frame.positions.length,0);
+   positionsNode.textContent=String(total);framesNode.textContent=String(frames.length);
+   stscStatus.textContent=total?`${total} posições recebidas em ${frames.length} quadro(s). Fonte: STSC/REDEMET.`:"Consulta concluída; não foram recebidas posições geográficas STSC válidas.";
+   connection.textContent="REDEMET CONSULTADA";updateTime();
+  }catch(error){
+   positionsNode.textContent="--";framesNode.textContent="--";
+   stscStatus.textContent=error.name==="AbortError"?"Consulta interrompida ou excedeu 20 segundos.":"Falha na consulta STSC: "+error.message;
+   connection.textContent="FALHA NA CONSULTA STSC";
+  }finally{clearTimeout(timeout);if(request===controller)request=null;}
+ }
+ window.refreshAutomaticAlerts=function(manual=false){refreshPrevots();return refreshSTSCPanel(manual);};
+ window.activateAutomaticSTSC=function(){
+  if(typeof toggleSTSC!=="function")return;
+  if(!stscEnabled)toggleSTSC();
+  const status=document.getElementById("stscStatus");
+  if(status)status.scrollIntoView({behavior:"smooth",block:"center"});
+ };
+ // PREVOTS: a página pública consultada entrega um mapa raster (PNG), não um GeoJSON público.
+ // A camada abaixo aceita GeoJSON oficial quando houver um endpoint fornecido pela fonte.
+ const prevotsVectorGroup=L.layerGroup();
+ let prevotsVectorVisible=false;
+ let prevotsVectorFeatures=0;
+ let prevotsVectorRequest=null;
+ const prevotsMapStatus=document.getElementById("prevotsMapStatus");
+ const prevotsGeoJsonUrl=document.getElementById("prevotsGeoJsonUrl");
+ function prevotsFeatureLabel(props){
+  return String(props?.fenomeno||props?.evento||props?.tipo||props?.name||props?.title||"Área prevista pela PREVOTS");
+ }
+ function prevotsFeatureColor(props){
+  const raw=String(props?.nivel||props?.severity||props?.risco||props?.categoria||"").toLowerCase();
+  if(/4|extrem|alto/.test(raw))return "#ff35d5";
+  if(/3|elevad/.test(raw))return "#ff3b45";
+  if(/2|moderad/.test(raw))return "#ffad32";
+  if(/1|baixo|marginal/.test(raw))return "#f4e442";
+  return "#55e78a";
+ }
+ function prevotsCollectLatLngs(coords,out){
+  if(!Array.isArray(coords))return;
+  if(coords.length>=2&&typeof coords[0]==="number"&&typeof coords[1]==="number"){
+   const lng=coords[0],lat=coords[1];
+   if(Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180)out.push([lat,lng]);
+   return;
+  }
+  for(const child of coords)prevotsCollectLatLngs(child,out);
+ }
+ function drawPrevotsGeoJSON(data){
+  const features=data?.type==="FeatureCollection"?data.features:(data?.type==="Feature"?[data]:[]);
+  if(!Array.isArray(features))throw new Error("GeoJSON sem lista de feições válida.");
+  prevotsVectorGroup.clearLayers();prevotsVectorFeatures=0;
+  for(const feature of features){
+   const points=[];prevotsCollectLatLngs(feature?.geometry?.coordinates,points);
+   if(!points.length)continue;
+   const lats=points.map(p=>p[0]),lngs=points.map(p=>p[1]);
+   const south=Math.min(...lats),north=Math.max(...lats),west=Math.min(...lngs),east=Math.max(...lngs);
+   if(!(north>south&&east>west))continue;
+   const props=feature.properties||{},color=prevotsFeatureColor(props);
+   const rectangle=L.rectangle([[south,west],[north,east]],{color,weight:2,opacity:.95,fillColor:color,fillOpacity:.17,dashArray:"5 4"});
+   rectangle.bindPopup(`<b>${prevotsFeatureLabel(props).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</b><br>Área delimitada pelo GeoJSON da fonte.<br>${south.toFixed(3)}, ${west.toFixed(3)} a ${north.toFixed(3)}, ${east.toFixed(3)}`);
+   prevotsVectorGroup.addLayer(rectangle);prevotsVectorFeatures++;
+  }
+  if(!prevotsVectorFeatures)throw new Error("O GeoJSON não contém polígonos com coordenadas válidas.");
+  if(prevotsVectorVisible)prevotsVectorGroup.addTo(map);
+  if(prevotsMapStatus)prevotsMapStatus.textContent=`${prevotsVectorFeatures} área(s) recebida(s) do GeoJSON. Os retângulos representam a extensão de cada feição, não um ponto de tornado confirmado.`;
+ }
+ window.connectPrevotsGeoJSON=async function(){
+  const url=(prevotsGeoJsonUrl?.value||"").trim();
+  if(!url){if(prevotsMapStatus)prevotsMapStatus.textContent="A PREVOTS não expõe GeoJSON na página pública consultada. Cole aqui somente um endpoint vetorial oficial fornecido pela fonte; a imagem PNG não contém coordenadas individuais.";return;}
+  let parsed;try{parsed=new URL(url);if(!/^https?:$/.test(parsed.protocol))throw new Error("Use um endereço HTTP ou HTTPS.");}catch(e){if(prevotsMapStatus)prevotsMapStatus.textContent="Endereço inválido: "+e.message;return;}
+  if(prevotsVectorRequest)prevotsVectorRequest.abort();
+  const controller=new AbortController();prevotsVectorRequest=controller;
+  if(prevotsMapStatus)prevotsMapStatus.textContent="Consultando a fonte GeoJSON...";
+  try{
+   const response=await fetch(url,{cache:"no-store",signal:controller.signal});
+   if(!response.ok)throw new Error("HTTP "+response.status);
+   const data=await response.json();drawPrevotsGeoJSON(data);
+  }catch(e){if(e.name!=="AbortError"&&prevotsMapStatus)prevotsMapStatus.textContent="Não foi possível carregar o GeoJSON: "+e.message+". A fonte pode bloquear CORS ou não disponibilizar esse formato.";}
+  finally{if(prevotsVectorRequest===controller)prevotsVectorRequest=null;}
+ };
+ window.togglePrevotsMapLayer=function(){
+  if(!prevotsVectorFeatures){if(prevotsMapStatus)prevotsMapStatus.textContent="Nenhuma área vetorial carregada. A página pública da PREVOTS fornece uma imagem de previsão, não coordenadas de polígonos.";return;}
+  prevotsVectorVisible=!prevotsVectorVisible;
+  if(prevotsVectorVisible)prevotsVectorGroup.addTo(map);else map.removeLayer(prevotsVectorGroup);
+  if(prevotsMapStatus)prevotsMapStatus.textContent=prevotsVectorVisible?`${prevotsVectorFeatures} área(s) exibida(s) no mapa.`:"Camada PREVOTS oculta.";
+ };
+ function start(){refreshAutomaticAlerts(false);if(timer)clearInterval(timer);timer=setInterval(()=>refreshAutomaticAlerts(false),5*60*1000);}
+ document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshAutomaticAlerts(false);});
+ start();
+})();
+</script>
+
 </body>
 </html>
