@@ -589,17 +589,76 @@ body.render-realgod #map .leaflet-radar-raster{image-rendering:auto;filter:none}
 .auto-alert-footer{color:#829eb2;font-size:9px;margin-top:12px;text-align:center}
 
 
-/* PALETA APOCS BR · reflectividade */
-.apocs-control{margin-top:11px;padding:11px;border:1px solid #d7e2ef;border-radius:12px;background:#f8fbff}
-.apocs-control label{margin:0 0 7px}
-.apocs-control select{width:100%}
-.apocs-preview{height:220px;width:18px;flex:0 0 18px;margin:0;border-radius:5px;border:1px solid #718096;background:linear-gradient(to bottom,#000000 0.000%, #0000c8 4.000%, #005ac8 8.000%, #00f4ff 16.000%, #ffffff 20.000%, #000000 24.800%, #610057 28.000%, #ff7dff 32.000%, #c100c1 35.200%, #7d0000 40.000%, #c90000 46.400%, #c84600 48.800%, #ff5f22 50.400%, #ffd500 54.400%, #ffb52b 56.800%, #d6bf31 57.920%, #c0a31a 58.400%, #9c8f0a 60.000%, #09604f 61.600%, #038e0e 64.800%, #41a948 68.560%, #00a6a9 70.400%, #005a6e 72.000%, #57456e 74.400%, #464646 76.000%, #000000 100.000%)}
-.apocs-legend-wrap{display:flex;align-items:stretch;gap:8px;margin-top:10px;height:220px}
-.apocs-ticks{display:flex;flex-direction:column;justify-content:space-between;font:10px/1 monospace;color:#dbe7f2;padding:1px 0}
-.apocs-control{background:#081522!important;border-color:#24445d!important;color:#e5eef7}
-.apocs-control label{color:#e5eef7}
-.apocs-control select{background:#0d2233;color:#e5eef7;border:1px solid #31536b;border-radius:6px;padding:8px}
 
+.storm-200-strip{display:grid;grid-template-columns:repeat(200,minmax(0,1fr));height:19px;overflow:hidden;border:1px solid #8293a7;border-radius:5px}
+.storm-200-strip span{display:block;min-width:0;height:100%}
+
+/* CLOUDGOD STORM reflectivity palette */
+.storm-panel{margin-top:10px;padding:11px;border:1px solid #b8c9dc;border-radius:12px;background:#f8fbff;color:#23364d}
+.storm-panel strong{display:block;font-size:12px;margin-bottom:8px}
+.storm-gradient{height:16px;border:1px solid #9aaabd;border-radius:5px;background:linear-gradient(90deg,#173bdb 0%,#00a8ff 12%,#00d6c5 24%,#00a83b 38%,#b7df00 49%,#ffe000 60%,#ff9900 70%,#f04424 81%,#c00070 91%,#ffffff 100%)}
+.storm-scale{display:flex;justify-content:space-between;font-size:9px;color:#53677e;margin-top:4px}
+.storm-table{width:100%;border-collapse:collapse;font-size:10px;margin-top:8px}
+.storm-table th,.storm-table td{padding:5px 6px;border-bottom:1px solid #e0e8f0;text-align:left}
+.storm-table th{font-size:9px;color:#53677e;letter-spacing:.4px}
+.storm-order{width:28px;color:#718096;font-weight:700;font-variant-numeric:tabular-nums}
+.storm-swatch{width:34px;height:10px;border:1px solid #aab6c4;border-radius:2px;display:inline-block;vertical-align:middle}
+.storm-note{font-size:10px;line-height:1.4;color:#5b6d80;margin-top:8px}
+
+/* PAINEL DE INSTABILIDADE ATMOSFÉRICA */
+.instability-panel{margin-top:15px;border-left:3px solid #1677ff}
+.instability-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.instability-head h3{margin:0}
+.instability-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:12px}
+.instability-metric{padding:11px;border:1px solid #e3ebf5;border-radius:11px;background:#f8fbff;min-width:0}
+.instability-metric b{display:block;font-size:9px;color:#71849b;margin-bottom:6px;letter-spacing:.3px}
+.instability-metric strong{display:block;font-size:18px;color:#214d78;overflow-wrap:anywhere}
+.instability-metric small{display:block;font-size:9px;color:#8293a8;margin-top:4px;line-height:1.4}
+.instability-status{font-size:10px;line-height:1.5;color:#60748b;margin-top:10px;overflow-wrap:anywhere}
+.instability-note{margin-top:10px;padding:10px;border-radius:9px;background:#fff8e9;color:#856327;font-size:9px;line-height:1.5}
+.instability-refresh{width:100%;margin-top:10px}
+ .pressure-map-help{font-size:9px;line-height:1.45;color:#71849b;margin-top:8px}
+.pressure-key{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:#60748b}
+.pressure-key b{font-size:14px}
+.pressure-high{color:#d83b36}.pressure-low{color:#2478d4}
+.pressure-marker{font:900 20px/1 Arial,sans-serif;text-shadow:0 1px 3px #fff,1px 0 3px #fff,-1px 0 3px #fff}
+.pressure-marker.high{color:#d52f2f}.pressure-marker.low{color:#126fce}
+.pressure-label{font:700 10px/1.2 Arial,sans-serif;color:#20364d;background:#fff;padding:2px 4px;border:1px solid #9aabba;border-radius:4px;white-space:nowrap}
+@media(max-width:480px){.instability-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.instability-metric{padding:9px}.instability-metric strong{font-size:16px}}
+
+
+/* CLOUDGOD LIVE USERS */
+#cgLiveLauncher{position:absolute;z-index:720;top:12px;right:12px;background:#102b46;color:#fff;border:1px solid #4b779d;border-radius:10px;padding:10px 13px;font-weight:900;letter-spacing:.4px;box-shadow:0 4px 16px #102b4640;cursor:pointer}
+#cgLivePanel{position:absolute;z-index:730;top:56px;right:12px;width:min(310px,calc(100% - 24px));max-height:min(72vh,620px);overflow:auto;background:#fff;border:1px solid #dce6f0;border-radius:14px;box-shadow:0 12px 35px #0b294b40;padding:13px;color:#19304b;display:none;font:13px Arial,sans-serif}
+#cgLivePanel.open{display:block}
+.cg-live-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.cg-live-title strong{font-size:14px;letter-spacing:.5px}.cg-live-close{border:0;background:#edf3f9;border-radius:8px;padding:6px 9px;cursor:pointer}
+.cg-live-field{display:block;margin:9px 0 4px;font-size:10px;font-weight:900;color:#60748b;letter-spacing:.6px}.cg-live-input{width:100%;border:1px solid #d5e0eb;border-radius:8px;padding:10px;font-size:13px;outline:none}.cg-live-input:focus{border-color:#1677ff}
+.cg-live-actions{display:flex;gap:7px;margin-top:10px}.cg-live-actions button{flex:1;border:0;border-radius:8px;padding:10px 8px;font-weight:900;cursor:pointer;background:#1677ff;color:white}.cg-live-actions button.secondary{background:#edf3f9;color:#19304b}.cg-live-status{font-size:11px;line-height:1.45;color:#60748b;margin:9px 0}.cg-live-share{display:flex;align-items:flex-start;gap:8px;background:#f0f7ff;border:1px solid #d8eaff;border-radius:9px;padding:10px;margin-top:10px;font-size:11px;line-height:1.4}.cg-live-share input{margin-top:2px}
+.cg-live-avatar{width:38px;height:38px;border:3px solid #fff;border-radius:50%;overflow:hidden;background:#1677ff;box-shadow:0 2px 8px #0005}.cg-live-avatar img{width:100%;height:100%;object-fit:cover}.cg-live-label{background:#102b46;color:#fff;border:1px solid #ffffffaa;border-radius:6px;padding:3px 6px;font:800 10px Arial,sans-serif;white-space:nowrap;box-shadow:0 2px 6px #0005;margin-top:3px}.cg-live-marker{display:flex;flex-direction:column;align-items:center;transform:translateY(-3px)}
+.cg-live-count{font-size:10px;color:#71849b;margin-top:8px}
+.cg-live-avatar-preview{display:flex;align-items:center;gap:10px;margin:9px 0}.cg-live-avatar-preview img{width:58px;height:58px;border-radius:50%;object-fit:cover;border:3px solid #d8e6f3;display:none}.cg-live-avatar-preview span{font-size:10px;color:#71849b}
+@media(max-width:600px){#cgLiveLauncher{top:8px;right:8px;padding:8px 10px;font-size:11px}#cgLivePanel{top:48px;right:8px;width:min(290px,calc(100% - 16px))}}
+
+
+/* CLOUDGOD LIVE ACCESS GATE — escolha opcional */
+#cgLivePanel .cg-live-gate-brand{display:none}
+#cgLiveSkip{display:block;width:100%;margin-top:13px;padding:12px;border:1px solid #60748b;background:transparent;color:#60748b;border-radius:9px;font-weight:900;letter-spacing:.7px;cursor:pointer}
+#cgLiveSkip:hover{background:#edf3f9}
+body.cg-live-gate-active{overflow:hidden}
+body.cg-live-gate-active #cgLivePanel{display:flex!important;position:fixed;z-index:99999;inset:0;top:0;right:0;width:100%;max-height:none;overflow-y:auto;box-sizing:border-box;border:0;border-radius:0;padding:28px 18px;background:radial-gradient(circle at 50% 0%,#17466b 0%,#081827 52%,#050d16 100%);color:#f4f8fc;box-shadow:none;flex-direction:column;justify-content:center;align-items:center;font-family:Arial,sans-serif}
+body.cg-live-gate-active #cgLivePanel>*{width:min(100%,420px);box-sizing:border-box}
+body.cg-live-gate-active #cgLivePanel .cg-live-gate-brand{display:block;text-align:center;margin:0 auto 22px;color:#fff}
+.cg-live-gate-brand strong{display:block;font-size:30px;letter-spacing:3px;color:#73d7ff}
+.cg-live-gate-brand span{display:block;margin-top:7px;font-size:10px;letter-spacing:1.5px;color:#b5c9da}
+body.cg-live-gate-active #cgLivePanel .cg-live-title{color:#fff}
+body.cg-live-gate-active #cgLivePanel .cg-live-title strong{font-size:15px}
+body.cg-live-gate-active #cgLivePanel .cg-live-close{display:none}
+body.cg-live-gate-active #cgLivePanel .cg-live-status{color:#b9c9d8}
+body.cg-live-gate-active #cgLivePanel .cg-live-field{color:#c4d4e2}
+body.cg-live-gate-active #cgLivePanel .cg-live-input{background:#10263a;border-color:#34516a;color:#fff}
+body.cg-live-gate-active #cgLivePanel .cg-live-actions button.secondary{background:#20374c;color:#fff}
+body.cg-live-gate-active #cgLiveSkip{border-color:#668096;color:#d5e1eb}
+body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 
 </style>
 </head>
@@ -628,7 +687,7 @@ body.render-realgod #map .leaflet-radar-raster{image-rendering:auto;filter:none}
   <p class="startup-note">ULTRA CLOUD e REALGOD reprocessam os pixels recebidos para reduzir blocos visíveis. Não criam medições meteorológicas nem aumentam a resolução nativa do radar.</p>
   <div class="startup-actions">
    <label for="startupMapMode">MAPA BASE
-    <select id="startupMapMode"><option value="street">OpenStreetMap</option><option value="satellite">Satélite (Esri)</option></select>
+    <select id="startupMapMode"><option value="street">OpenStreetMap · ORIGINAL</option><option value="satellite">Satélite · Esri World Imagery</option></select>
    </label>
    <button class="startup-enter" onclick="enterCloudgod()">INICIAR CLOUDGOD →</button>
   </div>
@@ -675,6 +734,32 @@ body.render-realgod #map .leaflet-radar-raster{image-rendering:auto;filter:none}
  <p>Altitudes em metros são estimativas visuais derivadas do realce infravermelho, não medições de altura. Para altitude real calibrada é necessário perfil atmosférico ou produto de altura de topo de nuvem.</p>
 </div>
 </div>
+<button id="cgLiveLauncher" type="button" onclick="cgToggleLivePanel()">👥 USUÁRIOS AO VIVO <span id="cgLiveCount">0</span></button>
+<section id="cgLivePanel" aria-label="Usuários ao vivo">
+ <div class="cg-live-gate-brand"><strong>CLOUDGOD</strong><span>ACESSO AO CLOUDGOD LIVE USERS</span></div>
+ <div class="cg-live-title"><strong>☁ CLOUDGOD LIVE</strong><button class="cg-live-close" type="button" onclick="cgToggleLivePanel(false)">✕</button></div>
+ <div id="cgLiveAuthArea">
+  <div class="cg-live-status">Entre ou crie uma conta para aparecer no mapa. Sua localização não será compartilhada até você ativar a opção abaixo.</div>
+  <label class="cg-live-field" for="cgLiveEmail">E-MAIL</label><input class="cg-live-input" id="cgLiveEmail" type="email" autocomplete="email" placeholder="seu@email.com">
+  <label class="cg-live-field" for="cgLivePassword">SENHA</label><input class="cg-live-input" id="cgLivePassword" type="password" autocomplete="current-password" placeholder="Mínimo de 6 caracteres">
+  <div class="cg-live-actions"><button type="button" onclick="cgSignIn()">ENTRAR</button><button class="secondary" type="button" onclick="cgSignUp()">CRIAR CONTA</button></div>
+  <button id="cgLiveSkip" type="button" onclick="cgSkipLiveUsers()">NÃO OBRIGADO</button>
+ </div>
+ <div id="cgLiveProfileArea" hidden>
+  <div class="cg-live-status" id="cgLiveSignedAs">Conectado</div>
+  <label class="cg-live-field" for="cgLiveName">NOME DE EXIBIÇÃO — OBRIGATÓRIO</label><input class="cg-live-input" id="cgLiveName" maxlength="28" required placeholder="Seu nome no mapa" oninput="cgAutoSaveProfile()" onblur="cgAutoSaveProfile()">
+  <label class="cg-live-field" for="cgLiveAvatarFile">FOTO DE PERFIL — OBRIGATÓRIA</label>
+  <input class="cg-live-input" id="cgLiveAvatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="cgUploadAvatar()">
+  <div class="cg-live-avatar-preview"><img id="cgLiveAvatarPreview" alt="Prévia da foto de perfil"><span id="cgLiveAvatarPreviewText">A prévia da foto aparecerá aqui.</span></div>
+  <div class="cg-live-status">É obrigatório escolher uma foto da galeria ou informar uma URL de imagem. JPG, PNG, WEBP ou GIF; máximo de 3 MB no envio.</div>
+  <label class="cg-live-field" for="cgLiveAvatar">OU URL DA FOTO</label><input class="cg-live-input" id="cgLiveAvatar" type="url" placeholder="https://..." oninput="cgAvatarUrlChanged()" onblur="cgAutoSaveProfile()" onchange="cgAutoSaveProfile()">
+  <div class="cg-live-status">Seu nome e sua foto são salvos automaticamente quando os dois estiverem preenchidos.</div>
+  <div class="cg-live-actions"><button class="secondary" type="button" onclick="cgSignOut()">SAIR</button></div>
+  <label class="cg-live-share"><input id="cgLiveShare" type="checkbox" onchange="cgSetSharing(this.checked)"><span><b>COMPARTILHAR MINHA LOCALIZAÇÃO NO MAPA</b><br>Opcional. Ao ativar, sua posição aproximada pelo GPS será visível para outros usuários conectados. Você pode desligar quando quiser.</span></label>
+ </div>
+ <div class="cg-live-status" id="cgLiveStatus" role="status">Conectando ao serviço…</div>
+ <div class="cg-live-count">Somente contas autenticadas com compartilhamento ativo aparecem no mapa. Posições antigas expiram automaticamente na visualização.</div>
+</section>
 </section>
 
 <aside class="side">
@@ -736,26 +821,31 @@ body.render-realgod #map .leaflet-radar-raster{image-rendering:auto;filter:none}
   <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')"><strong>ULTRA CLOUD</strong><small>Suavização avançada e transições de cor mais limpas.</small></button>
   <button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')"><strong>REALGOD</strong><small>Suavização máxima e interpolação de alta qualidade, sem lupa ou ampliação.</small></button>
  </div>
- <div class="apocs-control">
-  <label for="reflectivityPalette">PALETA DE CORES DA REFLECTIVIDADE</label>
-  <select id="reflectivityPalette" onchange="setReflectivityPalette(this.value)">
-   <option value="original" selected>CORES ORIGINAIS REDEMET · SEGURO</option>
-   <option value="apocs">APOCS BR · LEGENDA WxTools</option>
-  </select>
-  <div class="apocs-legend-wrap">
-   <div class="apocs-preview" aria-label="Escala APOCS BR: 100 dBZ no topo até menos 25 dBZ na base"></div>
-   <div class="apocs-ticks">
-    <span>100</span><span>95</span><span>90</span><span>80</span><span>75</span><span>69</span><span>65</span><span>60</span><span>56</span><span>50</span><span>42</span><span>39</span><span>37</span><span>32</span><span>29</span><span>27,6</span><span>27</span><span>25</span><span>23</span><span>19</span><span>14,3</span><span>12</span><span>10</span><span>7</span><span>5</span><span>−25</span>
-   </div>
-  </div>
-  <div class="bt-note">APOCS BR · WxTools · ordem da legenda: 100 dBZ no topo e −25 dBZ na base. Valores e RGB preservados do arquivo Apocs_BR.pal.</div>
+ <div class="storm-panel">
+  <strong>CLOUDGOD STORM · PALETA ÚNICA COM 200 TONS</strong>
+  <div id="storm200Strip" class="storm-200-strip" aria-label="Escala contínua de 200 tons de reflectividade"></div>
+  <div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
+  <div id="stormProcessStatus" class="storm-note" style="margin-top:7px">As 200 cores ficam reunidas em uma única escala contínua, do fraco ao extremo.</div>
  </div>
- <div class="bt-note">REALGOD reduz ao máximo o aspecto quadriculado, mas não cria medições ou detalhes que não existam na fonte.</div>
- <div class="dbz-professional" aria-label="Escala profissional de referência de reflectividade">
-  <strong>ESCALA PROFISSIONAL · REFERÊNCIA dBZ</strong>
-  <div class="dbz-bar"></div>
-  <div class="dbz-labels"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50</span><span>60</span><span>70</span><span>80</span><span>90 dBZ</span></div>
-  <div class="bt-note">Escala de referência visual. A imagem PNG colorida da REDEMET não fornece necessariamente os valores numéricos de cada pixel; portanto, esta faixa não recalibra os ecos nem atribui dBZ medidos.</div>
+ <div class="dbz-professional" aria-label="Escala visual de reflectividade">
+  <strong>CLOUDGOD STORM · ESCALA VISUAL</strong>
+  <div class="storm-gradient" title="Cores de reflectividade CLOUDGOD STORM"></div>
+  <div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
+  <table class="storm-table" aria-label="Legenda visual CLOUDGOD STORM">
+   <thead><tr><th>ORDEM</th><th>COR</th><th>INTENSIDADE</th><th>REFERÊNCIA</th></tr></thead>
+   <tbody>
+    <tr><td class="storm-order">01</td><td><span class="storm-swatch" style="background:#173bdb"></span></td><td>Fraca</td><td>Azul</td></tr>
+    <tr><td class="storm-order">02</td><td><span class="storm-swatch" style="background:#00a8ff"></span></td><td>Fraca a moderada</td><td>Ciano</td></tr>
+    <tr><td class="storm-order">03</td><td><span class="storm-swatch" style="background:#00a83b"></span></td><td>Moderada</td><td>Verde</td></tr>
+    <tr><td class="storm-order">04</td><td><span class="storm-swatch" style="background:#b7df00"></span></td><td>Moderada a forte</td><td>Amarelo-esverdeado</td></tr>
+    <tr><td class="storm-order">05</td><td><span class="storm-swatch" style="background:#ffe000"></span></td><td>Forte</td><td>Amarelo</td></tr>
+    <tr><td class="storm-order">06</td><td><span class="storm-swatch" style="background:#ff9900"></span></td><td>Muito forte</td><td>Laranja</td></tr>
+    <tr><td class="storm-order">07</td><td><span class="storm-swatch" style="background:#f04424"></span></td><td>Severa</td><td>Vermelho</td></tr>
+    <tr><td class="storm-order">08</td><td><span class="storm-swatch" style="background:#c00070"></span></td><td>Extrema</td><td>Magenta</td></tr>
+    <tr><td class="storm-order">09</td><td><span class="storm-swatch" style="background:#ffffff"></span></td><td>Núcleo máximo</td><td>Branco</td></tr>
+   </tbody>
+  </table>
+  <div class="storm-note">A legenda indica uma escala visual de cores. Como a imagem de origem não fornece o valor dBZ de cada pixel, a conversão por luminosidade é apenas estimativa e não representa calibração meteorológica.</div>
  </div>
 </div>
 
@@ -765,6 +855,31 @@ body.render-realgod #map .leaflet-radar-raster{image-rendering:auto;filter:none}
 </section>
 
 
+
+
+<section class="panel instability-panel" id="instabilityPanel">
+ <div class="instability-head">
+  <h3>INSTABILIDADE ATMOSFÉRICA</h3>
+  <span style="font-size:9px;color:#8293a8">GFS · OPEN-METEO</span>
+ </div>
+ <div class="info" style="margin-top:10px">Parâmetros atmosféricos para o centro atual do mapa. Mova o mapa para outra região e atualize a consulta.</div>
+ <div class="instability-grid">
+  <div class="instability-metric"><b>CAPE</b><strong id="instCAPE">—</strong><small>J/kg · energia convectiva</small></div>
+  <div class="instability-metric"><b>CIN</b><strong id="instCIN">—</strong><small>J/kg · inibição convectiva</small></div>
+  <div class="instability-metric"><b>LIFTED INDEX</b><strong id="instLI">—</strong><small>°C · índice de estabilidade</small></div>
+  <div class="instability-metric"><b>SRH</b><strong id="instSRH">N/D</strong><small>m²/s² · helicidade relativa à tempestade</small></div>
+  <div class="instability-metric" style="grid-column:1/-1"><b>WIND SHEAR 0–6 KM</b><strong id="instShear">—</strong><small id="instShearDetail">km/h · diferença vetorial entre vento de superfície e nível próximo de 6 km</small></div>
+ </div>
+ <div class="instability-map-block">
+  <div class="instability-map-title">HIGH PRESSURE / LOW PRESSURE <small>PRESSÃO AO NÍVEL DO MAR · GFS</small></div>
+  <button class="primary instability-refresh" id="pressureMapToggle" onclick="togglePressureMap()">ATIVAR MAPA H / L</button>
+  <div class="pressure-key"><span><b class="pressure-high">H</b> Alta pressão</span><span><b class="pressure-low">L</b> Baixa pressão</span><span>Valores em hPa</span></div>
+  <div class="pressure-map-help" id="pressureMapStatus">Ative para mostrar os centros regionais de alta e baixa pressão sobre o mapa principal. Os marcadores são calculados com dados do GFS.</div>
+ </div>
+ <button class="primary instability-refresh" id="instabilityRefresh" onclick="refreshInstabilityPanel()">ATUALIZAR NO CENTRO DO MAPA</button>
+ <div class="instability-status" id="instabilityStatus">Aguardando consulta dos parâmetros atmosféricos.</div>
+ <div class="instability-note">SRH não é fornecido pelo conjunto de variáveis GFS usado nesta consulta e permanece como não disponível — não será estimado artificialmente. O wind shear é calculado pela diferença vetorial entre 10 m e 500 hPa (aprox. 5,6 km), uma aproximação do intervalo 0–6 km.</div>
+</section>
 
 <section class="panel export-panel">
 <h3>EXPORTAÇÃO METEOROLÓGICA</h3>
@@ -789,19 +904,9 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 </section>
 
 <section class="panel">
-<h3>LEGENDA DE REFLECTIVIDADE</h3>
-<div class="legend">
-<i style="background:#b6f0ff"></i>
-<i style="background:#42caff"></i>
-<i style="background:#0087ff"></i>
-<i style="background:#00c65b"></i>
-<i style="background:#a4e600"></i>
-<i style="background:#fff000"></i>
-<i style="background:#ff9900"></i>
-<i style="background:#ff3333"></i>
-<i style="background:#c000b9"></i>
-</div>
-<div class="legend-labels"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Intensa</span></div>
+<h3>LEGENDA CLOUDGOD STORM · REFLECTIVIDADE</h3>
+<div class="storm-gradient"></div>
+<div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
 </section>
 
 <section class="panel">
@@ -888,16 +993,10 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
   <button class="secondary" type="button" onclick="activateAutomaticSTSC()">EXIBIR OCORRÊNCIAS NO MAPA</button>
  </div>
  <div class="auto-alert-card">
-  <strong>PREVOTS · PREVISÃO CONVECTIVA</strong>
+  <strong>PREVOTS · PREVISÃO CONVECTIVA (IMAGEM OFICIAL)</strong>
   <div id="autoPrevotsStatus" class="auto-alert-description">Carregando previsão...</div>
   <a href="https://prevots.org/previsao-convectiva/" target="_blank" rel="noopener" class="auto-alert-link">ABRIR PREVISÃO OFICIAL</a>
   <img id="autoPrevotsImage" class="auto-prevots-image" src="https://prevots.org/wp-content/uploads/previsao/previsao.png" alt="Mapa de previsão convectiva da PREVOTS" loading="lazy">
-  <div id="prevotsMapStatus" class="auto-alert-description" role="status">Camada vetorial aguardando uma fonte GeoJSON oficial.</div>
-  <label for="prevotsGeoJsonUrl" class="auto-alert-description" style="display:block">Endpoint GeoJSON oficial (se disponibilizado pela PREVOTS)</label>
-  <input id="prevotsGeoJsonUrl" type="url" placeholder="https://.../prevots.geojson" autocomplete="off" style="width:100%;box-sizing:border-box;background:#06111e;color:#eaf7ff;border:1px solid #1a5875;border-radius:8px;padding:10px;font-size:11px">
-  <button class="secondary" type="button" onclick="connectPrevotsGeoJSON()">CONECTAR ÁREAS GEOJSON</button>
-  <button class="secondary" type="button" onclick="togglePrevotsMapLayer()">MOSTRAR / OCULTAR ÁREAS NO MAPA</button>
-  <div class="auto-alert-description">Os retângulos serão criados somente a partir de coordenadas recebidas no GeoJSON. A imagem oficial, sozinha, não fornece coordenadas individuais de wall cloud ou tornado.</div>
  </div>
  <div class="auto-alert-card">
   <strong>INMET · AVISOS METEOROLÓGICOS</strong>
@@ -1207,6 +1306,8 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
   </footer>
  </section>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 // ============================================
 // CONFIGURAÇÃO REDEMET
@@ -1270,7 +1371,7 @@ let stscLastSignature="";
 // MAPA
 // ============================================
 
-const map=L.map("map",{
+const map=window.map=L.map("map",{
  center:[-14.2,-51.9],
  zoom:4,
  preferCanvas:true
@@ -1285,7 +1386,9 @@ function setBaseMap(mode){
  if(baseMapLayer)map.removeLayer(baseMapLayer);
  if(mode==="satellite"){
   baseMapLayer=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{
-   attribution:"Tiles © Esri",maxZoom:19
+   attribution:"Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+   maxZoom:19,
+   crossOrigin:true
   }).addTo(map);
  }else{
   baseMapLayer=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
@@ -2048,11 +2151,10 @@ function enterCloudgod(){
  requestAnimationFrame(()=>map.invalidateSize({pan:false,animate:false}));
 }
 document.addEventListener("DOMContentLoaded",()=>{
- const paletteControl=document.getElementById("reflectivityPalette");
- if(paletteControl)paletteControl.value=reflectivityPalette;
  setRenderQuality("smooth");
  const startMap=document.getElementById("startupMapMode");
- if(startMap)startMap.value="street";
+ if(startMap && !startMap.value)startMap.value="street";
+ renderStorm200Palette();
 });
 
 // ============================================
@@ -2070,7 +2172,7 @@ function selectProduct(product){
   if(button)button.classList.toggle("selected",id===product);
  });
  document.getElementById("btColorLegend").classList.toggle("open",product==="brightness");
- if(product==="brightness"){
+  if(product==="brightness"){
   frames=[];currentFrame=0;
   document.getElementById("subtitle").textContent="GOES-19 ABI C13 · LEGENDA COLOR ENHANCED";
   document.querySelector(".loop h3").textContent="SATÉLITE · TEMPERATURA DE BRILHO (BT)";
@@ -2273,110 +2375,59 @@ function radarExportSafeUrl(sourceUrl){
  return radarImageProxyUrl(sourceUrl);
 }
 
-// Processamento visual real dos pixels do raster recebido da REDEMET.
-// A interpolação reduz o aspecto quadriculado; o reforço de bordas é apenas visual.
-
-// APOCS BR: níveis dBZ e RGB extraídos do arquivo Apocs_BR.pal.
-const APOCS_BR_STOPS=[
- [-25,[0,0,0]],[5,[70,70,70]],[7,[87,69,110]],[10,[0,90,110]],
- [12,[0,166,169]],[14.3,[65,169,72]],[19,[3,142,14]],[23,[9,96,79]],
- [25,[156,143,10]],[27,[192,163,26]],[27.6,[214,191,49]],[29,[255,181,43]],
- [32,[255,213,0]],[37,[255,95,34]],[39,[200,70,0]],[42,[201,0,0]],
- [50,[125,0,0]],[56,[193,0,193]],[60,[255,125,255]],[65,[97,0,87]],
- [69,[0,0,0]],[75,[255,255,255]],[80,[0,244,255]],[90,[0,90,200]],
- [95,[0,0,200]],[100,[0,0,0]]
+// CLOUDGOD STORM: uma única paleta contínua com 200 tons.
+ // As cores são uma escala visual; o raster original não é falsamente convertido em dBZ.
+const STORM_ANCHORS=[
+ [0,[18,59,255]],[0.12,[0,168,255]],[0.24,[0,229,212]],[0.36,[0,184,74]],
+ [0.48,[183,224,0]],[0.60,[255,224,0]],[0.70,[255,151,0]],[0.81,[241,43,32]],
+ [0.91,[192,0,112]],[1,[255,255,255]]
 ];
-// Âncoras aproximadas da legenda de cores existente no HTML.
-// PNG colorido não contém necessariamente dBZ por pixel: remapeamento visual estimado.
-// Não há âncoras RGB da paleta-fonte da REDEMET confirmadas.
-// Não remapear pixels de um PNG colorido por aproximação: isso distorce a reflectividade.
-let reflectivityPalette="original";
-function apocsColorAt(dbz){
- const n=APOCS_BR_STOPS.length;
- if(dbz<=APOCS_BR_STOPS[0][0])return APOCS_BR_STOPS[0][1];
- if(dbz>=APOCS_BR_STOPS[n-1][0])return APOCS_BR_STOPS[n-1][1];
- for(let i=1;i<n;i++){
-  const a=APOCS_BR_STOPS[i-1],b=APOCS_BR_STOPS[i];
-  if(dbz<=b[0]){
-   const t=(dbz-a[0])/(b[0]-a[0]);
-   return a[1].map((v,k)=>Math.round(v+(b[1][k]-v)*t));
-  }
+function stormColorAt(t){
+ t=Math.max(0,Math.min(1,t));
+ let k=0;while(k<STORM_ANCHORS.length-2&&t>STORM_ANCHORS[k+1][0])k++;
+ const [a,ca]=STORM_ANCHORS[k], [b,cb]=STORM_ANCHORS[k+1];
+ const f=(t-a)/(b-a);
+ return "#"+ca.map((v,i)=>Math.round(v+(cb[i]-v)*f).toString(16).padStart(2,"0")).join("");
+}
+function renderStorm200Palette(){
+ const strip=document.getElementById("storm200Strip");
+ if(!strip)return;
+ const frag=document.createDocumentFragment();
+ for(let i=0;i<200;i++){
+  const sw=document.createElement("span");
+  sw.style.background=stormColorAt(i/199);
+  sw.title="Tom "+String(i+1).padStart(3,"0")+" de 200";
+  frag.appendChild(sw);
  }
- return [0,0,0];
+ strip.replaceChildren(frag);
 }
-function remapApocsPixels(data){
- // O PNG da REDEMET já chega colorido e não carrega dBZ por pixel.
- // Sem a tabela RGB original da fonte, não existe conversão confiável.
- // Mantém os pixels intactos para impedir desaparecimento ou cores falsas.
- return data;
-}
-function setReflectivityPalette(mode){
- reflectivityPalette=mode==="original"?"original":"apocs";
- radarRasterCache.clear();
- const message=document.getElementById("message");
- const control=document.getElementById("reflectivityPalette");
- if(control)control.value=reflectivityPalette;
- if(message)message.textContent=reflectivityPalette==="apocs"?"Legenda APOCS BR WxTools selecionada. Os pixels do radar permanecem intactos sem dados dBZ por pixel.":"Reflectividade REDEMET restaurada com as cores originais…";
- if(frames.length&&typeof showFrame==="function")showFrame(currentFrame);
- if(loopTimer)startLoop();
-}
-
+// Processamento visual dos pixels do raster antes de montar a camada Leaflet.
 const radarRasterCache=new Map();
 const RASTER_QUALITY={
  smooth:{mode:"original"},
  ultra:{mode:"smooth",strength:0.42},
  realgod:{mode:"enhance",strength:0.30,detail:0.55}
 };
-
-// Suavização espacial real, aplicada aos pixels do raster antes de exibi-lo.
-// A transparência é preservada para não criar manchas no fundo do radar.
 function processRadarPixels(canvas,profile){
- if(!profile)profile={mode:"original"};
- const needsPalette=reflectivityPalette==="apocs"&&["maxcappi","07km","05km"].includes(currentProduct);
- if(profile.mode==="original"&&!needsPalette)return;
+ if(!profile||profile.mode==="original")return;
  const ctx=canvas.getContext("2d",{willReadFrequently:true});
  if(!ctx)return;
  let image;
  try{image=ctx.getImageData(0,0,canvas.width,canvas.height);}catch(e){return;}
- const src=image.data, w=canvas.width, h=canvas.height;
- if(needsPalette)remapApocsPixels(src);
- const original=new Uint8ClampedArray(src);
- const strength=profile.strength||0;
- const detail=profile.detail||0;
- if(profile.mode==="original"){
-  ctx.putImageData(image,0,0);
-  return;
- }
-
- // Filtro gaussiano 3x3 com pesos 1-2-1 / 2-4-2 / 1-2-1.
- // Mistura o resultado com o original para controlar a intensidade.
- for(let y=1;y<h-1;y++){
-  for(let x=1;x<w-1;x++){
-   const i=(y*w+x)*4, alpha=original[i+3];
-   if(alpha<8)continue;
-   for(let c=0;c<3;c++){
-    let sum=0,weight=0;
-    for(let dy=-1;dy<=1;dy++){
-     for(let dx=-1;dx<=1;dx++){
-      const j=((y+dy)*w+x+dx)*4, a=original[j+3]/255;
-      if(a<0.04)continue;
-      const k=(dx===0?2:1)*(dy===0?2:1);
-      sum+=original[j+c]*k*a;weight+=k*a;
-     }
-    }
-    if(weight){
-     const blurred=sum/weight;
-     let value=original[i+c]*(1-strength)+blurred*strength;
-     if(detail){
-      const laplace=(original[i+c]*4-
-       original[((y-1)*w+x)*4+c]-
-       original[((y+1)*w+x)*4+c]-
-       original[(y*w+x-1)*4+c]-
-       original[(y*w+x+1)*4+c]);
-      value+=laplace*detail;
-     }
-     src[i+c]=Math.max(0,Math.min(255,value));
-    }
+ const src=image.data,w=canvas.width,h=canvas.height;
+ if(!profile||profile.mode==="original"){ctx.putImageData(image,0,0);return;}
+ const original=new Uint8ClampedArray(src),strength=profile.strength||0,detail=profile.detail||0;
+ for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){
+  const i=(y*w+x)*4,alpha=original[i+3];if(alpha<8)continue;
+  for(let c=0;c<3;c++){
+   let sum=0,weight=0;
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    const j=((y+dy)*w+x+dx)*4,a=original[j+3]/255;if(a<.04)continue;
+    const k=(dx===0?2:1)*(dy===0?2:1);sum+=original[j+c]*k*a;weight+=k*a;
+   }
+   if(weight){let value=original[i+c]*(1-strength)+(sum/weight)*strength;
+    if(detail)value+=(original[i+c]*4-original[((y-1)*w+x)*4+c]-original[((y+1)*w+x)*4+c]-original[(y*w+x-1)*4+c]-original[(y*w+x+1)*4+c])*detail;
+    src[i+c]=Math.max(0,Math.min(255,value));
    }
   }
  }
@@ -2384,7 +2435,7 @@ function processRadarPixels(canvas,profile){
 }
 function prepareRadarRaster(sourceUrl){
  const quality=currentRenderQuality||"smooth";
- const cacheKey=quality+"|"+reflectivityPalette+"|"+sourceUrl;
+ const cacheKey=quality+"|"+sourceUrl;
  if(radarRasterCache.has(cacheKey))return radarRasterCache.get(cacheKey);
  const task=new Promise(resolve=>{
   const img=new Image();
@@ -4259,77 +4310,184 @@ clearRadiosonde=function(){
   const status=document.getElementById("stscStatus");
   if(status)status.scrollIntoView({behavior:"smooth",block:"center"});
  };
- // PREVOTS: a página pública consultada entrega um mapa raster (PNG), não um GeoJSON público.
- // A camada abaixo aceita GeoJSON oficial quando houver um endpoint fornecido pela fonte.
- const prevotsVectorGroup=L.layerGroup();
- let prevotsVectorVisible=false;
- let prevotsVectorFeatures=0;
- let prevotsVectorRequest=null;
- const prevotsMapStatus=document.getElementById("prevotsMapStatus");
- const prevotsGeoJsonUrl=document.getElementById("prevotsGeoJsonUrl");
- function prevotsFeatureLabel(props){
-  return String(props?.fenomeno||props?.evento||props?.tipo||props?.name||props?.title||"Área prevista pela PREVOTS");
- }
- function prevotsFeatureColor(props){
-  const raw=String(props?.nivel||props?.severity||props?.risco||props?.categoria||"").toLowerCase();
-  if(/4|extrem|alto/.test(raw))return "#ff35d5";
-  if(/3|elevad/.test(raw))return "#ff3b45";
-  if(/2|moderad/.test(raw))return "#ffad32";
-  if(/1|baixo|marginal/.test(raw))return "#f4e442";
-  return "#55e78a";
- }
- function prevotsCollectLatLngs(coords,out){
-  if(!Array.isArray(coords))return;
-  if(coords.length>=2&&typeof coords[0]==="number"&&typeof coords[1]==="number"){
-   const lng=coords[0],lat=coords[1];
-   if(Number.isFinite(lat)&&Number.isFinite(lng)&&Math.abs(lat)<=90&&Math.abs(lng)<=180)out.push([lat,lng]);
-   return;
-  }
-  for(const child of coords)prevotsCollectLatLngs(child,out);
- }
- function drawPrevotsGeoJSON(data){
-  const features=data?.type==="FeatureCollection"?data.features:(data?.type==="Feature"?[data]:[]);
-  if(!Array.isArray(features))throw new Error("GeoJSON sem lista de feições válida.");
-  prevotsVectorGroup.clearLayers();prevotsVectorFeatures=0;
-  for(const feature of features){
-   const points=[];prevotsCollectLatLngs(feature?.geometry?.coordinates,points);
-   if(!points.length)continue;
-   const lats=points.map(p=>p[0]),lngs=points.map(p=>p[1]);
-   const south=Math.min(...lats),north=Math.max(...lats),west=Math.min(...lngs),east=Math.max(...lngs);
-   if(!(north>south&&east>west))continue;
-   const props=feature.properties||{},color=prevotsFeatureColor(props);
-   const rectangle=L.rectangle([[south,west],[north,east]],{color,weight:2,opacity:.95,fillColor:color,fillOpacity:.17,dashArray:"5 4"});
-   rectangle.bindPopup(`<b>${prevotsFeatureLabel(props).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</b><br>Área delimitada pelo GeoJSON da fonte.<br>${south.toFixed(3)}, ${west.toFixed(3)} a ${north.toFixed(3)}, ${east.toFixed(3)}`);
-   prevotsVectorGroup.addLayer(rectangle);prevotsVectorFeatures++;
-  }
-  if(!prevotsVectorFeatures)throw new Error("O GeoJSON não contém polígonos com coordenadas válidas.");
-  if(prevotsVectorVisible)prevotsVectorGroup.addTo(map);
-  if(prevotsMapStatus)prevotsMapStatus.textContent=`${prevotsVectorFeatures} área(s) recebida(s) do GeoJSON. Os retângulos representam a extensão de cada feição, não um ponto de tornado confirmado.`;
- }
- window.connectPrevotsGeoJSON=async function(){
-  const url=(prevotsGeoJsonUrl?.value||"").trim();
-  if(!url){if(prevotsMapStatus)prevotsMapStatus.textContent="A PREVOTS não expõe GeoJSON na página pública consultada. Cole aqui somente um endpoint vetorial oficial fornecido pela fonte; a imagem PNG não contém coordenadas individuais.";return;}
-  let parsed;try{parsed=new URL(url);if(!/^https?:$/.test(parsed.protocol))throw new Error("Use um endereço HTTP ou HTTPS.");}catch(e){if(prevotsMapStatus)prevotsMapStatus.textContent="Endereço inválido: "+e.message;return;}
-  if(prevotsVectorRequest)prevotsVectorRequest.abort();
-  const controller=new AbortController();prevotsVectorRequest=controller;
-  if(prevotsMapStatus)prevotsMapStatus.textContent="Consultando a fonte GeoJSON...";
-  try{
-   const response=await fetch(url,{cache:"no-store",signal:controller.signal});
-   if(!response.ok)throw new Error("HTTP "+response.status);
-   const data=await response.json();drawPrevotsGeoJSON(data);
-  }catch(e){if(e.name!=="AbortError"&&prevotsMapStatus)prevotsMapStatus.textContent="Não foi possível carregar o GeoJSON: "+e.message+". A fonte pode bloquear CORS ou não disponibilizar esse formato.";}
-  finally{if(prevotsVectorRequest===controller)prevotsVectorRequest=null;}
- };
- window.togglePrevotsMapLayer=function(){
-  if(!prevotsVectorFeatures){if(prevotsMapStatus)prevotsMapStatus.textContent="Nenhuma área vetorial carregada. A página pública da PREVOTS fornece uma imagem de previsão, não coordenadas de polígonos.";return;}
-  prevotsVectorVisible=!prevotsVectorVisible;
-  if(prevotsVectorVisible)prevotsVectorGroup.addTo(map);else map.removeLayer(prevotsVectorGroup);
-  if(prevotsMapStatus)prevotsMapStatus.textContent=prevotsVectorVisible?`${prevotsVectorFeatures} área(s) exibida(s) no mapa.`:"Camada PREVOTS oculta.";
- };
- function start(){refreshAutomaticAlerts(false);if(timer)clearInterval(timer);timer=setInterval(()=>refreshAutomaticAlerts(false),5*60*1000);}
- document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshAutomaticAlerts(false);});
- start();
+
 })();
+</script>
+
+
+<script>
+/* CLOUDGOD · parâmetros de instabilidade + mapa sinótico H/L */
+(function(){
+ const fields={cape:"instCAPE",convective_inhibition:"instCIN",lifted_index:"instLI"};
+ const status=document.getElementById("instabilityStatus");
+ if(!status)return;
+ let controller=null,pressureController=null,pressureLayer=null,pressureEnabled=false;
+ const pressureStatus=document.getElementById("pressureMapStatus");
+ function fmt(value,digits=0){const n=Number(value);return Number.isFinite(n)?n.toLocaleString("pt-BR",{maximumFractionDigits:digits,minimumFractionDigits:digits}):"N/D";}
+ function windVector(speed,direction){const sp=Number(speed),dir=Number(direction);if(!Number.isFinite(sp)||!Number.isFinite(dir))return null;const rad=dir*Math.PI/180;return {u:-sp*Math.sin(rad),v:-sp*Math.cos(rad)};}
+ function vectorDifference(a,b){if(!a||!b)return null;return Math.hypot(b.u-a.u,b.v-a.v);}
+ function ensurePressureLayer(){if(typeof map==="undefined"||!map)return false;if(!pressureLayer)pressureLayer=L.layerGroup();return true;}
+ function pressureIcon(kind,value){return L.divIcon({className:"",html:`<div style="text-align:center"><div class="pressure-marker ${kind}">${kind==="high"?"H":"L"}</div><div class="pressure-label">${fmt(value,0)} hPa</div></div>`,iconSize:[54,42],iconAnchor:[27,20]});}
+ window.togglePressureMap=function(){
+  if(!ensurePressureLayer()){pressureStatus.textContent="O mapa principal ainda não está pronto.";return;}
+  pressureEnabled=!pressureEnabled;
+  const button=document.getElementById("pressureMapToggle");
+  if(pressureEnabled){pressureLayer.addTo(map);button.textContent="DESATIVAR MAPA H / L";refreshPressureMap();}
+  else{map.removeLayer(pressureLayer);button.textContent="ATIVAR MAPA H / L";pressureStatus.textContent="Camada de alta e baixa pressão desativada.";}
+ };
+ async function refreshPressureMap(){
+  if(!pressureEnabled||!ensurePressureLayer())return;
+  if(pressureController)pressureController.abort();pressureController=new AbortController();
+  // Área fixa: América do Sul e Atlântico adjacente, incluindo o oceano próximo ao Brasil.
+  // Não depende do zoom/posição atual do mapa principal.
+  const south=-58,north=13,west=-85,east=-25;
+  const rows=13,cols=13,points=[];
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)points.push({lat:south+(north-south)*y/(rows-1),lon:west+(east-west)*x/(cols-1)});
+  pressureStatus.textContent="Consultando pressão ao nível do mar na América do Sul e no Atlântico próximo ao Brasil...";
+  try{
+   const url=`https://api.open-meteo.com/v1/gfs?latitude=${points.map(p=>p.lat.toFixed(3)).join(",")}&longitude=${points.map(p=>p.lon.toFixed(3)).join(",")}&hourly=pressure_msl&forecast_days=2&timezone=auto`;
+   const response=await fetch(url,{cache:"no-store",signal:pressureController.signal});if(!response.ok)throw new Error("Open-Meteo HTTP "+response.status);
+   const payload=await response.json(),series=Array.isArray(payload)?payload:[payload];
+   const times=series[0]?.hourly?.time||[];if(!times.length)throw new Error("Pressão não retornada pelo modelo.");
+   let ti=0,best=Infinity;times.forEach((t,i)=>{const d=Math.abs(new Date(t).getTime()-Date.now());if(d<best){best=d;ti=i;}});
+   const values=points.map((p,i)=>({ ...p, value:Number(series[i]?.hourly?.pressure_msl?.[ti]) }));
+   const extrema=[];
+   for(let y=1;y<rows-1;y++)for(let x=1;x<cols-1;x++){
+    const i=y*cols+x,v=values[i].value;if(!Number.isFinite(v))continue;
+    const neighbors=[values[i-1].value,values[i+1].value,values[i-cols].value,values[i+cols].value].filter(Number.isFinite);
+    if(neighbors.length<4)continue;
+    if(neighbors.every(n=>v>n+0.15))extrema.push({...values[i],kind:"high"});
+    if(neighbors.every(n=>v<n-0.15))extrema.push({...values[i],kind:"low"});
+   }
+   pressureLayer.clearLayers();
+   extrema.forEach(p=>L.marker([p.lat,p.lon],{icon:pressureIcon(p.kind,p.value),keyboard:false}).bindPopup(`<b>${p.kind==="high"?"HIGH PRESSURE · ALTA":"LOW PRESSURE · BAIXA"}</b><br>Pressão: ${fmt(p.value,1)} hPa<br>Região: América do Sul e Atlântico próximo ao Brasil<br>Fonte dos dados: NOAA GFS via Open-Meteo`).addTo(pressureLayer));
+   const highs=extrema.filter(p=>p.kind==="high").length,lows=extrema.filter(p=>p.kind==="low").length;
+   pressureStatus.textContent=`Mapa regional atualizado · América do Sul + Atlântico próximo ao Brasil · ${highs} centro(s) H e ${lows} centro(s) L · ${new Date(times[ti]).toLocaleString("pt-BR")} · pressão ao nível do mar.`;
+   if(!highs&&!lows)pressureStatus.textContent+=" Nenhum centro local bem definido foi identificado nesta amostragem.";
+  }catch(error){if(error.name!=="AbortError")pressureStatus.textContent="Falha ao consultar pressão: "+error.message;}
+ }
+ window.refreshInstabilityPanel=async function(){
+  const button=document.getElementById("instabilityRefresh");
+  if(typeof map==="undefined"||!map.getCenter){status.textContent="Mapa ainda não está pronto para consultar os dados.";return;}
+  if(controller)controller.abort();controller=new AbortController();
+  const center=map.getCenter(),lat=center.lat.toFixed(4),lon=center.lng.toFixed(4);
+  button.disabled=true;button.textContent="CONSULTANDO GFS...";status.textContent=`Consultando o modelo para ${lat}°, ${lon}°...`;
+  Object.values(fields).forEach(id=>document.getElementById(id).textContent="…");document.getElementById("instShear").textContent="…";
+  try{
+   const hourly=["cape","convective_inhibition","lifted_index","wind_speed_10m","wind_direction_10m","wind_speed_500hPa","wind_direction_500hPa","geopotential_height_500hPa"].join(",");
+   const url=`https://api.open-meteo.com/v1/gfs?latitude=${lat}&longitude=${lon}&hourly=${hourly}&forecast_days=2&timezone=auto&wind_speed_unit=kmh`;
+   const response=await fetch(url,{cache:"no-store",signal:controller.signal});if(!response.ok)throw new Error("Open-Meteo HTTP "+response.status);
+   const data=await response.json(),h=data.hourly||{},times=h.time||[];if(!times.length)throw new Error("O modelo não retornou horários.");
+   let index=0,best=Infinity;times.forEach((t,i)=>{const delta=Math.abs(new Date(t).getTime()-Date.now());if(delta<best){best=delta;index=i;}});
+   for(const [key,id] of Object.entries(fields))document.getElementById(id).textContent=fmt(h[key]?.[index],key==="lifted_index"?1:0);
+   const shear=vectorDifference(windVector(h.wind_speed_10m?.[index],h.wind_direction_10m?.[index]),windVector(h.wind_speed_500hPa?.[index],h.wind_direction_500hPa?.[index]));
+   document.getElementById("instShear").textContent=shear===null?"N/D":fmt(shear,1)+" km/h";
+   const height=Number(h.geopotential_height_500hPa?.[index]);
+   document.getElementById("instShearDetail").textContent=`Diferença vetorial 10 m–500 hPa · nível superior ${Number.isFinite(height)?fmt(height,0)+" m":"aprox. 5,6 km"} · valor aproximado`;
+   document.getElementById("instSRH").textContent="N/D";
+   status.textContent=`Dados carregados · ${new Date(times[index]).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})} · posição ${lat}°, ${lon}° · fonte: NOAA GFS via Open-Meteo.`;
+   if(pressureEnabled)refreshPressureMap();
+  }catch(error){if(error.name!=="AbortError"){status.textContent="Não foi possível carregar os parâmetros: "+error.message;Object.values(fields).forEach(id=>document.getElementById(id).textContent="N/D");document.getElementById("instShear").textContent="N/D";}}
+  finally{button.disabled=false;button.textContent="ATUALIZAR NO CENTRO DO MAPA";}
+ };
+ if(typeof map!=="undefined"&&map){map.on("moveend",()=>{if(pressureEnabled)refreshPressureMap();});}
+ document.addEventListener("DOMContentLoaded",()=>{const start=document.getElementById("startupScreen");if(start&&!start.hidden){const observer=new MutationObserver(()=>{if(start.hidden){observer.disconnect();setTimeout(()=>window.refreshInstabilityPanel(),900);}});observer.observe(start,{attributes:true,attributeFilter:["hidden"]});}else setTimeout(()=>window.refreshInstabilityPanel(),1200);});
+})();
+</script>
+
+
+<script>
+// ============================================
+// CLOUDGOD LIVE USERS · SUPABASE
+// Compartilhamento de localização sempre voluntário.
+// A chave publishable é própria para uso no navegador; nunca coloque service_role aqui.
+// ============================================
+const CG_SUPABASE_URL = "https://lqacqicutebasksofbsu.supabase.co";
+const CG_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_YPRQEioY8fEPfhgjC4Llcw_6Ftq2tgT";
+const cgSupabase = window.supabase?.createClient(CG_SUPABASE_URL, CG_SUPABASE_PUBLISHABLE_KEY);
+let cgCurrentUser = null;
+let cgWatchId = null;
+let cgLastPosition = null;
+let cgLiveMarkers = new Map();
+let cgLiveRefreshTimer = null;
+let cgHeartbeatTimer = null;
+let cgSharingBusy = false;
+
+function cgStatus(message, isError=false){const el=document.getElementById('cgLiveStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'#60748b';}}
+function cgSkipLiveUsers(){try{localStorage.setItem('cgLiveChoice','skip');}catch(_){}document.body.classList.remove('cg-live-gate-active');cgToggleLivePanel(false);cgStatus('Você escolheu não participar do LIVE USERS. O CLOUDGOD continua funcionando normalmente.');}
+function cgCloseLiveGate(){try{localStorage.setItem('cgLiveChoice','account');}catch(_){}document.body.classList.remove('cg-live-gate-active');}
+function cgInitLiveGate(){let choice='';try{choice=localStorage.getItem('cgLiveChoice')||'';}catch(_){}if(!cgCurrentUser&&choice!=='skip'){document.body.classList.add('cg-live-gate-active');cgToggleLivePanel(true);}else{document.body.classList.remove('cg-live-gate-active');}}
+function cgToggleLivePanel(force){const panel=document.getElementById('cgLivePanel');if(!panel)return;const open=typeof force==='boolean'?force:!panel.classList.contains('open');panel.classList.toggle('open',open);}
+function cgSafeAvatar(url){try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch(_){return '';}}
+function cgInitials(name){return (name||'CG').trim().slice(0,1).toUpperCase()||'C';}
+function cgMarkerHtml(profile){const avatar=cgSafeAvatar(profile.avatar_url);const name=String(profile.username||'Usuário').slice(0,28);const inner=avatar?`<img src="${avatar.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" alt="">`:`<span style="display:grid;place-items:center;width:100%;height:100%;color:#fff;font-weight:900">${cgInitials(name)}</span>`;return `<div class="cg-live-marker"><div class="cg-live-avatar">${inner}</div><div class="cg-live-label">${name.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</div></div>`;}
+function cgUpsertMarker(profile){if(!window.map||!profile)return;const lat=Number(profile.latitude),lon=Number(profile.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;const age=Date.now()-new Date(profile.updated_at||0).getTime();if(age>120000)return;const icon=L.divIcon({className:'',html:cgMarkerHtml(profile),iconSize:[100,58],iconAnchor:[50,54]});let marker=cgLiveMarkers.get(profile.id);if(marker){marker.setLatLng([lat,lon]);marker.setIcon(icon);}else{marker=L.marker([lat,lon],{icon,keyboard:false}).addTo(map);marker.bindPopup('');cgLiveMarkers.set(profile.id,marker);}const popup=document.createElement('div');const title=document.createElement('b');title.textContent=profile.username||'Usuário';popup.appendChild(title);const line=document.createElement('div');line.textContent='Usuário compartilhando localização ao vivo';line.style.marginTop='4px';popup.appendChild(line);marker.bindPopup(popup);}
+function cgRemoveMarker(id){const marker=cgLiveMarkers.get(id);if(marker&&window.map)map.removeLayer(marker);cgLiveMarkers.delete(id);}
+async function cgLoadLiveUsers(){if(!cgSupabase||!cgCurrentUser)return;const {data,error}=await cgSupabase.from('profiles').select('id,username,avatar_url,share_location,latitude,longitude,updated_at').eq('share_location',true);if(error){cgStatus('Falha ao carregar usuários: '+error.message,true);return;}const visible=new Set();(data||[]).forEach(p=>{const age=Date.now()-new Date(p.updated_at||0).getTime();if(age<=120000){visible.add(p.id);cgUpsertMarker(p);}});for(const id of [...cgLiveMarkers.keys()])if(!visible.has(id))cgRemoveMarker(id);const count=visible.size;const countEl=document.getElementById('cgLiveCount');if(countEl)countEl.textContent=String(count);}
+async function cgEnsureProfile(){
+  if(!cgSupabase)return;
+  // Confirma o usuário diretamente no Auth do mesmo projeto antes de gravar o perfil.
+  const {data:authData,error:authError}=await cgSupabase.auth.getUser();
+  if(authError||!authData?.user){cgCurrentUser=null;cgStatus('Sua sessão não foi confirmada pelo Supabase. Entre novamente na conta.',true);return;}
+  cgCurrentUser=authData.user;
+  const userId=authData.user.id;
+  const {data,error}=await cgSupabase.from('profiles').select('*').eq('id',userId).maybeSingle();
+  if(error){cgStatus('Erro ao carregar perfil: '+error.message,true);return;}
+  if(!data){
+    const {error:insertError}=await cgSupabase.from('profiles').upsert(
+      {id:userId,username:'Usuário',avatar_url:'',share_location:false},
+      {onConflict:'id',ignoreDuplicates:true}
+    );
+    if(insertError){cgStatus('Não foi possível criar perfil: '+insertError.message+' Verifique se a sessão e a URL do projeto Supabase correspondem.',true);return;}
+  }
+  const {data:profile,error:reloadError}=await cgSupabase.from('profiles').select('*').eq('id',userId).maybeSingle();
+  if(reloadError||!profile){cgStatus('Não foi possível confirmar o perfil no banco: '+(reloadError?.message||'perfil não encontrado'),true);return;}
+  document.getElementById('cgLiveName').value=profile.username==='Usuário'?'':(profile.username||'');
+  document.getElementById('cgLiveAvatar').value=profile.avatar_url||'';
+  cgPreviewAvatar(profile.avatar_url||'');
+  document.getElementById('cgLiveShare').checked=!!profile.share_location;
+  document.getElementById('cgLiveSignedAs').textContent='Conectado: '+(authData.user.email||'conta autenticada');
+  if(!profile.username||profile.username.trim().length<2||!cgSafeAvatar(profile.avatar_url)){
+    document.getElementById('cgLiveShare').checked=false;
+    cgStatus('Complete seu nome e sua foto de perfil; o salvamento é automático.');
+  }else if(profile.share_location&&Number.isFinite(Number(profile.latitude))&&Number.isFinite(Number(profile.longitude))){
+    cgLastPosition={latitude:Number(profile.latitude),longitude:Number(profile.longitude)};
+    cgStartLocationWatch();
+  }
+}
+async function cgUpdateAuthUI(){const authArea=document.getElementById('cgLiveAuthArea'),profileArea=document.getElementById('cgLiveProfileArea');authArea.hidden=!!cgCurrentUser;profileArea.hidden=!cgCurrentUser;if(cgCurrentUser){await cgEnsureProfile();await cgLoadLiveUsers();cgStartRealtime();}else{cgStopLocationWatch();cgStopRealtime();for(const id of [...cgLiveMarkers.keys()])cgRemoveMarker(id);document.getElementById('cgLiveCount').textContent='0';}}
+async function cgSignUp(){if(!cgSupabase)return cgStatus('Biblioteca Supabase não carregou. Atualize a página.',true);const email=document.getElementById('cgLiveEmail').value.trim(),password=document.getElementById('cgLivePassword').value;if(!email||password.length<6)return cgStatus('Informe um e-mail válido e uma senha com pelo menos 6 caracteres.',true);cgStatus('Criando conta…');const {data,error}=await cgSupabase.auth.signUp({email,password});if(error)return cgStatus(error.message,true);if(data.session){cgCurrentUser=data.user;cgCloseLiveGate();await cgUpdateAuthUI();cgStatus('Conta criada. Preencha seu nome e escolha sua foto; o perfil será salvo automaticamente, sem confirmação extra.');}else cgStatus('O Supabase ainda exige confirmação por e-mail. Para não pedir confirmação, desative “Confirm email” em Authentication → Sign In / Providers → Email no painel do Supabase.');}
+async function cgSignIn(){if(!cgSupabase)return cgStatus('Biblioteca Supabase não carregou.',true);const email=document.getElementById('cgLiveEmail').value.trim(),password=document.getElementById('cgLivePassword').value;if(!email||!password)return cgStatus('Informe seu e-mail e senha.',true);cgStatus('Entrando…');const {data,error}=await cgSupabase.auth.signInWithPassword({email,password});if(error)return cgStatus(error.message,true);cgCurrentUser=data.user;cgCloseLiveGate();await cgUpdateAuthUI();cgStatus('Conectado. Preencha seu nome e escolha sua foto; o perfil será salvo automaticamente, sem confirmação extra.');}
+async function cgSignOut(){if(cgCurrentUser){await cgSetSharing(false);}await cgSupabase.auth.signOut();cgCurrentUser=null;await cgUpdateAuthUI();cgInitLiveGate();cgStatus('Você saiu da conta.');}
+function cgPreviewAvatar(url){const img=document.getElementById('cgLiveAvatarPreview'),label=document.getElementById('cgLiveAvatarPreviewText'),safe=cgSafeAvatar(url);if(!img||!label)return;if(safe){img.src=safe;img.style.display='block';label.textContent='Prévia da foto selecionada.';}else{img.removeAttribute('src');img.style.display='none';label.textContent='A prévia da foto aparecerá aqui.';}}
+function cgAvatarUrlChanged(){const input=document.getElementById('cgLiveAvatar');cgPreviewAvatar(input.value);cgAutoSaveProfile();}
+async function cgUploadAvatar(){
+ if(!cgCurrentUser)return cgStatus('Entre na sua conta antes de enviar uma foto.',true);
+ const input=document.getElementById('cgLiveAvatarFile'),file=input.files&&input.files[0];if(!file)return;
+ const allowed=['image/jpeg','image/png','image/webp','image/gif'];
+ if(!allowed.includes(file.type)){input.value='';return cgStatus('Formato não permitido. Escolha JPG, PNG, WEBP ou GIF.',true);}
+ if(file.size>3*1024*1024){input.value='';return cgStatus('A imagem precisa ter no máximo 3 MB.',true);}
+ cgStatus('Enviando foto de perfil…');
+ const ext=({ 'image/jpeg':'jpg','image/png':'png','image/webp':'webp','image/gif':'gif' })[file.type];
+ const path=cgCurrentUser.id+'/'+Date.now()+'.'+ext;
+ const {error}=await cgSupabase.storage.from('profile-avatars').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type});
+ if(error)return cgStatus('Falha no envio da foto: '+error.message,true);
+ const {data}=cgSupabase.storage.from('profile-avatars').getPublicUrl(path);
+ document.getElementById('cgLiveAvatar').value=data.publicUrl;cgPreviewAvatar(data.publicUrl);
+ cgStatus('Foto enviada. Salvando perfil…');await cgSaveProfile();
+}
+async function cgSaveProfile(){if(!cgCurrentUser)return;const username=document.getElementById('cgLiveName').value.trim().slice(0,28),avatar_url=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(username.length<2)return cgStatus('Nome obrigatório: use pelo menos 2 caracteres.',true);if(!avatar_url)return cgStatus('Foto de perfil obrigatória. Escolha uma foto da galeria ou informe uma URL válida.',true);const {error}=await cgSupabase.from('profiles').upsert({id:cgCurrentUser.id,username,avatar_url,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)return cgStatus('Erro ao salvar perfil: '+error.message,true);cgStatus('Perfil completo e salvo automaticamente.');if(document.getElementById('cgLiveShare').checked)await cgLoadLiveUsers();}
+let cgAutoSaveTimer=null;function cgAutoSaveProfile(){if(!cgCurrentUser)return;clearTimeout(cgAutoSaveTimer);cgAutoSaveTimer=setTimeout(async()=>{const name=document.getElementById('cgLiveName').value.trim(),avatar=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(name.length<2||!avatar)return;await cgSaveProfile();},700);}
+async function cgSetSharing(enabled){if(!cgCurrentUser||cgSharingBusy)return;cgSharingBusy=true;const checkbox=document.getElementById('cgLiveShare');if(enabled){const requiredName=document.getElementById('cgLiveName').value.trim(),requiredAvatar=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(requiredName.length<2||!requiredAvatar){checkbox.checked=false;cgSharingBusy=false;return cgStatus('Antes de compartilhar, preencha o nome e a foto. O perfil será salvo automaticamente.',true);}const {data:profileCheck,error:profileError}=await cgSupabase.from('profiles').select('username,avatar_url').eq('id',cgCurrentUser.id).maybeSingle();if(profileError||!profileCheck||profileCheck.username?.trim().length<2||!cgSafeAvatar(profileCheck.avatar_url)){checkbox.checked=false;cgSharingBusy=false;return cgStatus('Preencha primeiro seu nome e sua foto de perfil; o salvamento é automático.',true);}if(!navigator.geolocation){checkbox.checked=false;cgSharingBusy=false;return cgStatus('Este navegador não oferece GPS.',true);}cgStatus('Solicitando permissão de localização…');navigator.geolocation.getCurrentPosition(async pos=>{cgLastPosition={latitude:pos.coords.latitude,longitude:pos.coords.longitude};const {error}=await cgSupabase.from('profiles').update({share_location:true,latitude:cgLastPosition.latitude,longitude:cgLastPosition.longitude,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);cgSharingBusy=false;if(error){checkbox.checked=false;cgStatus('Não foi possível ativar: '+error.message,true);return;}cgStartLocationWatch();cgStartHeartbeat();cgStatus('Compartilhamento ativo. Sua posição aparece para usuários conectados.');await cgLoadLiveUsers();},err=>{checkbox.checked=false;cgSharingBusy=false;cgStatus('Permissão não concedida ou GPS indisponível: '+err.message,true);},{enableHighAccuracy:false,timeout:15000,maximumAge:30000});}else{cgStopLocationWatch();cgStopHeartbeat();const {error}=await cgSupabase.from('profiles').update({share_location:false,latitude:null,longitude:null,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);checkbox.checked=false;cgSharingBusy=false;if(error)return cgStatus('Erro ao desligar compartilhamento: '+error.message,true);cgStatus('Compartilhamento desligado. Sua posição foi retirada do mapa.');await cgLoadLiveUsers();}}
+async function cgPublishPosition(pos){if(!cgCurrentUser||!document.getElementById('cgLiveShare').checked)return;const latitude=pos.coords.latitude,longitude=pos.coords.longitude;cgLastPosition={latitude,longitude};const {error}=await cgSupabase.from('profiles').update({latitude,longitude,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);if(error)cgStatus('Falha ao atualizar posição: '+error.message,true);}
+function cgStartLocationWatch(){cgStopLocationWatch();if(!navigator.geolocation)return;cgWatchId=navigator.geolocation.watchPosition(cgPublishPosition,err=>cgStatus('GPS: '+err.message,true),{enableHighAccuracy:false,maximumAge:15000,timeout:20000});cgStartHeartbeat();}
+function cgStartHeartbeat(){cgStopHeartbeat();cgHeartbeatTimer=setInterval(async()=>{if(!cgCurrentUser||!document.getElementById('cgLiveShare').checked||!cgLastPosition)return;const {error}=await cgSupabase.from('profiles').update({latitude:cgLastPosition.latitude,longitude:cgLastPosition.longitude,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);if(error)cgStatus('Falha ao atualizar presença: '+error.message,true);},45000);}
+function cgStopHeartbeat(){if(cgHeartbeatTimer){clearInterval(cgHeartbeatTimer);cgHeartbeatTimer=null;}}
+function cgStopLocationWatch(){if(cgWatchId!==null){navigator.geolocation.clearWatch(cgWatchId);cgWatchId=null;}cgStopHeartbeat();}
+let cgRealtimeChannel=null;
+function cgStartRealtime(){cgStopRealtime();cgRealtimeChannel=cgSupabase.channel('cg-live-profiles').on('postgres_changes',{event:'*',schema:'public',table:'profiles'},payload=>{const p=payload.new||payload.old;if(!p)return;if(payload.eventType==='DELETE'||!p.share_location){cgRemoveMarker(p.id);}else cgUpsertMarker(p);}).subscribe();if(cgLiveRefreshTimer)clearInterval(cgLiveRefreshTimer);cgLiveRefreshTimer=setInterval(cgLoadLiveUsers,30000);}
+function cgStopRealtime(){if(cgRealtimeChannel&&cgSupabase){cgSupabase.removeChannel(cgRealtimeChannel);cgRealtimeChannel=null;}if(cgLiveRefreshTimer){clearInterval(cgLiveRefreshTimer);cgLiveRefreshTimer=null;}}
+if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=data.session?.user||null;if(cgCurrentUser)cgCloseLiveGate();await cgUpdateAuthUI();cgInitLiveGate();cgStatus(cgCurrentUser?'Conectado.':'Entre ou crie uma conta, ou escolha NÃO OBRIGADO.');});cgSupabase.auth.onAuthStateChange((_event,session)=>{cgCurrentUser=session?.user||null;if(cgCurrentUser)cgCloseLiveGate();setTimeout(async()=>{await cgUpdateAuthUI();if(!cgCurrentUser)cgInitLiveGate();},0);});}else{cgStatus('Não foi possível carregar Supabase JS. Verifique a conexão.',true);}
 </script>
 
 </body>
