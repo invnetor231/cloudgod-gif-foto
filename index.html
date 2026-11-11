@@ -4322,62 +4322,95 @@ clearRadiosonde=function(){
  const status=document.getElementById("instabilityStatus");
  if(!status)return;
  let controller=null,pressureController=null,pressureLayer=null,pressureEnabled=false;
+ let lastPressureFetch=0,pressureTimer=null;
  const pressureStatus=document.getElementById("pressureMapStatus");
  function fmt(value,digits=0){const n=Number(value);return Number.isFinite(n)?n.toLocaleString("pt-BR",{maximumFractionDigits:digits,minimumFractionDigits:digits}):"N/D";}
  function windVector(speed,direction){const sp=Number(speed),dir=Number(direction);if(!Number.isFinite(sp)||!Number.isFinite(dir))return null;const rad=dir*Math.PI/180;return {u:-sp*Math.sin(rad),v:-sp*Math.cos(rad)};}
  function vectorDifference(a,b){if(!a||!b)return null;return Math.hypot(b.u-a.u,b.v-a.v);}
  function ensurePressureLayer(){if(typeof map==="undefined"||!map)return false;if(!pressureLayer)pressureLayer=L.layerGroup();return true;}
  function pressureIcon(kind,value){return L.divIcon({className:"",html:`<div style="text-align:center"><div class="pressure-marker ${kind}">${kind==="high"?"H":"L"}</div><div class="pressure-label">${fmt(value,0)} hPa</div></div>`,iconSize:[54,42],iconAnchor:[27,20]});}
+
+ // Repetição controlada para 429 e rota alternativa oficial do Open-Meteo.
+ async function requestGFS(url,signal){
+  let lastError=null;
+  for(let attempt=0;attempt<3;attempt++){
+   try{
+    const response=await fetch(url,{cache:"no-store",signal});
+    if(response.status===429){
+     const wait=Math.min(12000,Math.max(1800,Number(response.headers.get("Retry-After"))*1000||1800)*(attempt+1));
+     if(attempt<2){await new Promise((resolve,reject)=>{const timer=setTimeout(resolve,wait);signal?.addEventListener("abort",()=>{clearTimeout(timer);reject(new DOMException("Aborted","AbortError"));},{once:true});});continue;}
+     throw new Error("HTTP 429 · limite temporário de consultas atingido");
+    }
+    if(!response.ok)throw new Error("HTTP "+response.status);
+    return await response.json();
+   }catch(error){if(error.name==="AbortError")throw error;lastError=error;if(attempt===2)break;await new Promise(resolve=>setTimeout(resolve,900*(attempt+1)));}
+  }
+  // Endpoint Forecast com GFS Seamless como alternativa ao endpoint /gfs.
+  const fallback=url.replace("https://api.open-meteo.com/v1/gfs?","https://api.open-meteo.com/v1/forecast?")+"&models=gfs_seamless";
+  try{
+   const response=await fetch(fallback,{cache:"no-store",signal});
+   if(!response.ok)throw new Error("rota alternativa HTTP "+response.status);
+   return await response.json();
+  }catch(error){if(error.name==="AbortError")throw error;throw new Error((lastError?.message||"GFS indisponível")+"; alternativa: "+error.message);}
+ }
+
  window.togglePressureMap=function(){
   if(!ensurePressureLayer()){pressureStatus.textContent="O mapa principal ainda não está pronto.";return;}
   pressureEnabled=!pressureEnabled;
   const button=document.getElementById("pressureMapToggle");
-  if(pressureEnabled){pressureLayer.addTo(map);button.textContent="DESATIVAR MAPA H / L";refreshPressureMap();}
-  else{map.removeLayer(pressureLayer);button.textContent="ATIVAR MAPA H / L";pressureStatus.textContent="Camada de alta e baixa pressão desativada.";}
+  if(pressureEnabled){pressureLayer.addTo(map);button.textContent="DESATIVAR MAPA H / L";refreshPressureMap(true);}
+  else{if(pressureController)pressureController.abort();clearTimeout(pressureTimer);map.removeLayer(pressureLayer);button.textContent="ATIVAR MAPA H / L";pressureStatus.textContent="Camada de alta e baixa pressão desativada.";}
  };
- async function refreshPressureMap(){
+
+ async function refreshPressureMap(force=false){
   if(!pressureEnabled||!ensurePressureLayer())return;
-  if(pressureController)pressureController.abort();pressureController=new AbortController();
-  // Área fixa: América do Sul e Atlântico adjacente, incluindo o oceano próximo ao Brasil.
-  // Não depende do zoom/posição atual do mapa principal.
-  const south=-58,north=13,west=-85,east=-25;
-  const rows=13,cols=13,points=[];
+  // Evita rajadas de consultas quando o mapa é movimentado ou o painel é atualizado.
+  if(!force&&Date.now()-lastPressureFetch<60000)return;
+  if(pressureController)pressureController.abort();
+  pressureController=new AbortController();const signal=pressureController.signal;
+  // Grade continental reduzida: 9 x 9 = 81 localidades em uma única consulta.
+  // Abrange América do Sul e Atlântico adjacente ao Brasil.
+  const south=-58,north=13,west=-85,east=-25,rows=9,cols=9,points=[];
   for(let y=0;y<rows;y++)for(let x=0;x<cols;x++)points.push({lat:south+(north-south)*y/(rows-1),lon:west+(east-west)*x/(cols-1)});
-  pressureStatus.textContent="Consultando pressão ao nível do mar na América do Sul e no Atlântico próximo ao Brasil...";
+  pressureStatus.textContent="Consultando pressão ao nível do mar · GFS · América do Sul e Atlântico próximo ao Brasil...";
   try{
-   const url=`https://api.open-meteo.com/v1/gfs?latitude=${points.map(p=>p.lat.toFixed(3)).join(",")}&longitude=${points.map(p=>p.lon.toFixed(3)).join(",")}&hourly=pressure_msl&forecast_days=2&timezone=auto`;
-   const response=await fetch(url,{cache:"no-store",signal:pressureController.signal});if(!response.ok)throw new Error("Open-Meteo HTTP "+response.status);
-   const payload=await response.json(),series=Array.isArray(payload)?payload:[payload];
-   const times=series[0]?.hourly?.time||[];if(!times.length)throw new Error("Pressão não retornada pelo modelo.");
-   let ti=0,best=Infinity;times.forEach((t,i)=>{const d=Math.abs(new Date(t).getTime()-Date.now());if(d<best){best=d;ti=i;}});
-   const values=points.map((p,i)=>({ ...p, value:Number(series[i]?.hourly?.pressure_msl?.[ti]) }));
+   const url=`https://api.open-meteo.com/v1/gfs?latitude=${points.map(p=>p.lat.toFixed(3)).join(",")}&longitude=${points.map(p=>p.lon.toFixed(3)).join(",")}&hourly=pressure_msl&forecast_days=1&timezone=UTC`;
+   const payload=await requestGFS(url,signal),series=Array.isArray(payload)?payload:[payload];
+   const times=series.find(d=>d?.hourly?.time?.length)?.hourly.time||[];
+   if(!times.length)throw new Error("O modelo não retornou pressão ao nível do mar.");
+   let ti=0,best=Infinity;times.forEach((t,i)=>{const d=Math.abs(new Date(t+"Z").getTime()-Date.now());if(d<best){best=d;ti=i;}});
+   const values=points.map((p,i)=>({...p,value:Number(series[i]?.hourly?.pressure_msl?.[ti])}));
    const extrema=[];
    for(let y=1;y<rows-1;y++)for(let x=1;x<cols-1;x++){
     const i=y*cols+x,v=values[i].value;if(!Number.isFinite(v))continue;
-    const neighbors=[values[i-1].value,values[i+1].value,values[i-cols].value,values[i+cols].value].filter(Number.isFinite);
-    if(neighbors.length<4)continue;
-    if(neighbors.every(n=>v>n+0.15))extrema.push({...values[i],kind:"high"});
-    if(neighbors.every(n=>v<n-0.15))extrema.push({...values[i],kind:"low"});
+    const neighbors=[values[i-1].value,values[i+1].value,values[i-cols].value,values[i+cols].value];
+    if(neighbors.some(n=>!Number.isFinite(n)))continue;
+    if(neighbors.every(n=>v>n+0.4))extrema.push({...values[i],kind:"high"});
+    else if(neighbors.every(n=>v<n-0.4))extrema.push({...values[i],kind:"low"});
    }
    pressureLayer.clearLayers();
-   extrema.forEach(p=>L.marker([p.lat,p.lon],{icon:pressureIcon(p.kind,p.value),keyboard:false}).bindPopup(`<b>${p.kind==="high"?"HIGH PRESSURE · ALTA":"LOW PRESSURE · BAIXA"}</b><br>Pressão: ${fmt(p.value,1)} hPa<br>Região: América do Sul e Atlântico próximo ao Brasil<br>Fonte dos dados: NOAA GFS via Open-Meteo`).addTo(pressureLayer));
+   extrema.forEach(p=>L.marker([p.lat,p.lon],{icon:pressureIcon(p.kind,p.value),keyboard:false}).bindPopup(`<b>${p.kind==="high"?"HIGH PRESSURE · ALTA":"LOW PRESSURE · BAIXA"}</b><br>Pressão: ${fmt(p.value,1)} hPa<br>Região: América do Sul e Atlântico próximo ao Brasil<br>Fonte: NOAA GFS via Open-Meteo`).addTo(pressureLayer));
+   lastPressureFetch=Date.now();
    const highs=extrema.filter(p=>p.kind==="high").length,lows=extrema.filter(p=>p.kind==="low").length;
-   pressureStatus.textContent=`Mapa regional atualizado · América do Sul + Atlântico próximo ao Brasil · ${highs} centro(s) H e ${lows} centro(s) L · ${new Date(times[ti]).toLocaleString("pt-BR")} · pressão ao nível do mar.`;
-   if(!highs&&!lows)pressureStatus.textContent+=" Nenhum centro local bem definido foi identificado nesta amostragem.";
-  }catch(error){if(error.name!=="AbortError")pressureStatus.textContent="Falha ao consultar pressão: "+error.message;}
+   pressureStatus.textContent=`Mapa atualizado · ${highs} centro(s) H · ${lows} centro(s) L · ${new Date(times[ti]+"Z").toLocaleString("pt-BR")} · pressão ao nível do mar (hPa).`;
+   if(!highs&&!lows)pressureStatus.textContent+=" Nenhum centro fechado foi identificado nesta grade; isso não significa ausência de sistemas de pressão.";
+  }catch(error){if(error.name!=="AbortError")pressureStatus.textContent="Falha ao consultar pressão: "+error.message+". Aguarde um pouco e tente novamente.";}
  }
+
  window.refreshInstabilityPanel=async function(){
   const button=document.getElementById("instabilityRefresh");
   if(typeof map==="undefined"||!map.getCenter){status.textContent="Mapa ainda não está pronto para consultar os dados.";return;}
   if(controller)controller.abort();controller=new AbortController();
   const center=map.getCenter(),lat=center.lat.toFixed(4),lon=center.lng.toFixed(4);
-  button.disabled=true;button.textContent="CONSULTANDO GFS...";status.textContent=`Consultando o modelo para ${lat}°, ${lon}°...`;
-  Object.values(fields).forEach(id=>document.getElementById(id).textContent="…");document.getElementById("instShear").textContent="…";
+  button.disabled=true;button.textContent="CONSULTANDO GFS...";
+  status.textContent=`Consultando o GFS para o centro do mapa (${lat}°, ${lon}°)...`;
+  Object.values(fields).forEach(id=>document.getElementById(id).textContent="…");
+  document.getElementById("instShear").textContent="…";
   try{
    const hourly=["cape","convective_inhibition","lifted_index","wind_speed_10m","wind_direction_10m","wind_speed_500hPa","wind_direction_500hPa","geopotential_height_500hPa"].join(",");
    const url=`https://api.open-meteo.com/v1/gfs?latitude=${lat}&longitude=${lon}&hourly=${hourly}&forecast_days=2&timezone=auto&wind_speed_unit=kmh`;
-   const response=await fetch(url,{cache:"no-store",signal:controller.signal});if(!response.ok)throw new Error("Open-Meteo HTTP "+response.status);
-   const data=await response.json(),h=data.hourly||{},times=h.time||[];if(!times.length)throw new Error("O modelo não retornou horários.");
+   const data=await requestGFS(url,controller.signal),h=data.hourly||{},times=h.time||[];
+   if(!times.length)throw new Error("O modelo não retornou horários.");
    let index=0,best=Infinity;times.forEach((t,i)=>{const delta=Math.abs(new Date(t).getTime()-Date.now());if(delta<best){best=delta;index=i;}});
    for(const [key,id] of Object.entries(fields))document.getElementById(id).textContent=fmt(h[key]?.[index],key==="lifted_index"?1:0);
    const shear=vectorDifference(windVector(h.wind_speed_10m?.[index],h.wind_direction_10m?.[index]),windVector(h.wind_speed_500hPa?.[index],h.wind_direction_500hPa?.[index]));
@@ -4385,13 +4418,24 @@ clearRadiosonde=function(){
    const height=Number(h.geopotential_height_500hPa?.[index]);
    document.getElementById("instShearDetail").textContent=`Diferença vetorial 10 m–500 hPa · nível superior ${Number.isFinite(height)?fmt(height,0)+" m":"aprox. 5,6 km"} · valor aproximado`;
    document.getElementById("instSRH").textContent="N/D";
-   status.textContent=`Dados carregados · ${new Date(times[index]).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})} · posição ${lat}°, ${lon}° · fonte: NOAA GFS via Open-Meteo.`;
-   if(pressureEnabled)refreshPressureMap();
-  }catch(error){if(error.name!=="AbortError"){status.textContent="Não foi possível carregar os parâmetros: "+error.message;Object.values(fields).forEach(id=>document.getElementById(id).textContent="N/D");document.getElementById("instShear").textContent="N/D";}}
-  finally{button.disabled=false;button.textContent="ATUALIZAR NO CENTRO DO MAPA";}
+   status.textContent=`Parâmetros carregados · ${new Date(times[index]).toLocaleString("pt-BR")} · centro ${lat}°, ${lon}° · NOAA GFS via Open-Meteo.`;
+   if(pressureEnabled)refreshPressureMap(false);
+  }catch(error){
+   if(error.name!=="AbortError"){
+    status.textContent="Não foi possível carregar os parâmetros: "+error.message+". Aguarde e tente novamente.";
+    Object.values(fields).forEach(id=>document.getElementById(id).textContent="N/D");
+    document.getElementById("instShear").textContent="N/D";
+   }
+  }finally{button.disabled=false;button.textContent="ATUALIZAR NO CENTRO DO MAPA";}
  };
- if(typeof map!=="undefined"&&map){map.on("moveend",()=>{if(pressureEnabled)refreshPressureMap();});}
- document.addEventListener("DOMContentLoaded",()=>{const start=document.getElementById("startupScreen");if(start&&!start.hidden){const observer=new MutationObserver(()=>{if(start.hidden){observer.disconnect();setTimeout(()=>window.refreshInstabilityPanel(),900);}});observer.observe(start,{attributes:true,attributeFilter:["hidden"]});}else setTimeout(()=>window.refreshInstabilityPanel(),1200);});
+ // A camada H/L é regional fixa; não dispara nova consulta a cada movimento do mapa.
+ document.addEventListener("DOMContentLoaded",()=>{
+  const start=document.getElementById("startupScreen");
+  if(start&&!start.hidden){
+   const observer=new MutationObserver(()=>{if(start.hidden){observer.disconnect();setTimeout(()=>window.refreshInstabilityPanel(),1200);}});
+   observer.observe(start,{attributes:true,attributeFilter:["hidden"]});
+  }else setTimeout(()=>window.refreshInstabilityPanel(),1600);
+ });
 })();
 </script>
 
