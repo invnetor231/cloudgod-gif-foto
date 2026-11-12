@@ -932,7 +932,7 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <option value="1500">Lenta</option>
 <option selected="" value="800">Normal</option>
 <option value="250">Rápida</option>
-<option value="50">Muito rápida</option>
+<option value="143">Muito rápida · 7x</option>
 </select>
 <label for="loopFrameCount">QUANTIDADE DE FRAMES NO LOOP</label>
 <select id="loopFrameCount">
@@ -1317,6 +1317,8 @@ let currentProduct="maxcappi";
 let frames=[];
 let currentFrame=0;
 let loopTimer=null;
+let loopFastRendering=false;
+let loopPreloadToken=0;
 let loopRunToken=0;
 let radarLayers=[];
 let refreshing=false;
@@ -2210,28 +2212,67 @@ function buildURL(dataHour=utcHour(),frameLimit=15){
 
 async function fetchSelectedFrames(signal){
  const requested=selectedFrameCount();
- const batches=Math.ceil(requested/15);
- const collected=[];
- for(let batch=0;batch<batches;batch++){
-  const url=buildURL(utcHour(-batch),Math.min(15,requested-batch*15));
-  const response=await fetch(url,{signal,cache:"no-store"});
-  if(!response.ok)throw new Error("REDEMET respondeu HTTP "+response.status);
-  const json=await response.json();
-  if(json?.error||json?.status===false)throw new Error(json.message||"A API retornou um erro.");
-  if(currentProduct==="infrared")collected.push(...parseSatelliteResponse(json));
-  else{
-   const parsed=parseRadarResponse(json,utcHour(-batch));
-   updateRadarStations(parsed.stations);
-   collected.push(...parsed.frames);
+ const collected=new Map();
+ const counter=document.getElementById("frameCounter");
+ const number=document.getElementById("frameNumber");
+ const message=document.getElementById("message");
+ const updateProgress=()=>{
+  const total=collected.size;
+  // O denominador acompanha exatamente a quantidade escolhida no seletor.
+  if(counter)counter.textContent=total+"/"+requested;
+  if(number)number.textContent=total+" / "+requested;
+  if(message)message.textContent="Quadros recebidos: "+total+"/"+requested;
+ };
+ if(counter)counter.textContent="0/"+requested;
+ if(number)number.textContent="0 / "+requested;
+ if(message)message.textContent="Iniciando busca de quadros...";
+ const maxBatches=Math.min(48,Math.max(4,Math.ceil(requested/15)+12));
+ let nextBatch=0;
+ const concurrency=Math.min(4,maxBatches);
+ async function worker(){
+  while(nextBatch<maxBatches&&collected.size<requested){
+   if(signal?.aborted)throw new DOMException("Busca cancelada","AbortError");
+   const batch=nextBatch++;
+   const dataHour=utcHour(-batch);
+   const response=await fetch(buildURL(dataHour,15),{signal,cache:"no-store"});
+   if(!response.ok)throw new Error("REDEMET respondeu HTTP "+response.status);
+   const json=await response.json();
+   if(json?.error||json?.status===false)throw new Error(json.message||"A API retornou um erro.");
+   let batchFrames=[];
+   if(currentProduct==="infrared"){
+    batchFrames=parseSatelliteResponse(json);
+   }else{
+    const parsed=parseRadarResponse(json,dataHour);
+    updateRadarStations(parsed.stations);
+    batchFrames=parsed.frames;
+   }
+   batchFrames.forEach(frame=>{
+    const imageKeys=(frame.images||[]).map(image=>image.url).filter(Boolean).sort().join("|");
+    const key=String(frame.time||"")+"|"+imageKeys;
+    if(imageKeys&&!collected.has(key)&&collected.size<requested){
+     collected.set(key,{...frame,_order:collected.size});
+    }
+   });
+   updateProgress();
   }
  }
- // Remove quadros repetidos quando duas janelas retornam o mesmo horário/imagem.
- const unique=new Map();
- collected.forEach((frame,index)=>{
-  const key=String(frame.time||"")+"|"+(frame.images||[]).map(image=>image.url).join("|");
-  if(!unique.has(key))unique.set(key,{...frame,_order:index});
- });
- return [...unique.values()].sort((a,b)=>String(a.time).localeCompare(String(b.time))).slice(-requested);
+ // Quatro consultas simultâneas aceleram a coleta sem sobrecarregar
+ // a REDEMET com dezenas de requisições paralelas.
+ await Promise.all(Array.from({length:concurrency},()=>worker()));
+ const result=[...collected.values()]
+  .sort((a,b)=>String(a.time).localeCompare(String(b.time)))
+  .slice(-requested);
+ if(counter)counter.textContent=result.length+"/"+requested;
+ if(number)number.textContent=result.length+" / "+requested;
+ if(message){
+  message.textContent=result.length
+   ? "Carregamento concluído: "+result.length+"/"+requested+" quadros recebidos."
+   : "A REDEMET não retornou quadros válidos.";
+ }
+ if(result.length<requested){
+  console.warn("REDEMET retornou menos quadros únicos que o solicitado:",result.length,"/",requested);
+ }
+ return result;
 }
 
 // Imagens REDEMET passam pelo backend do mesmo domínio. Isso permite
@@ -2575,7 +2616,9 @@ async function showFrame(index){
   // Exibe todos os radares que carregaram, mesmo se uma estação falhar.
   successfulLayers.forEach(layer=>layer.setOpacity(opacity));
   radarLayers.forEach(layer=>layer.setOpacity(0));
-  await new Promise(resolve=>setTimeout(resolve,60));
+  // No modo muito rápido, reduz a pausa de troca visual para um único ciclo
+  // de renderização, em vez de segurar cada quadro por 60 ms.
+  if(!loopFastRendering)await new Promise(resolve=>setTimeout(resolve,60));
   if(renderToken!==frameRenderToken){
    nextLayers.forEach(layer=>radarGroup.removeLayer(layer));
    return;
@@ -2594,10 +2637,14 @@ async function showFrame(index){
    "As imagens de radar não carregaram. O quadro anterior foi mantido.";
  }
 
- document.getElementById("timeline").max=Math.max(0,frames.length-1);
- document.getElementById("timeline").value=currentFrame;
- document.getElementById("frameCounter").textContent=frames.length+" quadro(s)";
- document.getElementById("frameNumber").textContent=(currentFrame+1)+" / "+frames.length;
+ const activeIndexes=getLoopFrameIndexes();
+ const activePosition=Math.max(0,activeIndexes.indexOf(currentFrame));
+ document.getElementById("timeline").max=Math.max(0,activeIndexes.length-1);
+ document.getElementById("timeline").value=activePosition;
+ const selectedTotal=selectedFrameCount();
+ const visibleTotal=Math.min(frames.length,selectedTotal);
+ document.getElementById("frameCounter").textContent=visibleTotal+"/"+selectedTotal;
+ document.getElementById("frameNumber").textContent=(activePosition+1)+" / "+activeIndexes.length;
  document.getElementById("frameDate").textContent=String(frame.time);
  if(document.getElementById("cloud3dModal")?.classList.contains("open")&&window.cloud3dReflectivityGroup){
   window.cloud3dReflectivityGroup.clearLayers();
@@ -2614,7 +2661,7 @@ async function refreshRadar(){
  setStatus("CONSULTANDO REDEMET");
  try{
   const controller=new AbortController();
-  const timeout=setTimeout(()=>controller.abort(),45000);
+  const timeout=setTimeout(()=>controller.abort(),180000);
   try{
    frames=await fetchSelectedFrames(controller.signal);
    if(!frames.length)throw new Error("A REDEMET não retornou imagens com coordenadas válidas para os quadros solicitados.");
@@ -2625,8 +2672,9 @@ async function refreshRadar(){
     document.getElementById("subtitle").textContent="REDEMET · TODOS OS RADARES DO BRASIL";
     document.getElementById("message").textContent=frames.length+" quadros / "+totalImages+" imagens recebidas.";
    }
-   currentFrame=0;
-   showFrame(0);
+   const initialIndexes=getLoopFrameIndexes();
+   currentFrame=initialIndexes.length?initialIndexes[0]:0;
+   showFrame(currentFrame);
    if(currentProduct==="infrared")document.getElementById("message").textContent="Infravermelho realçado: "+frames.length+" imagem(ns) recebida(s).";
    setStatus("MAPA E IMAGENS ATIVOS",true);
   }finally{clearTimeout(timeout);}
@@ -2637,15 +2685,44 @@ async function refreshRadar(){
 }
 
 function nextFrame(){
- if(frames.length) return showFrame(currentFrame+1);
+ if(!frames.length)return;
+ const indexes=getLoopFrameIndexes();
+ if(!indexes.length)return;
+ const position=indexes.indexOf(currentFrame);
+ const next=indexes[(position+1+indexes.length)%indexes.length];
+ return showFrame(next);
 }
 function previousFrame(){
- if(frames.length) return showFrame(currentFrame-1);
+ if(!frames.length)return;
+ const indexes=getLoopFrameIndexes();
+ if(!indexes.length)return;
+ const position=indexes.indexOf(currentFrame);
+ const previous=indexes[(position-1+indexes.length)%indexes.length];
+ return showFrame(previous);
 }
 function pauseLoop(){
- // Invalida qualquer ciclo que esteja aguardando o carregamento de um quadro.
+ // Invalida qualquer ciclo ou pré-carregamento iniciado anteriormente.
  loopRunToken++;
+ loopPreloadToken++;
+ loopFastRendering=false;
  if(loopTimer){clearTimeout(loopTimer);loopTimer=null;}
+}
+async function preloadRadarLoopFrames(indexes, startPosition, token){
+ // Prepara todo o conjunto selecionado antes/durante o loop. Assim, a troca
+ // não precisa esperar a transferência e o processamento de cada imagem.
+ const jobs=[];
+ for(let offset=0;offset<indexes.length;offset++){
+  const frame=frames[indexes[(startPosition+offset)%indexes.length]];
+  if(frame)for(const item of (frame.images||[]))jobs.push(item.url);
+ }
+ let cursor=0;
+ const workers=Array.from({length:8},async()=>{
+  while(cursor<jobs.length&&token===loopPreloadToken){
+   const url=jobs[cursor++];
+   try{await prepareRadarRaster(radarExportSafeUrl(url));}catch(_){/* showFrame fará a tentativa normal */}
+  }
+ });
+ await Promise.all(workers);
 }
 function getLoopFrameIndexes(){
  const selector=document.getElementById("loopFrameCount");
@@ -2658,11 +2735,17 @@ function getLoopFrameIndexes(){
 async function runRadarLoop(token){
  if(token!==loopRunToken||!frames.length)return;
  const speed=Math.max(20,Number(document.getElementById("speed").value)||800);
+ loopFastRendering=speed<=143;
  const indexes=getLoopFrameIndexes();
  if(!indexes.length)return;
  const currentPosition=indexes.indexOf(currentFrame);
- const nextIndex=indexes[(currentPosition+1+indexes.length)%indexes.length];
- // Aguarda o quadro terminar de carregar para não pular imagens ainda não exibidas.
+ const nextPosition=(currentPosition+1+indexes.length)%indexes.length;
+ const nextIndex=indexes[nextPosition];
+ // Pré-carrega os próximos quadros em segundo plano para o modo muito rápido
+ // não ficar limitado pela primeira transferência de cada imagem.
+ const preloadToken=++loopPreloadToken;
+ preloadRadarLoopFrames(indexes,nextPosition,preloadToken);
+ // Aguarda a imagem ficar pronta, evitando quadros vazios ou saltos.
  await showFrame(nextIndex);
  if(token!==loopRunToken||!frames.length)return;
  loopTimer=setTimeout(()=>runRadarLoop(token),speed);
@@ -2681,7 +2764,8 @@ function stopLoop(){
  if(frames.length) showFrame(0);
 }
 document.getElementById("timeline").addEventListener("input",event=>{
- if(frames.length) showFrame(Number(event.target.value));
+ const indexes=getLoopFrameIndexes();
+ if(indexes.length)showFrame(indexes[Math.max(0,Math.min(indexes.length-1,Number(event.target.value)||0))]);
 });
 document.getElementById("opacity").addEventListener("input",event=>{
  const opacity=Number(event.target.value)/100;
@@ -2692,7 +2776,15 @@ document.getElementById("speed").addEventListener("change",()=>{
  if(loopTimer) startLoop();
 });
 document.getElementById("loopFrameCount").addEventListener("change",()=>{
- if(loopTimer) startLoop();
+ const indexes=getLoopFrameIndexes();
+ const requested=selectedFrameCount();
+ const available=indexes.length;
+ document.getElementById("frameCounter").textContent=available+"/"+requested;
+ if(indexes.length){
+  if(!indexes.includes(currentFrame))currentFrame=indexes[0];
+  showFrame(currentFrame);
+ }
+ if(loopTimer)startLoop();
 });
 document.getElementById("autoRefresh").addEventListener("change",event=>{
  if(event.target.checked){
