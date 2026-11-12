@@ -1,14 +1,13 @@
 
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#ffffff">
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<meta content="#ffffff" name="theme-color"/>
 <title>CLOUDGOD | Radar Meteorológico</title>
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-
+<link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box}
 html,body{width:100%;min-height:100%;margin:0}
@@ -660,42 +659,78 @@ body.cg-live-gate-active #cgLivePanel .cg-live-actions button.secondary{backgrou
 body.cg-live-gate-active #cgLiveSkip{border-color:#668096;color:#d5e1eb}
 body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 
+
+/* CLOUDGOD · navegação por abas e pesquisa */
+.cg-global-search{flex:1;max-width:520px;margin:0 24px;position:relative}
+.cg-global-search input{width:100%;height:42px;padding:0 15px 0 40px;border:1px solid var(--border);border-radius:12px;background:#f8faff;color:var(--text);font:12px Arial,sans-serif;outline:none;box-shadow:inset 0 1px 2px #19304b08}
+.cg-global-search:before{content:"⌕";position:absolute;left:14px;top:7px;font-size:22px;color:var(--muted);pointer-events:none}
+.cg-global-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1677ff18}
+.cg-tab-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:7px;background:#edf4ff;border:1px solid var(--border);border-radius:13px;margin-bottom:12px;position:sticky;top:0;z-index:20}
+.cg-tab-btn{min-width:0;padding:10px 6px;border-radius:9px;background:transparent;color:#526b86;font-size:10px;white-space:nowrap}
+.cg-tab-btn:hover{transform:none;background:#ffffffa8}
+.cg-tab-btn.active{background:#fff;color:var(--blue);box-shadow:0 2px 8px #19304b12}
+.cg-tab-content{display:none;min-width:0}
+.cg-tab-content.active{display:block}
+.cg-tab-content>.panel,.cg-tab-content>.mn-panel,.cg-tab-content>.rs-panel,.cg-tab-content>.loop{margin:0 0 10px}
+.cg-tab-content>.panel{padding:14px;border-radius:13px}
+.cg-tab-content .product{padding:10px 12px;min-height:0}
+.cg-tab-content .product strong{font-size:11px}
+.cg-tab-content .product small{font-size:9px}
+.cg-search-empty{padding:20px;text-align:center;color:var(--muted);font-size:11px}
+.cg-search-empty[hidden]{display:none}
+.side{min-width:0;max-height:calc(100vh - 118px);overflow:auto;padding-right:3px;scrollbar-width:thin}
+.cg-tab-content .mn-panel,.cg-tab-content .rs-panel{margin-top:0}
+.cg-tab-content .mn-frame-wrap,#mnFrame{min-height:360px;height:360px}
+.cg-tab-content .rs-chart-grid{grid-template-columns:1fr}
+@media(max-width:850px){
+ header{height:auto;min-height:72px;flex-wrap:wrap;padding:10px 13px;gap:8px}
+ .cg-global-search{order:3;flex:1 0 100%;max-width:none;margin:0}
+ main{padding:12px}
+ .dashboard{grid-template-columns:minmax(0,1fr)}
+ .side{max-height:none;overflow:visible;padding:0}
+ #map{height:58vh;min-height:350px}
+ .cg-tab-nav{position:sticky;top:0}
+ .cg-tab-btn{font-size:9px;padding:10px 3px}
+}
+@media(max-width:480px){
+ .cg-tab-nav{gap:3px;padding:5px}
+ .cg-tab-btn{font-size:8px;padding:9px 2px}
+ .cg-global-search input{height:39px}
+ .side{display:block}
+}
 </style>
 </head>
-
 <body>
-
 <div class="startup-screen" id="startupScreen">
- <div class="startup-card">
-  <div class="startup-brand">
-   <div class="startup-logo">☁</div>
-   <div><h1>CLOUDGOD</h1><small>RADAR METEOROLÓGICO · CENTRAL DE INICIALIZAÇÃO</small></div>
-  </div>
-  <h2>Configuração de renderização da reflectividade</h2>
-  <p class="startup-intro">Escolha como o CLOUDGOD deve apresentar os quadros de radar. A opção pode ser alterada depois, sem trocar a fonte meteorológica.</p>
-  <div class="render-presets" id="startupPresets">
-   <button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')">
-    <strong>SUAVE</strong><small>Imagem normal, sem processamento extra.</small>
-   </button>
-   <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')">
-    <strong>ULTRA CLOUD</strong><small>Interpolação avançada para reduzir o aspecto quadriculado.</small>
-   </button>
-   <button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')">
-    <strong>REALGOD</strong><small>Suavização máxima em tempo real, para uma imagem visualmente muito limpa.</small>
-   </button>
-  </div>
-  <p class="startup-note">ULTRA CLOUD e REALGOD reprocessam os pixels recebidos para reduzir blocos visíveis. Não criam medições meteorológicas nem aumentam a resolução nativa do radar.</p>
-  <div class="startup-actions">
-   <label for="startupMapMode">MAPA BASE
-    <select id="startupMapMode"><option value="street">OpenStreetMap · ORIGINAL</option><option value="satellite">Satélite · Esri World Imagery</option></select>
-   </label>
-   <button class="startup-enter" onclick="enterCloudgod()">INICIAR CLOUDGOD →</button>
-  </div>
- </div>
+<div class="startup-card">
+<div class="startup-brand">
+<div class="startup-logo">☁</div>
+<div><h1>CLOUDGOD</h1><small>RADAR METEOROLÓGICO · CENTRAL DE INICIALIZAÇÃO</small></div>
 </div>
-
+<h2>Configuração de renderização da reflectividade</h2>
+<p class="startup-intro">Escolha como o CLOUDGOD deve apresentar os quadros de radar. A opção pode ser alterada depois, sem trocar a fonte meteorológica.</p>
+<div class="render-presets" id="startupPresets">
+<button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')">
+<strong>SUAVE</strong><small>Imagem normal, sem processamento extra.</small>
+</button>
+<button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')">
+<strong>ULTRA CLOUD</strong><small>Interpolação avançada para reduzir o aspecto quadriculado.</small>
+</button>
+<button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')">
+<strong>REALGOD</strong><small>Suavização máxima em tempo real, para uma imagem visualmente muito limpa.</small>
+</button>
+</div>
+<p class="startup-note">ULTRA CLOUD e REALGOD reprocessam os pixels recebidos para reduzir blocos visíveis. Não criam medições meteorológicas nem aumentam a resolução nativa do radar.</p>
+<div class="startup-actions">
+<label for="startupMapMode">MAPA BASE
+    <select id="startupMapMode"><option value="street">OpenStreetMap · ORIGINAL</option><option value="satellite">Satélite · Esri World Imagery</option></select>
+</label>
+<button class="startup-enter" onclick="enterCloudgod()">INICIAR CLOUDGOD →</button>
+</div>
+</div>
+</div>
 <header>
-<div class="brand">
+<div class="cg-global-search"><input aria-label="Pesquisar opções" autocomplete="off" id="cgOptionSearch" placeholder="Pesquisar produto, mapa ou ferramenta…" type="search"/></div><div class="brand">
 <div class="logo">☁</div>
 <div>
 <h1>CLOUDGOD</h1>
@@ -704,10 +739,8 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 </div>
 <div class="status" id="status">● INICIALIZANDO</div>
 </header>
-
 <main>
 <div class="dashboard">
-
 <section class="map-card">
 <div class="map-head">
 <div>
@@ -720,77 +753,80 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 </div>
 </div>
 <div id="map">
-<div id="cloud3dPanel" class="cloud3d-panel">
- <h4>☁ NUVENS VOLUMÉTRICAS · 3D</h4>
- <div class="cloud3d-stats">
-  <div class="cloud3d-stat"><b id="cloud3dPanelMin">—</b><span>BASE ESTIMADA</span></div>
-  <div class="cloud3d-stat"><b id="cloud3dPanelAvg">—</b><span>ALTURA MÉDIA</span></div>
-  <div class="cloud3d-stat"><b id="cloud3dPanelMax">—</b><span>TOPO ESTIMADO</span></div>
- </div>
- <label for="cloud3dPanelDensity">DENSIDADE VISUAL</label>
- <input id="cloud3dPanelDensity" type="range" min="35" max="100" value="75">
- <label for="cloud3dPanelHeight">EXAGERO VERTICAL</label>
- <input id="cloud3dPanelHeight" type="range" min="50" max="200" value="100">
- <p>Altitudes em metros são estimativas visuais derivadas do realce infravermelho, não medições de altura. Para altitude real calibrada é necessário perfil atmosférico ou produto de altura de topo de nuvem.</p>
+<div class="cloud3d-panel" id="cloud3dPanel">
+<h4>☁ NUVENS VOLUMÉTRICAS · 3D</h4>
+<div class="cloud3d-stats">
+<div class="cloud3d-stat"><b id="cloud3dPanelMin">—</b><span>BASE ESTIMADA</span></div>
+<div class="cloud3d-stat"><b id="cloud3dPanelAvg">—</b><span>ALTURA MÉDIA</span></div>
+<div class="cloud3d-stat"><b id="cloud3dPanelMax">—</b><span>TOPO ESTIMADO</span></div>
+</div>
+<label for="cloud3dPanelDensity">DENSIDADE VISUAL</label>
+<input id="cloud3dPanelDensity" max="100" min="35" type="range" value="75"/>
+<label for="cloud3dPanelHeight">EXAGERO VERTICAL</label>
+<input id="cloud3dPanelHeight" max="200" min="50" type="range" value="100"/>
+<p>Altitudes em metros são estimativas visuais derivadas do realce infravermelho, não medições de altura. Para altitude real calibrada é necessário perfil atmosférico ou produto de altura de topo de nuvem.</p>
 </div>
 </div>
-<button id="cgLiveLauncher" type="button" onclick="cgToggleLivePanel()">👥 USUÁRIOS AO VIVO <span id="cgLiveCount">0</span></button>
-<section id="cgLivePanel" aria-label="Usuários ao vivo">
- <div class="cg-live-gate-brand"><strong>CLOUDGOD</strong><span>ACESSO AO CLOUDGOD LIVE USERS</span></div>
- <div class="cg-live-title"><strong>☁ CLOUDGOD LIVE</strong><button class="cg-live-close" type="button" onclick="cgToggleLivePanel(false)">✕</button></div>
- <div id="cgLiveAuthArea">
-  <div class="cg-live-status">Entre ou crie uma conta para aparecer no mapa. Sua localização não será compartilhada até você ativar a opção abaixo.</div>
-  <label class="cg-live-field" for="cgLiveEmail">E-MAIL</label><input class="cg-live-input" id="cgLiveEmail" type="email" autocomplete="email" placeholder="seu@email.com">
-  <label class="cg-live-field" for="cgLivePassword">SENHA</label><input class="cg-live-input" id="cgLivePassword" type="password" autocomplete="current-password" placeholder="Mínimo de 6 caracteres">
-  <div class="cg-live-actions"><button type="button" onclick="cgSignIn()">ENTRAR</button><button class="secondary" type="button" onclick="cgSignUp()">CRIAR CONTA</button></div>
-  <button id="cgLiveSkip" type="button" onclick="cgSkipLiveUsers()">NÃO OBRIGADO</button>
- </div>
- <div id="cgLiveProfileArea" hidden>
-  <div class="cg-live-status" id="cgLiveSignedAs">Conectado</div>
-  <label class="cg-live-field" for="cgLiveName">NOME DE EXIBIÇÃO — OBRIGATÓRIO</label><input class="cg-live-input" id="cgLiveName" maxlength="28" required placeholder="Seu nome no mapa" oninput="cgAutoSaveProfile()" onblur="cgAutoSaveProfile()">
-  <label class="cg-live-field" for="cgLiveAvatarFile">FOTO DE PERFIL — OBRIGATÓRIA</label>
-  <input class="cg-live-input" id="cgLiveAvatarFile" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onchange="cgUploadAvatar()">
-  <div class="cg-live-avatar-preview"><img id="cgLiveAvatarPreview" alt="Prévia da foto de perfil"><span id="cgLiveAvatarPreviewText">A prévia da foto aparecerá aqui.</span></div>
-  <div class="cg-live-status">É obrigatório escolher uma foto da galeria ou informar uma URL de imagem. JPG, PNG, WEBP ou GIF; máximo de 3 MB no envio.</div>
-  <label class="cg-live-field" for="cgLiveAvatar">OU URL DA FOTO</label><input class="cg-live-input" id="cgLiveAvatar" type="url" placeholder="https://..." oninput="cgAvatarUrlChanged()" onblur="cgAutoSaveProfile()" onchange="cgAutoSaveProfile()">
-  <div class="cg-live-status">Seu nome e sua foto são salvos automaticamente quando os dois estiverem preenchidos.</div>
-  <div class="cg-live-actions"><button class="secondary" type="button" onclick="cgSignOut()">SAIR</button></div>
-  <label class="cg-live-share"><input id="cgLiveShare" type="checkbox" onchange="cgSetSharing(this.checked)"><span><b>COMPARTILHAR MINHA LOCALIZAÇÃO NO MAPA</b><br>Opcional. Ao ativar, sua posição aproximada pelo GPS será visível para outros usuários conectados. Você pode desligar quando quiser.</span></label>
- </div>
- <div class="cg-live-status" id="cgLiveStatus" role="status">Conectando ao serviço…</div>
- <div class="cg-live-count">Somente contas autenticadas com compartilhamento ativo aparecem no mapa. Posições antigas expiram automaticamente na visualização.</div>
+<button id="cgLiveLauncher" onclick="cgToggleLivePanel()" type="button">👥 USUÁRIOS AO VIVO <span id="cgLiveCount">0</span></button>
+<section aria-label="Usuários ao vivo" id="cgLivePanel">
+<div class="cg-live-gate-brand"><strong>CLOUDGOD</strong><span>ACESSO AO CLOUDGOD LIVE USERS</span></div>
+<div class="cg-live-title"><strong>☁ CLOUDGOD LIVE</strong><button class="cg-live-close" onclick="cgToggleLivePanel(false)" type="button">✕</button></div>
+<div id="cgLiveAuthArea">
+<div class="cg-live-status">Entre ou crie uma conta para aparecer no mapa. Sua localização não será compartilhada até você ativar a opção abaixo.</div>
+<label class="cg-live-field" for="cgLiveEmail">E-MAIL</label><input autocomplete="email" class="cg-live-input" id="cgLiveEmail" placeholder="seu@email.com" type="email"/>
+<label class="cg-live-field" for="cgLivePassword">SENHA</label><input autocomplete="current-password" class="cg-live-input" id="cgLivePassword" placeholder="Mínimo de 6 caracteres" type="password"/>
+<div class="cg-live-actions"><button onclick="cgSignIn()" type="button">ENTRAR</button><button class="secondary" onclick="cgSignUp()" type="button">CRIAR CONTA</button></div>
+<button id="cgLiveSkip" onclick="cgSkipLiveUsers()" type="button">NÃO OBRIGADO</button>
+</div>
+<div hidden="" id="cgLiveProfileArea">
+<div class="cg-live-status" id="cgLiveSignedAs">Conectado</div>
+<label class="cg-live-field" for="cgLiveName">NOME DE EXIBIÇÃO — OBRIGATÓRIO</label><input class="cg-live-input" id="cgLiveName" maxlength="28" onblur="cgAutoSaveProfile()" oninput="cgAutoSaveProfile()" placeholder="Seu nome no mapa" required=""/>
+<label class="cg-live-field" for="cgLiveAvatarFile">FOTO DE PERFIL — OBRIGATÓRIA</label>
+<input accept="image/jpeg,image/png,image/webp,image/gif" class="cg-live-input" id="cgLiveAvatarFile" onchange="cgUploadAvatar()" type="file"/>
+<div class="cg-live-avatar-preview"><img alt="Prévia da foto de perfil" id="cgLiveAvatarPreview"/><span id="cgLiveAvatarPreviewText">A prévia da foto aparecerá aqui.</span></div>
+<div class="cg-live-status">É obrigatório escolher uma foto da galeria ou informar uma URL de imagem. JPG, PNG, WEBP ou GIF; máximo de 3 MB no envio.</div>
+<label class="cg-live-field" for="cgLiveAvatar">OU URL DA FOTO</label><input class="cg-live-input" id="cgLiveAvatar" onblur="cgAutoSaveProfile()" onchange="cgAutoSaveProfile()" oninput="cgAvatarUrlChanged()" placeholder="https://..." type="url"/>
+<div class="cg-live-status">Seu nome e sua foto são salvos automaticamente quando os dois estiverem preenchidos.</div>
+<div class="cg-live-actions"><button class="secondary" onclick="cgSignOut()" type="button">SAIR</button></div>
+<label class="cg-live-share"><input id="cgLiveShare" onchange="cgSetSharing(this.checked)" type="checkbox"/><span><b>COMPARTILHAR MINHA LOCALIZAÇÃO NO MAPA</b><br/>Opcional. Ao ativar, sua posição aproximada pelo GPS será visível para outros usuários conectados. Você pode desligar quando quiser.</span></label>
+</div>
+<div class="cg-live-status" id="cgLiveStatus" role="status">Conectando ao serviço…</div>
+<div class="cg-live-count">Somente contas autenticadas com compartilhamento ativo aparecem no mapa. Posições antigas expiram automaticamente na visualização.</div>
 </section>
 </section>
+<aside class="side"><nav aria-label="Categorias do radar" class="cg-tab-nav"><button aria-selected="true" class="cg-tab-btn active" data-tab="radar" type="button">⌁ Radar</button><button aria-selected="false" class="cg-tab-btn" data-tab="atmosfera" type="button">◉ Atmosfera</button><button aria-selected="false" class="cg-tab-btn" data-tab="previsoes" type="button">↗ Previsões</button><button aria-selected="false" class="cg-tab-btn" data-tab="modelos" type="button">▦ Modelos</button><button aria-selected="false" class="cg-tab-btn" data-tab="ferramentas" type="button">⚙ Ferramentas</button></nav>
 
-<aside class="side">
 
-<section class="panel">
+
+
+
+
+
+
+
+
+
+<div class="cg-tab-content active" data-tab-content="radar"><section class="panel cg-search-item" data-search-item="1">
 <div class="panel-title">
 <h3>PRODUTOS METEOROLÓGICOS</h3>
 <span>REDEMET</span>
 </div>
-
 <div class="product active" data-product="maxcappi" onclick="selectProduct('maxcappi')">
 <div><strong>MAXCAPPI</strong><small>Reflectividade máxima</small></div><div class="dot"></div>
 </div>
-
 <div class="product" data-product="07km" onclick="selectProduct('07km')">
 <div><strong>CAPPI 7 KM</strong><small>7.300 metros</small></div><div class="dot"></div>
 </div>
-
 <div class="product" data-product="05km" onclick="selectProduct('05km')">
 <div><strong>CAPPI 5 KM</strong><small>5.500 metros</small></div><div class="dot"></div>
 </div>
-
 <div class="product" data-product="infrared" onclick="selectProduct('infrared')">
 <div><strong>INFRAVERMELHO REALÇADO</strong><small>Satélite · imagem infravermelha da América do Sul</small></div><div class="dot"></div>
 </div>
-
 <div class="product" data-product="brightness" onclick="selectProduct('brightness')">
 <div><strong>TEMPERATURA DE BRILHO (BT)</strong><small>GOES-19 ABI C13 · referência Color Enhanced · 10,3 µm</small></div><div class="dot"></div>
 </div>
-
-<div id="btColorLegend" class="bt-legend" aria-label="Tabela de cores de referência da temperatura de brilho">
+<div aria-label="Tabela de cores de referência da temperatura de brilho" class="bt-legend" id="btColorLegend">
 <h4>LEGENDA BT · COLOR ENHANCED</h4>
 <table class="bt-table">
 <tbody>
@@ -808,122 +844,64 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 </table>
 <div class="bt-note">Escala ilustrativa de referência para o realce Color Enhanced. Os intervalos e cores precisam corresponder à tabela de cores aplicada ao raster BT; a legenda, sozinha, não calibra nem altera os pixels.</div>
 </div>
-
 <div class="info" style="margin:10px 0 12px">Exibindo imagens de todos os radares disponíveis. O ícone 📡 indica a localização de cada estação de radar.</div>
-
 <label>OPACIDADE DA IMAGEM</label>
-<input type="range" id="opacity" min="10" max="100" value="90">
-
+<input id="opacity" max="100" min="10" type="range" value="90"/>
 <div class="render-quality-panel">
- <label style="margin-top:0">QUALIDADE DE RENDERIZAÇÃO DA REFLECTIVIDADE</label>
- <div class="render-presets">
-  <button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')"><strong>SUAVE</strong><small>Reflectividade normal, sem suavização adicional.</small></button>
-  <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')"><strong>ULTRA CLOUD</strong><small>Suavização avançada e transições de cor mais limpas.</small></button>
-  <button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')"><strong>REALGOD</strong><small>Suavização máxima e interpolação de alta qualidade, sem lupa ou ampliação.</small></button>
- </div>
- <div class="storm-panel">
-  <strong>CLOUDGOD STORM · PALETA ÚNICA COM 200 TONS</strong>
-  <div id="storm200Strip" class="storm-200-strip" aria-label="Escala contínua de 200 tons de reflectividade"></div>
-  <div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
-  <div id="stormProcessStatus" class="storm-note" style="margin-top:7px">As 200 cores ficam reunidas em uma única escala contínua, do fraco ao extremo.</div>
- </div>
- <div class="dbz-professional" aria-label="Escala visual de reflectividade">
-  <strong>CLOUDGOD STORM · ESCALA VISUAL</strong>
-  <div class="storm-gradient" title="Cores de reflectividade CLOUDGOD STORM"></div>
-  <div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
-  <table class="storm-table" aria-label="Legenda visual CLOUDGOD STORM">
-   <thead><tr><th>ORDEM</th><th>COR</th><th>INTENSIDADE</th><th>REFERÊNCIA</th></tr></thead>
-   <tbody>
-    <tr><td class="storm-order">01</td><td><span class="storm-swatch" style="background:#173bdb"></span></td><td>Fraca</td><td>Azul</td></tr>
-    <tr><td class="storm-order">02</td><td><span class="storm-swatch" style="background:#00a8ff"></span></td><td>Fraca a moderada</td><td>Ciano</td></tr>
-    <tr><td class="storm-order">03</td><td><span class="storm-swatch" style="background:#00a83b"></span></td><td>Moderada</td><td>Verde</td></tr>
-    <tr><td class="storm-order">04</td><td><span class="storm-swatch" style="background:#b7df00"></span></td><td>Moderada a forte</td><td>Amarelo-esverdeado</td></tr>
-    <tr><td class="storm-order">05</td><td><span class="storm-swatch" style="background:#ffe000"></span></td><td>Forte</td><td>Amarelo</td></tr>
-    <tr><td class="storm-order">06</td><td><span class="storm-swatch" style="background:#ff9900"></span></td><td>Muito forte</td><td>Laranja</td></tr>
-    <tr><td class="storm-order">07</td><td><span class="storm-swatch" style="background:#f04424"></span></td><td>Severa</td><td>Vermelho</td></tr>
-    <tr><td class="storm-order">08</td><td><span class="storm-swatch" style="background:#c00070"></span></td><td>Extrema</td><td>Magenta</td></tr>
-    <tr><td class="storm-order">09</td><td><span class="storm-swatch" style="background:#ffffff"></span></td><td>Núcleo máximo</td><td>Branco</td></tr>
-   </tbody>
-  </table>
-  <div class="storm-note">A legenda indica uma escala visual de cores. Como a imagem de origem não fornece o valor dBZ de cada pixel, a conversão por luminosidade é apenas estimativa e não representa calibração meteorológica.</div>
- </div>
+<label style="margin-top:0">QUALIDADE DE RENDERIZAÇÃO DA REFLECTIVIDADE</label>
+<div class="render-presets">
+<button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')"><strong>SUAVE</strong><small>Reflectividade normal, sem suavização adicional.</small></button>
+<button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')"><strong>ULTRA CLOUD</strong><small>Suavização avançada e transições de cor mais limpas.</small></button>
+<button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')"><strong>REALGOD</strong><small>Suavização máxima e interpolação de alta qualidade, sem lupa ou ampliação.</small></button>
 </div>
-
-
-<button class="primary" style="width:100%;margin-top:12px" onclick="refreshRadar()">ATUALIZAR REFLECTIVIDADE</button>
+<div class="storm-panel">
+<strong>CLOUDGOD STORM · PALETA ÚNICA COM 200 TONS</strong>
+<div aria-label="Escala contínua de 200 tons de reflectividade" class="storm-200-strip" id="storm200Strip"></div>
+<div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
+<div class="storm-note" id="stormProcessStatus" style="margin-top:7px">As 200 cores ficam reunidas em uma única escala contínua, do fraco ao extremo.</div>
+</div>
+<div aria-label="Escala visual de reflectividade" class="dbz-professional">
+<strong>CLOUDGOD STORM · ESCALA VISUAL</strong>
+<div class="storm-gradient" title="Cores de reflectividade CLOUDGOD STORM"></div>
+<div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
+<table aria-label="Legenda visual CLOUDGOD STORM" class="storm-table">
+<thead><tr><th>ORDEM</th><th>COR</th><th>INTENSIDADE</th><th>REFERÊNCIA</th></tr></thead>
+<tbody>
+<tr><td class="storm-order">01</td><td><span class="storm-swatch" style="background:#173bdb"></span></td><td>Fraca</td><td>Azul</td></tr>
+<tr><td class="storm-order">02</td><td><span class="storm-swatch" style="background:#00a8ff"></span></td><td>Fraca a moderada</td><td>Ciano</td></tr>
+<tr><td class="storm-order">03</td><td><span class="storm-swatch" style="background:#00a83b"></span></td><td>Moderada</td><td>Verde</td></tr>
+<tr><td class="storm-order">04</td><td><span class="storm-swatch" style="background:#b7df00"></span></td><td>Moderada a forte</td><td>Amarelo-esverdeado</td></tr>
+<tr><td class="storm-order">05</td><td><span class="storm-swatch" style="background:#ffe000"></span></td><td>Forte</td><td>Amarelo</td></tr>
+<tr><td class="storm-order">06</td><td><span class="storm-swatch" style="background:#ff9900"></span></td><td>Muito forte</td><td>Laranja</td></tr>
+<tr><td class="storm-order">07</td><td><span class="storm-swatch" style="background:#f04424"></span></td><td>Severa</td><td>Vermelho</td></tr>
+<tr><td class="storm-order">08</td><td><span class="storm-swatch" style="background:#c00070"></span></td><td>Extrema</td><td>Magenta</td></tr>
+<tr><td class="storm-order">09</td><td><span class="storm-swatch" style="background:#ffffff"></span></td><td>Núcleo máximo</td><td>Branco</td></tr>
+</tbody>
+</table>
+<div class="storm-note">A legenda indica uma escala visual de cores. Como a imagem de origem não fornece o valor dBZ de cada pixel, a conversão por luminosidade é apenas estimativa e não representa calibração meteorológica.</div>
+</div>
+</div>
+<button class="primary" onclick="refreshRadar()" style="width:100%;margin-top:12px">ATUALIZAR REFLECTIVIDADE</button>
 <div id="message">Preparando radar...</div>
-</section>
-
-
-
-
-<section class="panel instability-panel" id="instabilityPanel">
- <div class="instability-head">
-  <h3>INSTABILIDADE ATMOSFÉRICA</h3>
-  <span style="font-size:9px;color:#8293a8">GFS · OPEN-METEO</span>
- </div>
- <div class="info" style="margin-top:10px">Parâmetros atmosféricos para o centro atual do mapa. Mova o mapa para outra região e atualize a consulta.</div>
- <div class="instability-grid">
-  <div class="instability-metric"><b>CAPE</b><strong id="instCAPE">—</strong><small>J/kg · energia convectiva</small></div>
-  <div class="instability-metric"><b>CIN</b><strong id="instCIN">—</strong><small>J/kg · inibição convectiva</small></div>
-  <div class="instability-metric"><b>LIFTED INDEX</b><strong id="instLI">—</strong><small>°C · índice de estabilidade</small></div>
-  <div class="instability-metric"><b>SRH</b><strong id="instSRH">N/D</strong><small>m²/s² · helicidade relativa à tempestade</small></div>
-  <div class="instability-metric" style="grid-column:1/-1"><b>WIND SHEAR 0–6 KM</b><strong id="instShear">—</strong><small id="instShearDetail">km/h · diferença vetorial entre vento de superfície e nível próximo de 6 km</small></div>
- </div>
- <div class="instability-map-block">
-  <div class="instability-map-title">HIGH PRESSURE / LOW PRESSURE <small>PRESSÃO AO NÍVEL DO MAR · GFS</small></div>
-  <button class="primary instability-refresh" id="pressureMapToggle" onclick="togglePressureMap()">ATIVAR MAPA H / L</button>
-  <div class="pressure-key"><span><b class="pressure-high">H</b> Alta pressão</span><span><b class="pressure-low">L</b> Baixa pressão</span><span>Valores em hPa</span></div>
-  <div class="pressure-map-help" id="pressureMapStatus">Ative para mostrar os centros regionais de alta e baixa pressão sobre o mapa principal. Os marcadores são calculados com dados do GFS.</div>
- </div>
- <button class="primary instability-refresh" id="instabilityRefresh" onclick="refreshInstabilityPanel()">ATUALIZAR NO CENTRO DO MAPA</button>
- <div class="instability-status" id="instabilityStatus">Aguardando consulta dos parâmetros atmosféricos.</div>
- <div class="instability-note">SRH não é fornecido pelo conjunto de variáveis GFS usado nesta consulta e permanece como não disponível — não será estimado artificialmente. O wind shear é calculado pela diferença vetorial entre 10 m e 500 hPa (aprox. 5,6 km), uma aproximação do intervalo 0–6 km.</div>
-</section>
-
-<section class="panel export-panel">
-<h3>EXPORTAÇÃO METEOROLÓGICA</h3>
-<div class="export-help"><b>FOTO DE ULTRA RESOLUÇÃO 1:1</b><br>Ative a ferramenta e toque no centro da região desejada do mapa. A captura será exportada em PNG quadrado de 3072 × 3072 pixels, com as camadas visíveis. A ampliação não inventa detalhes que não existam no raster original.</div>
-<button class="primary" id="photoModeButton" onclick="toggleUltraPhotoMode()">FOTO DE ULTRA RESOLUÇÃO</button>
-<div class="export-help" style="margin-top:12px"><b>GIF · AMÉRICA DO SUL</b><br>Enquadra a América do Sul e anima os quadros temporais reais de reflectividade carregados da REDEMET, em loop contínuo.</div>
-<button class="secondary" id="gifExportButton" onclick="exportSouthAmericaGif()">GERAR GIF DA AMÉRICA DO SUL</button>
-<div id="exportStatus" class="export-state">Aguardando seleção ou exportação.</div>
-</section>
-
-<section class="panel">
-<h3>MEDIDOR DE DISTÂNCIA</h3>
-<div class="info">
-Toque em qualquer local do mapa para medir a distância em linha reta a partir da sua posição.
-</div>
-<button class="secondary" style="width:100%;margin-top:10px" onclick="requestLocation()">⌖ LOCALIZAR-ME</button>
-<button class="secondary" style="width:100%;margin-top:7px" onclick="clearSelection()">LIMPAR SELEÇÃO</button>
-<button class="primary" style="width:100%;margin-top:7px" id="areaModeButton" onclick="toggleAreaMode()">▱ MEDIR ÁREA NO MAPA</button>
-<button class="danger" style="width:100%;margin-top:7px" onclick="clearAreaMeasurement()">APAGAR MEDIDA DE ÁREA</button>
-<div id="areaStatus" style="font-size:10px;color:#75869a;margin-top:8px">Modo de área desativado.</div>
-<div id="locationStatus" style="font-size:10px;color:#75869a;margin-top:10px">Localização não solicitada.</div>
-</section>
-
-<section class="panel">
+</section><section class="panel cg-search-item" data-search-item="1">
 <h3>LEGENDA CLOUDGOD STORM · REFLECTIVIDADE</h3>
 <div class="storm-gradient"></div>
 <div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
-</section>
-
-<section class="panel">
+</section><section class="panel cg-search-item" data-search-item="1">
 <h3>RAIOS E RELÂMPAGOS</h3>
 <div class="info">Exibe as descargas elétricas detectadas no mapa como pontos coloridos. A cor representa a intensidade energética relativa informada pelo GOES-19 GLM; os pontos permanecem visíveis enquanto o loop anima cada descarga.</div>
-<button class="primary" id="lightningToggle" style="width:100%;margin-top:10px" onclick="toggleLightning()">ATIVAR RAIOS E RELÂMPAGOS</button>
-<button class="secondary" id="lightningLoopToggle" style="width:100%;margin-top:8px" onclick="toggleLightningLoop()" disabled>INICIAR LOOP DOS RAIOS</button>
+<button class="primary" id="lightningToggle" onclick="toggleLightning()" style="width:100%;margin-top:10px">ATIVAR RAIOS E RELÂMPAGOS</button>
+<button class="secondary" disabled="" id="lightningLoopToggle" onclick="toggleLightningLoop()" style="width:100%;margin-top:8px">INICIAR LOOP DOS RAIOS</button>
 <label for="lightningSpeed">VELOCIDADE DO LOOP</label>
 <select id="lightningSpeed" onchange="updateLightningSpeed(this.value)" style="margin-top:5px;margin-bottom:10px">
 <option value="1200">Lento · 0,8 raio/s</option>
 <option value="700">Normal · 1,4 raio/s</option>
 <option value="350">Rápido · 2,9 raios/s</option>
 <option value="180">Muito rápido · 5,6 raios/s</option>
-<option value="100" selected>ULTRA RÁPIDO · 10 raios/s</option>
+<option selected="" value="100">ULTRA RÁPIDO · 10 raios/s</option>
 </select>
 <label>OPACIDADE DOS MARCADORES</label>
-<input type="range" id="lightningOpacity" min="20" max="100" value="100">
+<input id="lightningOpacity" max="100" min="20" type="range" value="100"/>
 <div class="lightning-legend">
 <span><i class="lightning-dot" style="background:#25a85a"></i>Baixa</span>
 <span><i class="lightning-dot" style="background:#f4d43b"></i>Moderada</span>
@@ -931,263 +909,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <span><i class="lightning-dot" style="background:#e33434"></i>Muito alta</span>
 </div>
 <div class="lightning-status" id="lightningStatus">Camada desligada. Fonte prevista: GOES-19 GLM.</div>
-</section>
-
-<section class="panel" id="stormForecastPanel">
-<h3>PREVISÃO DE TEMPESTADES</h3>
-<div class="info">Campo de potencial convectivo previsto pelo GFS, combinando CAPE, precipitação convectiva e códigos de tempo significativo. Não representa rastreamento de células observadas.</div>
-<button class="primary" id="stormForecastToggle" style="width:100%;margin-top:10px" onclick="toggleForecastProduct('storms')">ATIVAR PREVISÃO DE TEMPESTADES</button>
-<div class="stsc-status" id="stormForecastStatus">Produto desligado.</div>
-<div class="forecast-time-controls">
- <button class="secondary" onclick="shiftForecastHour('storms',-1)">◀</button>
- <input type="range" id="stormsForecastHour" min="0" max="47" value="0" step="1" oninput="renderForecastHour('storms',this.value)" disabled>
- <button class="secondary" onclick="shiftForecastHour('storms',1)">▶</button>
-</div>
-<div class="forecast-selected-time" id="stormsForecastSelectedTime">Aguardando dados horários</div>
-<div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>HORÁRIO</th><th>POTENCIAL</th><th>CAPE</th><th>CHUVA CONV.</th></tr></thead><tbody id="stormsForecastRows"><tr><td colspan="4">Ative o produto para carregar a previsão.</td></tr></tbody></table></div>
-<div class="stsc-legend" style="flex-wrap:wrap">
- <span><i style="background:#42a66b"></i>Baixo</span>
- <span><i style="background:#e6c52e"></i>Moderado</span>
- <span><i style="background:#ed8b2c"></i>Alto</span>
- <span><i style="background:#d93434"></i>Muito alto</span>
-</div>
-<button class="secondary" style="width:100%;margin-top:8px" onclick="refreshForecastProduct('storms')">ATUALIZAR PREVISÃO</button>
-</section>
-
-<section class="panel" id="extremeRainPanel">
-<h3>PREVISÃO DE CHUVA EXTREMA</h3>
-<div class="info">Precipitação horária prevista pelo GFS, interpolada em campo contínuo. Os limiares indicam intensidade da chuva, não risco de inundação.</div>
-<button class="primary" id="extremeRainToggle" style="width:100%;margin-top:10px" onclick="toggleForecastProduct('rain')">ATIVAR PREVISÃO DE CHUVA EXTREMA</button>
-<div class="stsc-status" id="extremeRainStatus">Produto desligado.</div>
-<div class="forecast-time-controls">
- <button class="secondary" onclick="shiftForecastHour('rain',-1)">◀</button>
- <input type="range" id="rainForecastHour" min="0" max="47" value="0" step="1" oninput="renderForecastHour('rain',this.value)" disabled>
- <button class="secondary" onclick="shiftForecastHour('rain',1)">▶</button>
-</div>
-<div class="forecast-selected-time" id="rainForecastSelectedTime">Aguardando dados horários</div>
-<div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>HORÁRIO</th><th>CHUVA mm/h</th><th>ACUM. 3h</th><th>ACUM. 6h</th><th>ACUM. 24h</th></tr></thead><tbody id="rainForecastRows"><tr><td colspan="5">Ative o produto para carregar a previsão.</td></tr></tbody></table></div>
-<div class="stsc-legend" style="flex-wrap:wrap">
- <span><i style="background:#42a66b"></i>Fraca</span>
- <span><i style="background:#e6c52e"></i>Moderada</span>
- <span><i style="background:#ed8b2c"></i>Forte</span>
- <span><i style="background:#d93434"></i>Extrema</span>
-</div>
-<button class="secondary" style="width:100%;margin-top:8px" onclick="refreshForecastProduct('rain')">ATUALIZAR PREVISÃO</button>
-</section>
-
-
-<section class="panel" id="areaAlertsPanel">
- <h3>ALERTAS AUTOMÁTICOS · TEMPO SEVERO</h3>
- <div class="info">Monitoramento de atividade convectiva e previsão de tempestades. Os dados são apresentados conforme a fonte original. Uma ocorrência STSC ou uma previsão convectiva não confirma, por si só, tornado, mesociclone ou wall cloud.</div>
- <div class="auto-alert-header">
-  <span id="autoAlertConnection" class="auto-alert-status">INICIALIZANDO MONITORAMENTO...</span>
-  <button class="secondary" type="button" onclick="refreshAutomaticAlerts(true)">ATUALIZAR</button>
- </div>
- <div class="auto-alert-card">
-  <strong>STSC · REDEMET / DECEA</strong>
-  <div id="autoSTSCStatus" class="auto-alert-description">Aguardando consulta...</div>
-  <div class="auto-alert-metrics">
-   <div><b id="autoSTSCPositions">--</b><small>POSIÇÕES</small></div>
-   <div><b id="autoSTSCFrames">--</b><small>QUADROS</small></div>
-  </div>
-  <button class="secondary" type="button" onclick="activateAutomaticSTSC()">EXIBIR OCORRÊNCIAS NO MAPA</button>
- </div>
- <div class="auto-alert-card">
-  <strong>PREVOTS · PREVISÃO CONVECTIVA (IMAGEM OFICIAL)</strong>
-  <div id="autoPrevotsStatus" class="auto-alert-description">Carregando previsão...</div>
-  <a href="https://prevots.org/previsao-convectiva/" target="_blank" rel="noopener" class="auto-alert-link">ABRIR PREVISÃO OFICIAL</a>
-  <img id="autoPrevotsImage" class="auto-prevots-image" src="https://prevots.org/wp-content/uploads/previsao/previsao.png" alt="Mapa de previsão convectiva da PREVOTS" loading="lazy">
- </div>
- <div class="auto-alert-card">
-  <strong>INMET · AVISOS METEOROLÓGICOS</strong>
-  <div class="auto-alert-description">Consulte os avisos meteorológicos oficiais e suas áreas de validade.</div>
-  <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener" class="auto-alert-link">ABRIR AVISOS DO INMET</a>
-  <div class="auto-alert-description">A consulta é aberta no portal oficial; esta versão não declara que existe um feed automático do INMET conectado.</div>
- </div>
- <div class="auto-alert-warning">
-  <b>IMPORTANTE</b>
-  <p>STSC indica atividade convectiva conforme os dados recebidos da REDEMET. Não é confirmação de tornado ou mesociclone. A PREVOTS apresenta previsão, não observação confirmada. Fenômenos específicos exigem evidências e fontes apropriadas.</p>
- </div>
- <div class="auto-alert-footer" id="autoAlertLastUpdate">Última atualização: aguardando dados.</div>
-</section>
-
-<section class="panel" id="tornadoRiskPanel">
-<h3>RISCO AMBIENTAL DE TORNADO</h3>
-<div class="info">Estimativa experimental baseada em CAPE, inibição convectiva, cisalhamento do vento e nível de condensação. Não é probabilidade de tornado nem alerta oficial.</div>
-<button class="primary" id="tornadoRiskToggle" style="width:100%;margin-top:10px" onclick="toggleTornadoRisk()">ATIVAR RISCO NA ÁREA DO MAPA</button>
-<div class="stsc-status" id="tornadoRiskStatus">Camada desligada. Ative para consultar os campos atmosféricos do modelo GFS.</div>
-<div class="stsc-legend" style="flex-wrap:wrap">
- <span><i style="background:#42a66b"></i>Baixo</span>
- <span><i style="background:#e6c52e"></i>Marginal</span>
- <span><i style="background:#ed8b2c"></i>Elevado</span>
- <span><i style="background:#d93434"></i>Muito elevado</span>
-</div>
-<div class="info" id="tornadoRiskDetails" style="margin-top:9px">Campo contínuo interpolado a partir de pontos do modelo. Não representa ocorrência confirmada.</div>
-<button class="secondary" style="width:100%;margin-top:8px" onclick="refreshTornadoRisk()">ATUALIZAR ANÁLISE</button>
-</section>
-
-<section class="panel">
-<h3>TSC · TEMPO SEVERO CONVECTIVO</h3>
-<div class="info">Ocorrências convectivas do STSC/REDEMET. O histórico é exibido simultaneamente: azul para registros antigos e vermelho para os mais recentes.</div>
-<button class="primary" id="stscToggle" style="width:100%;margin-top:10px" onclick="toggleSTSC()">ATIVAR TSC</button>
-<div class="stsc-controls">
- <button class="secondary" onclick="refreshSTSC(true)">ATUALIZAR</button>
- <button class="secondary" onclick="stepSTSCFrame(-1)">MENOS HISTÓRICO</button>
- <button class="secondary" onclick="stepSTSCFrame(1)">MAIS HISTÓRICO</button>
-</div>
-<label>OPACIDADE DO TSC</label>
-<input type="range" id="stscOpacity" min="10" max="100" value="75">
-<input class="timeline" id="stscTimeline" type="range" min="0" max="0" value="0" disabled>
-<div class="stsc-meta">
- <span id="stscTime">Aguardando dados</span>
- <span id="stscFrameNumber">0 / 0</span>
-</div>
-<div class="stsc-legend">
- <span><i style="background:#2864c5"></i>Antiga</span>
- <span><i style="background:#e33434"></i>Recente</span>
-</div>
-<div class="stsc-status" id="stscStatus">Camada desligada. Fonte: REDEMET/DECEA.</div>
-</section>
-
-</aside>
-</div>
-
-<section class="mn-panel" id="modelosNumericos">
- <div class="mn-head">
-  <div>
-   <h2>MODELOS NUMÉRICOS · PREVISÃO DE CHUVA</h2>
-   <small>Produtos oficiais do CPTEC/INPE · WRF 7 km e MONAN</small>
-  </div>
-  <span class="status" style="font-size:9px">● FONTE OFICIAL</span>
- </div>
- <div class="mn-controls">
-  <div>
-   <label for="mnModel">MODELO</label>
-   <select id="mnModel" onchange="changeMNModel()">
-    <option value="wrf">WRF · 7 km (padrão)</option>
-    <option value="monan">MONAN</option>
-   </select>
-  </div>
-  <div>
-   <label for="mnVariable">PRODUTO</label>
-   <select id="mnVariable" onchange="changeMNVariable()">
-    <option value="aprec">Precipitação acumulada</option>
-   </select>
-  </div>
-  <div>
-   <label for="mnRegion">DOMÍNIO</label>
-   <select id="mnRegion" onchange="changeMNRegion()">
-    <option value="ams">América do Sul</option>
-   </select>
-  </div>
- </div>
- <div class="mn-frame-wrap">
-  <iframe id="mnFrame" title="Previsão numérica oficial do CPTEC/INPE" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/"></iframe>
- </div>
- <div class="mn-fallback">
-  <button class="primary" type="button" onclick="openMNOfficial()">ABRIR PRODUTO OFICIAL EM NOVA ABA</button>
-  <small id="mnStatus">WRF 7 km · Precipitação acumulada. Se o portal não aparecer incorporado, use o botão para abrir diretamente.</small>
- </div>
- <div class="mn-grid">
-  <div class="mn-item"><b>PRECIPITAÇÃO ACUMULADA</b><span>Produto selecionado · mapas de previsão em milímetros.</span></div>
-  <div class="mn-item"><b>TEMPERATURA E PONTO DE ORVALHO</b><span>Próxima integração: campos meteorológicos do GRIB2.</span></div>
-  <div class="mn-item"><b>UMIDADE E CONVERGÊNCIA</b><span>Próxima integração: níveis de pressão e convergência de umidade.</span></div>
-  <div class="mn-item"><b>CAPE, CIN E PWAT</b><span>Próxima integração: índices convectivos e água precipitável.</span></div>
-  <div class="mn-item"><b>MOVIMENTO VERTICAL (OMEGA)</b><span>Próxima integração: levantamento em 850, 700 e 500 hPa.</span></div>
-  <div class="mn-item"><b>CISALHAMENTO E SRH</b><span>Próxima integração: perfis de vento e helicidade relativa à tempestade.</span></div>
-  <div class="mn-item"><b>VENTO E PRESSÃO</b><span>Próxima integração: vento em superfície e altitude, pressão ao nível do mar.</span></div>
-  <div class="mn-item"><b>FRAMES DA PREVISÃO</b><span>Controles de animação disponíveis no visualizador oficial do modelo.</span></div>
- </div>
- <div class="mn-note"><b>Transparência dos dados:</b> nesta versão, o mapa incorporado usa o produto oficial de precipitação acumulada do CPTEC. As demais variáveis aparecem como próximas integrações; não são simuladas nem exibidas como se já estivessem disponíveis. Para ativá-las no CLOUDGOD será necessário processar os campos GRIB2 do WRF/MONAN.</div>
- <div class="mn-source">Fontes: <a href="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/" target="_blank" rel="noopener">WRF · CPTEC/INPE</a> · <a href="https://previsaonumerica.cptec.inpe.br/monan/aprec/ams/" target="_blank" rel="noopener">MONAN · CPTEC/INPE</a> · <a href="https://dataserver.cptec.inpe.br/dataserver_modelos/wrf/ams_07km/" target="_blank" rel="noopener">Arquivo de dados WRF 7 km</a>.</div>
-</section>
-
-
-<section class="rs-panel" id="radiossondagem">
- <div class="rs-head">
-  <div>
-   <h2>RADIOSSONDAGEM · SKEW-T / LOG-P</h2>
-   <small>Perfil vertical observado · temperatura, ponto de orvalho e vento</small>
-  </div>
-  <span class="status" style="font-size:9px">● ANÁLISE VERTICAL</span>
- </div>
- <div class="rs-controls">
-  <div>
-   <label for="rsStation">ESTAÇÃO (WMO)</label>
-   <select id="rsStation">
-    <option value="83779" selected>São Paulo / Marte · 83779</option>
-    <option value="83746">Rio de Janeiro / Galeão · 83746</option>
-    <option value="83378">Brasília · 83378</option>
-    <option value="82332">Manaus · 82332</option>
-    <option value="82193">Belém · 82193</option>
-    <option value="82900">Recife · 82900</option>
-    <option value="83229">Salvador · 83229</option>
-    <option value="83612">Campo Grande · 83612</option>
-    <option value="83840">Curitiba · 83840</option>
-    <option value="83971">Porto Alegre · 83971</option>
-   </select>
-  </div>
-  <div>
-   <label for="rsDate">DATA (OPCIONAL)</label>
-   <input type="date" id="rsDate">
-  </div>
-  <div>
-   <label for="rsHour">HORÁRIO UTC</label>
-   <select id="rsHour">
-    <option value="all" selected>Mais recente (qualquer horário)</option>
-    <option value="00">00Z</option>
-    <option value="12">12Z</option>
-   </select>
-  </div>
-  <div>
-   <label for="rsUnits">UNIDADE DO VENTO</label>
-   <select id="rsUnits">
-    <option value="kt" selected> nós (kt)</option>
-    <option value="ms"> m/s</option>
-   </select>
-  </div>
- </div>
- <div class="rs-actions">
-  <button class="primary" id="rsFetchBtn" type="button" onclick="fetchLatestRadiosonde()">BUSCAR SONDAGEM AUTOMATICAMENTE</button>
-  <button class="secondary" type="button" onclick="downloadRadiosondeCSV()">BAIXAR CSV</button>
-  <button class="secondary" type="button" onclick="clearRadiosonde()">LIMPAR GRÁFICOS</button>
- </div>
- <div class="rs-source-note">
-  <b>Carregamento automático:</b> o CLOUDGOD consulta o arquivo de radiossondagens da NOAA/IGRA, seleciona a última observação disponível da estação e converte os níveis para o Skew-T e o hodógrafo. Você não precisa copiar nem colar dados. A disponibilidade e a atualização dependem dos envios recebidos pela NOAA.
- </div>
- <div class="rs-chart-grid">
-  <div class="rs-chart-card">
-   <div class="rs-chart-title">SKEW-T / LOG-P · T (vermelho) · Td (verde)</div>
-   <canvas id="rsSkewCanvas" width="900" height="760" aria-label="Diagrama Skew-T"></canvas>
-   <div class="rs-chart-empty" id="rsSkewEmpty">Aguardando dados reais da radiossondagem. Cole um arquivo Text: List para gerar o diagrama.</div>
-  </div>
-  <div class="rs-chart-card">
-   <div class="rs-chart-title">HODÓGRAFO · PERFIL DO VENTO</div>
-   <canvas id="rsHodoCanvas" width="520" height="520" aria-label="Hodógrafo"></canvas>
-   <div class="rs-chart-empty" id="rsHodoEmpty">O hodógrafo será desenhado quando houver direção e velocidade do vento nos níveis da sondagem.</div>
-  </div>
- </div>
- <div class="rs-metrics" id="rsMetrics">
-  <div class="rs-metric"><b>NÍVEIS LIDOS</b><span>—</span></div>
-  <div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>—</span></div>
-  <div class="rs-metric"><b>TEMPERATURA SUPERFÍCIE</b><span>—</span></div>
-  <div class="rs-metric"><b>TOPO DO PERFIL</b><span>—</span></div>
- </div>
- <div class="rs-status" id="rsStatus">Fonte automática: NOAA/NCEI · Integrated Global Radiosonde Archive (IGRA 2.2). Clique em “Buscar sondagem automaticamente”.</div>
- <div class="rs-table-wrap" id="rsTableWrap" hidden>
-  <table class="rs-table">
-   <thead><tr><th>Pressão (hPa)</th><th>Altitude (m)</th><th>Temp. (°C)</th><th>Ponto orvalho (°C)</th><th>UR (%)</th><th>Vento (°)</th><th>Velocidade (kt)</th></tr></thead>
-   <tbody id="rsTableBody"></tbody>
-  </table>
- </div>
- <div class="mn-source">
-  Fontes: <a href="https://weather.uwyo.edu/upperair/sounding.shtml" target="_blank" rel="noopener">University of Wyoming · Upper Air</a> ·
-  <a href="https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive" target="_blank" rel="noopener">NOAA · IGRA</a> ·
-  <a href="https://wis2bra.inmet.gov.br/oapi/collections/discovery-metadata/items/urn%3Awmo%3Amd%3Abr-inmet%3Aupper-air?f=html" target="_blank" rel="noopener">INMET · dados TEMP em BUFR</a>.
- </div>
-</section>
-
-<section class="loop">
+</section><section class="loop cg-search-item" data-search-item="1">
 <div class="loop-head">
 <h3>ANIMAÇÃO TEMPORAL · PRODUTO ATIVO</h3>
 <span id="frameCounter" style="font-size:10px;color:#8293a7">0 imagens</span>
@@ -1199,7 +921,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <button class="secondary" onclick="nextFrame()">PRÓXIMO ▶</button>
 <button class="danger" onclick="stopLoop()">■ PARAR</button>
 </div>
-<input class="timeline" id="timeline" type="range" min="0" max="0" value="0">
+<input class="timeline" id="timeline" max="0" min="0" type="range" value="0"/>
 <div class="timeinfo">
 <span id="frameDate">Aguardando imagens</span>
 <span id="frameNumber">0 / 0</span>
@@ -1208,13 +930,13 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <label>VELOCIDADE</label>
 <select id="speed">
 <option value="1500">Lenta</option>
-<option value="800" selected>Normal</option>
+<option selected="" value="800">Normal</option>
 <option value="250">Rápida</option>
 <option value="50">Muito rápida</option>
 </select>
 <label for="loopFrameCount">QUANTIDADE DE FRAMES NO LOOP</label>
 <select id="loopFrameCount">
-<option value="all" selected>Todos os frames disponíveis</option>
+<option selected="" value="all">Todos os frames disponíveis</option>
 <option value="5">5 frames</option>
 <option value="10">10 frames</option>
 <option value="15">15 frames</option>
@@ -1223,11 +945,289 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <option value="45">45 frames</option>
 <option value="60">60 frames</option>
 </select>
-<label><input type="checkbox" id="autoRefresh"> Atualização automática</label>
+<label><input id="autoRefresh" type="checkbox"/> Atualização automática</label>
 </div>
-</section>
-</main>
+</section></div><div class="cg-tab-content" data-tab-content="atmosfera"><section class="panel instability-panel cg-search-item" data-search-item="1" id="instabilityPanel">
+<div class="instability-head">
+<h3>INSTABILIDADE ATMOSFÉRICA</h3>
+<span style="font-size:9px;color:#8293a8">GFS · OPEN-METEO</span>
+</div>
+<div class="info" style="margin-top:10px">Parâmetros atmosféricos para o centro atual do mapa. Mova o mapa para outra região e atualize a consulta.</div>
+<div class="instability-grid">
+<div class="instability-metric"><b>CAPE</b><strong id="instCAPE">—</strong><small>J/kg · energia convectiva</small></div>
+<div class="instability-metric"><b>CIN</b><strong id="instCIN">—</strong><small>J/kg · inibição convectiva</small></div>
+<div class="instability-metric"><b>LIFTED INDEX</b><strong id="instLI">—</strong><small>°C · índice de estabilidade</small></div>
+<div class="instability-metric"><b>SRH</b><strong id="instSRH">N/D</strong><small>m²/s² · helicidade relativa à tempestade</small></div>
+<div class="instability-metric" style="grid-column:1/-1"><b>WIND SHEAR 0–6 KM</b><strong id="instShear">—</strong><small id="instShearDetail">km/h · diferença vetorial entre vento de superfície e nível próximo de 6 km</small></div>
+</div>
+<div class="instability-map-block">
+<div class="instability-map-title">HIGH PRESSURE / LOW PRESSURE <small>PRESSÃO AO NÍVEL DO MAR · GFS</small></div>
+<button class="primary instability-refresh" id="pressureMapToggle" onclick="togglePressureMap()">ATIVAR MAPA H / L</button>
+<div class="pressure-key"><span><b class="pressure-high">H</b> Alta pressão</span><span><b class="pressure-low">L</b> Baixa pressão</span><span>Valores em hPa</span></div>
+<div class="pressure-map-help" id="pressureMapStatus">Ative para mostrar os centros regionais de alta e baixa pressão sobre o mapa principal. Os marcadores são calculados com dados do GFS.</div>
+</div>
+<button class="primary instability-refresh" id="instabilityRefresh" onclick="refreshInstabilityPanel()">ATUALIZAR NO CENTRO DO MAPA</button>
+<div class="instability-status" id="instabilityStatus">Aguardando consulta dos parâmetros atmosféricos.</div>
+<div class="instability-note">SRH não é fornecido pelo conjunto de variáveis GFS usado nesta consulta e permanece como não disponível — não será estimado artificialmente. O wind shear é calculado pela diferença vetorial entre 10 m e 500 hPa (aprox. 5,6 km), uma aproximação do intervalo 0–6 km.</div>
+</section><section class="panel cg-search-item" data-search-item="1" id="tornadoRiskPanel">
+<h3>RISCO AMBIENTAL DE TORNADO</h3>
+<div class="info">Estimativa experimental baseada em CAPE, inibição convectiva, cisalhamento do vento e nível de condensação. Não é probabilidade de tornado nem alerta oficial.</div>
+<button class="primary" id="tornadoRiskToggle" onclick="toggleTornadoRisk()" style="width:100%;margin-top:10px">ATIVAR RISCO NA ÁREA DO MAPA</button>
+<div class="stsc-status" id="tornadoRiskStatus">Camada desligada. Ative para consultar os campos atmosféricos do modelo GFS.</div>
+<div class="stsc-legend" style="flex-wrap:wrap">
+<span><i style="background:#42a66b"></i>Baixo</span>
+<span><i style="background:#e6c52e"></i>Marginal</span>
+<span><i style="background:#ed8b2c"></i>Elevado</span>
+<span><i style="background:#d93434"></i>Muito elevado</span>
+</div>
+<div class="info" id="tornadoRiskDetails" style="margin-top:9px">Campo contínuo interpolado a partir de pontos do modelo. Não representa ocorrência confirmada.</div>
+<button class="secondary" onclick="refreshTornadoRisk()" style="width:100%;margin-top:8px">ATUALIZAR ANÁLISE</button>
+</section></div><div class="cg-tab-content" data-tab-content="previsoes"><section class="panel cg-search-item" data-search-item="1" id="stormForecastPanel">
+<h3>PREVISÃO DE TEMPESTADES</h3>
+<div class="info">Campo de potencial convectivo previsto pelo GFS, combinando CAPE, precipitação convectiva e códigos de tempo significativo. Não representa rastreamento de células observadas.</div>
+<button class="primary" id="stormForecastToggle" onclick="toggleForecastProduct('storms')" style="width:100%;margin-top:10px">ATIVAR PREVISÃO DE TEMPESTADES</button>
+<div class="stsc-status" id="stormForecastStatus">Produto desligado.</div>
+<div class="forecast-time-controls">
+<button class="secondary" onclick="shiftForecastHour('storms',-1)">◀</button>
+<input disabled="" id="stormsForecastHour" max="47" min="0" oninput="renderForecastHour('storms',this.value)" step="1" type="range" value="0"/>
+<button class="secondary" onclick="shiftForecastHour('storms',1)">▶</button>
+</div>
+<div class="forecast-selected-time" id="stormsForecastSelectedTime">Aguardando dados horários</div>
+<div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>HORÁRIO</th><th>POTENCIAL</th><th>CAPE</th><th>CHUVA CONV.</th></tr></thead><tbody id="stormsForecastRows"><tr><td colspan="4">Ative o produto para carregar a previsão.</td></tr></tbody></table></div>
+<div class="stsc-legend" style="flex-wrap:wrap">
+<span><i style="background:#42a66b"></i>Baixo</span>
+<span><i style="background:#e6c52e"></i>Moderado</span>
+<span><i style="background:#ed8b2c"></i>Alto</span>
+<span><i style="background:#d93434"></i>Muito alto</span>
+</div>
+<button class="secondary" onclick="refreshForecastProduct('storms')" style="width:100%;margin-top:8px">ATUALIZAR PREVISÃO</button>
+</section><section class="panel cg-search-item" data-search-item="1" id="extremeRainPanel">
+<h3>PREVISÃO DE CHUVA EXTREMA</h3>
+<div class="info">Precipitação horária prevista pelo GFS, interpolada em campo contínuo. Os limiares indicam intensidade da chuva, não risco de inundação.</div>
+<button class="primary" id="extremeRainToggle" onclick="toggleForecastProduct('rain')" style="width:100%;margin-top:10px">ATIVAR PREVISÃO DE CHUVA EXTREMA</button>
+<div class="stsc-status" id="extremeRainStatus">Produto desligado.</div>
+<div class="forecast-time-controls">
+<button class="secondary" onclick="shiftForecastHour('rain',-1)">◀</button>
+<input disabled="" id="rainForecastHour" max="47" min="0" oninput="renderForecastHour('rain',this.value)" step="1" type="range" value="0"/>
+<button class="secondary" onclick="shiftForecastHour('rain',1)">▶</button>
+</div>
+<div class="forecast-selected-time" id="rainForecastSelectedTime">Aguardando dados horários</div>
+<div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>HORÁRIO</th><th>CHUVA mm/h</th><th>ACUM. 3h</th><th>ACUM. 6h</th><th>ACUM. 24h</th></tr></thead><tbody id="rainForecastRows"><tr><td colspan="5">Ative o produto para carregar a previsão.</td></tr></tbody></table></div>
+<div class="stsc-legend" style="flex-wrap:wrap">
+<span><i style="background:#42a66b"></i>Fraca</span>
+<span><i style="background:#e6c52e"></i>Moderada</span>
+<span><i style="background:#ed8b2c"></i>Forte</span>
+<span><i style="background:#d93434"></i>Extrema</span>
+</div>
+<button class="secondary" onclick="refreshForecastProduct('rain')" style="width:100%;margin-top:8px">ATUALIZAR PREVISÃO</button>
+</section><section class="panel cg-search-item" data-search-item="1" id="areaAlertsPanel">
+<h3>ALERTAS AUTOMÁTICOS · TEMPO SEVERO</h3>
+<div class="info">Monitoramento de atividade convectiva e previsão de tempestades. Os dados são apresentados conforme a fonte original. Uma ocorrência STSC ou uma previsão convectiva não confirma, por si só, tornado, mesociclone ou wall cloud.</div>
+<div class="auto-alert-header">
+<span class="auto-alert-status" id="autoAlertConnection">INICIALIZANDO MONITORAMENTO...</span>
+<button class="secondary" onclick="refreshAutomaticAlerts(true)" type="button">ATUALIZAR</button>
+</div>
+<div class="auto-alert-card">
+<strong>STSC · REDEMET / DECEA</strong>
+<div class="auto-alert-description" id="autoSTSCStatus">Aguardando consulta...</div>
+<div class="auto-alert-metrics">
+<div><b id="autoSTSCPositions">--</b><small>POSIÇÕES</small></div>
+<div><b id="autoSTSCFrames">--</b><small>QUADROS</small></div>
+</div>
+<button class="secondary" onclick="activateAutomaticSTSC()" type="button">EXIBIR OCORRÊNCIAS NO MAPA</button>
+</div>
+<div class="auto-alert-card">
+<strong>PREVOTS · PREVISÃO CONVECTIVA (IMAGEM OFICIAL)</strong>
+<div class="auto-alert-description" id="autoPrevotsStatus">Carregando previsão...</div>
+<a class="auto-alert-link" href="https://prevots.org/previsao-convectiva/" rel="noopener" target="_blank">ABRIR PREVISÃO OFICIAL</a>
+<img alt="Mapa de previsão convectiva da PREVOTS" class="auto-prevots-image" id="autoPrevotsImage" loading="lazy" src="https://prevots.org/wp-content/uploads/previsao/previsao.png"/>
+</div>
+<div class="auto-alert-card">
+<strong>INMET · AVISOS METEOROLÓGICOS</strong>
+<div class="auto-alert-description">Consulte os avisos meteorológicos oficiais e suas áreas de validade.</div>
+<a class="auto-alert-link" href="https://alertas2.inmet.gov.br/" rel="noopener" target="_blank">ABRIR AVISOS DO INMET</a>
+<div class="auto-alert-description">A consulta é aberta no portal oficial; esta versão não declara que existe um feed automático do INMET conectado.</div>
+</div>
+<div class="auto-alert-warning">
+<b>IMPORTANTE</b>
+<p>STSC indica atividade convectiva conforme os dados recebidos da REDEMET. Não é confirmação de tornado ou mesociclone. A PREVOTS apresenta previsão, não observação confirmada. Fenômenos específicos exigem evidências e fontes apropriadas.</p>
+</div>
+<div class="auto-alert-footer" id="autoAlertLastUpdate">Última atualização: aguardando dados.</div>
+</section><section class="panel cg-search-item" data-search-item="1">
+<h3>TSC · TEMPO SEVERO CONVECTIVO</h3>
+<div class="info">Ocorrências convectivas do STSC/REDEMET. O histórico é exibido simultaneamente: azul para registros antigos e vermelho para os mais recentes.</div>
+<button class="primary" id="stscToggle" onclick="toggleSTSC()" style="width:100%;margin-top:10px">ATIVAR TSC</button>
+<div class="stsc-controls">
+<button class="secondary" onclick="refreshSTSC(true)">ATUALIZAR</button>
+<button class="secondary" onclick="stepSTSCFrame(-1)">MENOS HISTÓRICO</button>
+<button class="secondary" onclick="stepSTSCFrame(1)">MAIS HISTÓRICO</button>
+</div>
+<label>OPACIDADE DO TSC</label>
+<input id="stscOpacity" max="100" min="10" type="range" value="75"/>
+<input class="timeline" disabled="" id="stscTimeline" max="0" min="0" type="range" value="0"/>
+<div class="stsc-meta">
+<span id="stscTime">Aguardando dados</span>
+<span id="stscFrameNumber">0 / 0</span>
+</div>
+<div class="stsc-legend">
+<span><i style="background:#2864c5"></i>Antiga</span>
+<span><i style="background:#e33434"></i>Recente</span>
+</div>
+<div class="stsc-status" id="stscStatus">Camada desligada. Fonte: REDEMET/DECEA.</div>
+</section></div><div class="cg-tab-content" data-tab-content="modelos"><section class="mn-panel cg-search-item" data-search-item="1" id="modelosNumericos">
+<div class="mn-head">
+<div>
+<h2>MODELOS NUMÉRICOS · PREVISÃO DE CHUVA</h2>
+<small>Produtos oficiais do CPTEC/INPE · WRF 7 km e MONAN</small>
+</div>
+<span class="status" style="font-size:9px">● FONTE OFICIAL</span>
+</div>
+<div class="mn-controls">
+<div>
+<label for="mnModel">MODELO</label>
+<select id="mnModel" onchange="changeMNModel()">
+<option value="wrf">WRF · 7 km (padrão)</option>
+<option value="monan">MONAN</option>
+</select>
+</div>
+<div>
+<label for="mnVariable">PRODUTO</label>
+<select id="mnVariable" onchange="changeMNVariable()">
+<option value="aprec">Precipitação acumulada</option>
+</select>
+</div>
+<div>
+<label for="mnRegion">DOMÍNIO</label>
+<select id="mnRegion" onchange="changeMNRegion()">
+<option value="ams">América do Sul</option>
+</select>
+</div>
+</div>
+<div class="mn-frame-wrap">
+<iframe id="mnFrame" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" src="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/" title="Previsão numérica oficial do CPTEC/INPE"></iframe>
+</div>
+<div class="mn-fallback">
+<button class="primary" onclick="openMNOfficial()" type="button">ABRIR PRODUTO OFICIAL EM NOVA ABA</button>
+<small id="mnStatus">WRF 7 km · Precipitação acumulada. Se o portal não aparecer incorporado, use o botão para abrir diretamente.</small>
+</div>
+<div class="mn-grid">
+<div class="mn-item"><b>PRECIPITAÇÃO ACUMULADA</b><span>Produto selecionado · mapas de previsão em milímetros.</span></div>
+<div class="mn-item"><b>TEMPERATURA E PONTO DE ORVALHO</b><span>Próxima integração: campos meteorológicos do GRIB2.</span></div>
+<div class="mn-item"><b>UMIDADE E CONVERGÊNCIA</b><span>Próxima integração: níveis de pressão e convergência de umidade.</span></div>
+<div class="mn-item"><b>CAPE, CIN E PWAT</b><span>Próxima integração: índices convectivos e água precipitável.</span></div>
+<div class="mn-item"><b>MOVIMENTO VERTICAL (OMEGA)</b><span>Próxima integração: levantamento em 850, 700 e 500 hPa.</span></div>
+<div class="mn-item"><b>CISALHAMENTO E SRH</b><span>Próxima integração: perfis de vento e helicidade relativa à tempestade.</span></div>
+<div class="mn-item"><b>VENTO E PRESSÃO</b><span>Próxima integração: vento em superfície e altitude, pressão ao nível do mar.</span></div>
+<div class="mn-item"><b>FRAMES DA PREVISÃO</b><span>Controles de animação disponíveis no visualizador oficial do modelo.</span></div>
+</div>
+<div class="mn-note"><b>Transparência dos dados:</b> nesta versão, o mapa incorporado usa o produto oficial de precipitação acumulada do CPTEC. As demais variáveis aparecem como próximas integrações; não são simuladas nem exibidas como se já estivessem disponíveis. Para ativá-las no CLOUDGOD será necessário processar os campos GRIB2 do WRF/MONAN.</div>
+<div class="mn-source">Fontes: <a href="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/" rel="noopener" target="_blank">WRF · CPTEC/INPE</a> · <a href="https://previsaonumerica.cptec.inpe.br/monan/aprec/ams/" rel="noopener" target="_blank">MONAN · CPTEC/INPE</a> · <a href="https://dataserver.cptec.inpe.br/dataserver_modelos/wrf/ams_07km/" rel="noopener" target="_blank">Arquivo de dados WRF 7 km</a>.</div>
+</section><section class="rs-panel cg-search-item" data-search-item="1" id="radiossondagem">
+<div class="rs-head">
+<div>
+<h2>RADIOSSONDAGEM · SKEW-T / LOG-P</h2>
+<small>Perfil vertical observado · temperatura, ponto de orvalho e vento</small>
+</div>
+<span class="status" style="font-size:9px">● ANÁLISE VERTICAL</span>
+</div>
+<div class="rs-controls">
+<div>
+<label for="rsStation">ESTAÇÃO (WMO)</label>
+<select id="rsStation">
+<option selected="" value="83779">São Paulo / Marte · 83779</option>
+<option value="83746">Rio de Janeiro / Galeão · 83746</option>
+<option value="83378">Brasília · 83378</option>
+<option value="82332">Manaus · 82332</option>
+<option value="82193">Belém · 82193</option>
+<option value="82900">Recife · 82900</option>
+<option value="83229">Salvador · 83229</option>
+<option value="83612">Campo Grande · 83612</option>
+<option value="83840">Curitiba · 83840</option>
+<option value="83971">Porto Alegre · 83971</option>
+</select>
+</div>
+<div>
+<label for="rsDate">DATA (OPCIONAL)</label>
+<input id="rsDate" type="date"/>
+</div>
+<div>
+<label for="rsHour">HORÁRIO UTC</label>
+<select id="rsHour">
+<option selected="" value="all">Mais recente (qualquer horário)</option>
+<option value="00">00Z</option>
+<option value="12">12Z</option>
+</select>
+</div>
+<div>
+<label for="rsUnits">UNIDADE DO VENTO</label>
+<select id="rsUnits">
+<option selected="" value="kt"> nós (kt)</option>
+<option value="ms"> m/s</option>
+</select>
+</div>
+</div>
+<div class="rs-actions">
+<button class="primary" id="rsFetchBtn" onclick="fetchLatestRadiosonde()" type="button">BUSCAR SONDAGEM AUTOMATICAMENTE</button>
+<button class="secondary" onclick="downloadRadiosondeCSV()" type="button">BAIXAR CSV</button>
+<button class="secondary" onclick="clearRadiosonde()" type="button">LIMPAR GRÁFICOS</button>
+</div>
+<div class="rs-source-note">
+<b>Carregamento automático:</b> o CLOUDGOD consulta o arquivo de radiossondagens da NOAA/IGRA, seleciona a última observação disponível da estação e converte os níveis para o Skew-T e o hodógrafo. Você não precisa copiar nem colar dados. A disponibilidade e a atualização dependem dos envios recebidos pela NOAA.
+ </div>
+<div class="rs-chart-grid">
+<div class="rs-chart-card">
+<div class="rs-chart-title">SKEW-T / LOG-P · T (vermelho) · Td (verde)</div>
+<canvas aria-label="Diagrama Skew-T" height="760" id="rsSkewCanvas" width="900"></canvas>
+<div class="rs-chart-empty" id="rsSkewEmpty">Aguardando dados reais da radiossondagem. Cole um arquivo Text: List para gerar o diagrama.</div>
+</div>
+<div class="rs-chart-card">
+<div class="rs-chart-title">HODÓGRAFO · PERFIL DO VENTO</div>
+<canvas aria-label="Hodógrafo" height="520" id="rsHodoCanvas" width="520"></canvas>
+<div class="rs-chart-empty" id="rsHodoEmpty">O hodógrafo será desenhado quando houver direção e velocidade do vento nos níveis da sondagem.</div>
+</div>
+</div>
+<div class="rs-metrics" id="rsMetrics">
+<div class="rs-metric"><b>NÍVEIS LIDOS</b><span>—</span></div>
+<div class="rs-metric"><b>PRESSÃO MÍNIMA</b><span>—</span></div>
+<div class="rs-metric"><b>TEMPERATURA SUPERFÍCIE</b><span>—</span></div>
+<div class="rs-metric"><b>TOPO DO PERFIL</b><span>—</span></div>
+</div>
+<div class="rs-status" id="rsStatus">Fonte automática: NOAA/NCEI · Integrated Global Radiosonde Archive (IGRA 2.2). Clique em “Buscar sondagem automaticamente”.</div>
+<div class="rs-table-wrap" hidden="" id="rsTableWrap">
+<table class="rs-table">
+<thead><tr><th>Pressão (hPa)</th><th>Altitude (m)</th><th>Temp. (°C)</th><th>Ponto orvalho (°C)</th><th>UR (%)</th><th>Vento (°)</th><th>Velocidade (kt)</th></tr></thead>
+<tbody id="rsTableBody"></tbody>
+</table>
+</div>
+<div class="mn-source">
+  Fontes: <a href="https://weather.uwyo.edu/upperair/sounding.shtml" rel="noopener" target="_blank">University of Wyoming · Upper Air</a> ·
+  <a href="https://www.ncei.noaa.gov/products/weather-balloon/integrated-global-radiosonde-archive" rel="noopener" target="_blank">NOAA · IGRA</a> ·
+  <a href="https://wis2bra.inmet.gov.br/oapi/collections/discovery-metadata/items/urn%3Awmo%3Amd%3Abr-inmet%3Aupper-air?f=html" rel="noopener" target="_blank">INMET · dados TEMP em BUFR</a>.
+ </div>
+</section></div><div class="cg-tab-content" data-tab-content="ferramentas"><section class="panel export-panel cg-search-item" data-search-item="1">
+<h3>EXPORTAÇÃO METEOROLÓGICA</h3>
+<div class="export-help"><b>FOTO DE ULTRA RESOLUÇÃO 1:1</b><br/>Ative a ferramenta e toque no centro da região desejada do mapa. A captura será exportada em PNG quadrado de 3072 × 3072 pixels, com as camadas visíveis. A ampliação não inventa detalhes que não existam no raster original.</div>
+<button class="primary" id="photoModeButton" onclick="toggleUltraPhotoMode()">FOTO DE ULTRA RESOLUÇÃO</button>
+<div class="export-help" style="margin-top:12px"><b>GIF · AMÉRICA DO SUL</b><br/>Enquadra a América do Sul e anima os quadros temporais reais de reflectividade carregados da REDEMET, em loop contínuo.</div>
+<button class="secondary" id="gifExportButton" onclick="exportSouthAmericaGif()">GERAR GIF DA AMÉRICA DO SUL</button>
+<div class="export-state" id="exportStatus">Aguardando seleção ou exportação.</div>
+</section><section class="panel cg-search-item" data-search-item="1">
+<h3>MEDIDOR DE DISTÂNCIA</h3>
+<div class="info">
+Toque em qualquer local do mapa para medir a distância em linha reta a partir da sua posição.
+</div>
+<button class="secondary" onclick="requestLocation()" style="width:100%;margin-top:10px">⌖ LOCALIZAR-ME</button>
+<button class="secondary" onclick="clearSelection()" style="width:100%;margin-top:7px">LIMPAR SELEÇÃO</button>
+<button class="primary" id="areaModeButton" onclick="toggleAreaMode()" style="width:100%;margin-top:7px">▱ MEDIR ÁREA NO MAPA</button>
+<button class="danger" onclick="clearAreaMeasurement()" style="width:100%;margin-top:7px">APAGAR MEDIDA DE ÁREA</button>
+<div id="areaStatus" style="font-size:10px;color:#75869a;margin-top:8px">Modo de área desativado.</div>
+<div id="locationStatus" style="font-size:10px;color:#75869a;margin-top:10px">Localização não solicitada.</div>
+</section></div><div class="cg-search-empty" hidden="True">Nenhuma opção encontrada nesta categoria.</div></aside>
+</div>
 
+
+
+</main>
 <!-- CARTÃO TRANSPARENTE -->
 <div class="distance-card" id="distanceCard" onclick="expandDistanceCard()">
 <div class="distance-top">
@@ -1238,7 +1238,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <span id="distanceValue">--</span>
 <small>km</small>
 </div>
-<div style="font-size:10px;color:#6c7e92" id="distanceLabel">Aguardando localização</div>
+<div id="distanceLabel" style="font-size:10px;color:#6c7e92">Aguardando localização</div>
 <div class="distance-details">
 <div><b>Latitude:</b> <span id="selectedLat">--</span></div>
 <div><b>Longitude:</b> <span id="selectedLon">--</span></div>
@@ -1248,66 +1248,57 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 </div>
 <div class="distance-hint">Toque para expandir ou recolher</div>
 </div>
-
 <div class="area-card" id="areaCard">
- <div class="area-card-title">ÁREA SELECIONADA</div>
- <div class="area-card-value"><span id="areaValue">0,00</span> <small>km²</small></div>
- <div class="area-card-detail" id="areaDimensions">Aguardando dois pontos no mapa</div>
+<div class="area-card-title">ÁREA SELECIONADA</div>
+<div class="area-card-value"><span id="areaValue">0,00</span> <small>km²</small></div>
+<div class="area-card-detail" id="areaDimensions">Aguardando dois pontos no mapa</div>
 </div>
-
 <!-- BOTÃO ECONOMIA -->
 <button class="economy-toggle" onclick="toggleEconomyMenu()">=</button>
-
 <!-- MENU ECONOMIA -->
 <div class="economy-menu" id="economyMenu">
 <h3>CLOUDGOD · PRODUTOS</h3>
-<button id="menu-maxcappi" class="selected" onclick="selectProduct('maxcappi');closeEconomyMenu()">MAXCAPPI</button>
+<button class="selected" id="menu-maxcappi" onclick="selectProduct('maxcappi');closeEconomyMenu()">MAXCAPPI</button>
 <button id="menu-07km" onclick="selectProduct('07km');closeEconomyMenu()">REFLECTIVIDADE 7 KM</button>
 <button id="menu-05km" onclick="selectProduct('05km');closeEconomyMenu()">REFLECTIVIDADE 5 KM</button>
 <button id="menu-infrared" onclick="selectProduct('infrared');closeEconomyMenu()">SATÉLITE INFRAVERMELHO REALÇADO</button>
 <button id="menu-brightness" onclick="selectProduct('brightness');closeEconomyMenu()">TEMPERATURA DE BRILHO · GOES-19</button>
 <button id="menu-stsc" onclick="toggleSTSC();closeEconomyMenu()">ATIVAR / DESATIVAR TSC</button>
-<hr style="border:0;border-top:1px solid #e7edf5;margin:10px 0">
+<hr style="border:0;border-top:1px solid #e7edf5;margin:10px 0"/>
 <button class="secondary" onclick="toggleEconomy()">SAIR DO MODO ECONOMIA</button>
 <button class="secondary" onclick="requestLocation()">MINHA LOCALIZAÇÃO</button>
 </div>
-
 <div class="footer">CLOUDGOD · REDEMET/DECEA · NOAA GOES-19 ABI BAND 13 · GOES-19 GLM · OPENSTREETMAP</div>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.152.2/three.min.js"></script>
-
-
-<div id="cloud3dModal" aria-hidden="true">
- <section class="cloud3d-window">
-  <header class="cloud3d-head">
-   <div><strong>CLOUDGOD · MAPEAMENTO METEOROLÓGICO 3D</strong><small id="cloud3dAreaLabel">Área selecionada no mapa</small></div>
-   <button class="cloud3d-close" id="cloud3dClose" type="button">FECHAR ✕</button>
-  </header>
-  <div class="cloud3d-stage">
-   <div id="cloud3dAreaMap"></div>
-   <canvas id="cloud3dAreaCanvas"></canvas>
-  </div>
-  <footer class="cloud3d-toolbar">
-   <label>Densidade da nuvem <input id="cloud3dDensity" type="range" min="20" max="100" value="75"></label>
-   <label>Exagero vertical <input id="cloud3dHeight" type="range" min="50" max="200" value="100"></label>
-   <button id="cloud3dRadarVolumeBtn" type="button" style="background:#087fbd;color:#fff;border:1px solid #65cfff;border-radius:8px;padding:8px 11px;font-weight:800">RECONSTRUIR NUVEM PELO RADAR</button>
-   <button id="cloud3dRadarVolumeClear" type="button" style="background:#ffffff18;color:#d9edff;border:1px solid #ffffff35;border-radius:8px;padding:8px 11px">LIMPAR VOLUME</button>
-
-   <div class="cloud3d-readouts">
-    <div class="cloud3d-readout"><b id="cloud3dMin">—</b><span>BASE ESTIMADA</span></div>
-    <div class="cloud3d-readout"><b id="cloud3dAvg">—</b><span>ALTURA MÉDIA</span></div>
-    <div class="cloud3d-readout"><b id="cloud3dMax">—</b><span>TOPO ESTIMADO</span></div>
-   </div>
-   <div class="cloud3d-note">Nuvens volumétricas derivadas do GOES-19 ABI canal 2 (luz visível). Altitudes são ilustrativas, não medições calibradas; o canal visível não identifica nuvens à noite. A área inicial corresponde ao recorte medido, mas o mapa pode ser movido e ampliado livremente. A reconstrução transforma ecos raster do MAXCAPPI e cortes CAPPI 5,5/7,3 km em volumes cumuliformes suavizados. A forma é uma interpretação visual dos ecos, não uma tomografia radar completa nem dBZ calibrado por pixel.</div>
-  </footer>
- </section>
+<div aria-hidden="true" id="cloud3dModal">
+<section class="cloud3d-window">
+<header class="cloud3d-head">
+<div><strong>CLOUDGOD · MAPEAMENTO METEOROLÓGICO 3D</strong><small id="cloud3dAreaLabel">Área selecionada no mapa</small></div>
+<button class="cloud3d-close" id="cloud3dClose" type="button">FECHAR ✕</button>
+</header>
+<div class="cloud3d-stage">
+<div id="cloud3dAreaMap"></div>
+<canvas id="cloud3dAreaCanvas"></canvas>
+</div>
+<footer class="cloud3d-toolbar">
+<label>Densidade da nuvem <input id="cloud3dDensity" max="100" min="20" type="range" value="75"/></label>
+<label>Exagero vertical <input id="cloud3dHeight" max="200" min="50" type="range" value="100"/></label>
+<button id="cloud3dRadarVolumeBtn" style="background:#087fbd;color:#fff;border:1px solid #65cfff;border-radius:8px;padding:8px 11px;font-weight:800" type="button">RECONSTRUIR NUVEM PELO RADAR</button>
+<button id="cloud3dRadarVolumeClear" style="background:#ffffff18;color:#d9edff;border:1px solid #ffffff35;border-radius:8px;padding:8px 11px" type="button">LIMPAR VOLUME</button>
+<div class="cloud3d-readouts">
+<div class="cloud3d-readout"><b id="cloud3dMin">—</b><span>BASE ESTIMADA</span></div>
+<div class="cloud3d-readout"><b id="cloud3dAvg">—</b><span>ALTURA MÉDIA</span></div>
+<div class="cloud3d-readout"><b id="cloud3dMax">—</b><span>TOPO ESTIMADO</span></div>
+</div>
+<div class="cloud3d-note">Nuvens volumétricas derivadas do GOES-19 ABI canal 2 (luz visível). Altitudes são ilustrativas, não medições calibradas; o canal visível não identifica nuvens à noite. A área inicial corresponde ao recorte medido, mas o mapa pode ser movido e ampliado livremente. A reconstrução transforma ecos raster do MAXCAPPI e cortes CAPPI 5,5/7,3 km em volumes cumuliformes suavizados. A forma é uma interpretação visual dos ecos, não uma tomografia radar completa nem dBZ calibrado por pixel.</div>
+</footer>
+</section>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script>
 // ============================================
 // CONFIGURAÇÃO REDEMET
@@ -2195,20 +2186,52 @@ function selectProduct(product){
 // DATA UTC E URL
 // ============================================
 
-function utcHour(){
-
- const d=new Date();
-
+function utcHour(offsetHours=0){
+ const d=new Date(Date.now()+Number(offsetHours||0)*60*60*1000);
  return d.getUTCFullYear()+
  String(d.getUTCMonth()+1).padStart(2,"0")+
  String(d.getUTCDate()).padStart(2,"0")+
  String(d.getUTCHours()).padStart(2,"0");
 }
 
-function buildURL(){
- // Sem parâmetro area: a resposta consolidada da REDEMET inclui as estações disponíveis.
- const params=new URLSearchParams({api_key:API_KEY,data:utcHour(),anima:"15"});
+function selectedFrameCount(){
+ const selected=document.getElementById("loopFrameCount")?.value||"all";
+ const requested=selected==="all"?60:Number(selected);
+ return Math.max(1,Math.min(60,Number.isFinite(requested)?Math.floor(requested):60));
+}
+
+function buildURL(dataHour=utcHour(),frameLimit=15){
+ // A REDEMET limita RADAR e SATÉLITE a 15 quadros por consulta.
+ // Quantidades maiores são montadas em lotes de 15 horários.
+ const safeLimit=Math.max(1,Math.min(15,Math.floor(Number(frameLimit)||15)));
+ const params=new URLSearchParams({api_key:API_KEY,data:dataHour,anima:String(safeLimit)});
  return API[currentProduct]+"?"+params.toString();
+}
+
+async function fetchSelectedFrames(signal){
+ const requested=selectedFrameCount();
+ const batches=Math.ceil(requested/15);
+ const collected=[];
+ for(let batch=0;batch<batches;batch++){
+  const url=buildURL(utcHour(-batch),Math.min(15,requested-batch*15));
+  const response=await fetch(url,{signal,cache:"no-store"});
+  if(!response.ok)throw new Error("REDEMET respondeu HTTP "+response.status);
+  const json=await response.json();
+  if(json?.error||json?.status===false)throw new Error(json.message||"A API retornou um erro.");
+  if(currentProduct==="infrared")collected.push(...parseSatelliteResponse(json));
+  else{
+   const parsed=parseRadarResponse(json,utcHour(-batch));
+   updateRadarStations(parsed.stations);
+   collected.push(...parsed.frames);
+  }
+ }
+ // Remove quadros repetidos quando duas janelas retornam o mesmo horário/imagem.
+ const unique=new Map();
+ collected.forEach((frame,index)=>{
+  const key=String(frame.time||"")+"|"+(frame.images||[]).map(image=>image.url).join("|");
+  if(!unique.has(key))unique.set(key,{...frame,_order:index});
+ });
+ return [...unique.values()].sort((a,b)=>String(a.time).localeCompare(String(b.time))).slice(-requested);
 }
 
 // Imagens REDEMET passam pelo backend do mesmo domínio. Isso permite
@@ -2231,7 +2254,7 @@ function radarImageProxyUrl(originalUrl){
 
 // Normaliza respostas da REDEMET sem presumir que "radar" seja sempre array.
 // A API pode entregar os grupos temporais como arrays ou objetos indexados.
-function parseRadarResponse(json){
+function parseRadarResponse(json,fallbackHour=""){
  const data=json?.data||{};
  const radar=data.radar??data.RADAR??data.imagens??data;
  if(!radar)return {frames:[],stations:[]};
@@ -2318,11 +2341,11 @@ function parseRadarResponse(json){
    }
   });
 
-  const time=data?.anima?.[index]||data?.horarios?.[index]||
-   nodes.find(n=>n.data||n.datahora||n.horario)?.data||
+  const time=nodes.find(n=>n.data||n.datahora||n.horario)?.data||
    nodes.find(n=>n.datahora)?.datahora||
    nodes.find(n=>n.horario)?.horario||
-   ("Quadro "+(index+1));
+   (fallbackHour?fallbackHour+" "+(data?.anima?.[index]||data?.horarios?.[index]||""):
+    (data?.anima?.[index]||data?.horarios?.[index]||("Quadro "+(index+1))));
   if(images.length)parsedFrames.push({time,images});
  });
 
@@ -2593,29 +2616,14 @@ async function refreshRadar(){
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),45000);
   try{
+   frames=await fetchSelectedFrames(controller.signal);
+   if(!frames.length)throw new Error("A REDEMET não retornou imagens com coordenadas válidas para os quadros solicitados.");
    if(currentProduct==="infrared"){
-    const response=await fetch(buildURL(),{signal:controller.signal,cache:"no-store"});
-    if(!response.ok)throw new Error("REDEMET respondeu HTTP "+response.status);
-    const json=await response.json();
-    if(json?.error||json?.status===false)throw new Error(json.message||"A API retornou um erro.");
-    const received=parseSatelliteResponse(json);
-    if(!received.length)throw new Error("A API não retornou imagens Infravermelho realçado com limites geográficos válidos.");
-    frames=received;
     document.getElementById("subtitle").textContent="SATÉLITE REDEMET · INFRAVERMELHO REALÇADO";
    }else{
-    // Uma única consulta consolidada evita 26 requisições concorrentes e
-    // preserva todas as estações dentro de cada quadro temporal.
-    const response=await fetch(buildURL(),{signal:controller.signal,cache:"no-store"});
-    if(!response.ok)throw new Error("REDEMET respondeu HTTP "+response.status);
-    const json=await response.json();
-    if(json?.error||json?.status===false)throw new Error(json.message||"A API retornou um erro.");
-    const parsed=parseRadarResponse(json);
-    updateRadarStations(parsed.stations);
-    if(!parsed.frames.length)throw new Error("A REDEMET não retornou imagens MAXCAPPI/CAPPI com coordenadas válidas para este horário.");
-    frames=parsed.frames.sort((a,b)=>String(a.time).localeCompare(String(b.time)));
     const totalImages=frames.reduce((sum,frame)=>sum+frame.images.length,0);
     document.getElementById("subtitle").textContent="REDEMET · TODOS OS RADARES DO BRASIL";
-    document.getElementById("message").textContent=totalImages+" imagens recebidas de "+parsed.stations.length+" estações identificadas.";
+    document.getElementById("message").textContent=frames.length+" quadros / "+totalImages+" imagens recebidas.";
    }
    currentFrame=0;
    showFrame(0);
@@ -4255,10 +4263,6 @@ clearRadiosonde=function(){
  vertical.addEventListener("input",()=>{if(active)loadVisibleSatellite();});
 })();
 </script>
-
-
-
-
 <script>
 /* CLOUDGOD — MONITORAMENTO AUTOMÁTICO DE FONTES */
 (function(){
@@ -4313,8 +4317,6 @@ clearRadiosonde=function(){
 
 })();
 </script>
-
-
 <script>
 /* CLOUDGOD · parâmetros de instabilidade + mapa sinótico H/L */
 (function(){
@@ -4438,8 +4440,6 @@ clearRadiosonde=function(){
  });
 })();
 </script>
-
-
 <script>
 // ============================================
 // CLOUDGOD LIVE USERS · SUPABASE
@@ -4533,6 +4533,42 @@ function cgStartRealtime(){cgStopRealtime();cgRealtimeChannel=cgSupabase.channel
 function cgStopRealtime(){if(cgRealtimeChannel&&cgSupabase){cgSupabase.removeChannel(cgRealtimeChannel);cgRealtimeChannel=null;}if(cgLiveRefreshTimer){clearInterval(cgLiveRefreshTimer);cgLiveRefreshTimer=null;}}
 if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=data.session?.user||null;if(cgCurrentUser)cgCloseLiveGate();await cgUpdateAuthUI();cgInitLiveGate();cgStatus(cgCurrentUser?'Conectado.':'Entre ou crie uma conta, ou escolha NÃO OBRIGADO.');});cgSupabase.auth.onAuthStateChange((_event,session)=>{cgCurrentUser=session?.user||null;if(cgCurrentUser)cgCloseLiveGate();setTimeout(async()=>{await cgUpdateAuthUI();if(!cgCurrentUser)cgInitLiveGate();},0);});}else{cgStatus('Não foi possível carregar Supabase JS. Verifique a conexão.',true);}
 </script>
-
-</body>
+<script>
+(function(){
+ const side=document.querySelector('.side');
+ if(!side) return;
+ const buttons=[...side.querySelectorAll('.cg-tab-btn')];
+ const contents=[...side.querySelectorAll('.cg-tab-content')];
+ const search=document.getElementById('cgOptionSearch');
+ const empty=side.querySelector('.cg-search-empty');
+ function activate(name){
+   buttons.forEach(b=>{const on=b.dataset.tab===name;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
+   contents.forEach(c=>c.classList.toggle('active',c.dataset.tabContent===name));
+   filter();
+ }
+ buttons.forEach(b=>b.addEventListener('click',()=>activate(b.dataset.tab)));
+ function filter(){
+   const q=(search?.value||'').trim().toLocaleLowerCase('pt-BR');
+   const active=side.querySelector('.cg-tab-content.active');
+   if(!active)return;
+   let shown=0;
+   active.querySelectorAll('[data-search-item="1"]').forEach(item=>{
+     const match=!q||item.textContent.toLocaleLowerCase('pt-BR').includes(q);
+     item.hidden=!match;
+     if(match)shown++;
+   });
+   if(empty) empty.hidden=shown!==0;
+ }
+ if(search){
+   search.addEventListener('input',()=>{
+     const q=search.value.trim().toLocaleLowerCase('pt-BR');
+     if(q){
+       const found=contents.find(c=>[...c.querySelectorAll('[data-search-item="1"]')].some(item=>item.textContent.toLocaleLowerCase('pt-BR').includes(q)));
+       if(found) activate(found.dataset.tabContent);
+       else filter();
+     }else filter();
+   });
+ }
+})();
+</script></body>
 </html>
