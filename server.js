@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +10,16 @@ const ALLOWED_ORIGIN = process.env.CLOUDGOD_ORIGIN || 'https://cloudgod-gif-foto
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
+
+// Servir a interface principal no mesmo serviço que fornece a API CPTEC.
+app.get(['/', '/index.html'], (_req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'index.html'), (error) => {
+    if (error && !res.headersSent) {
+      res.status(500).type('text/plain').send('Não foi possível carregar o index.html. Verifique se ele está na raiz do serviço.');
+    }
+  });
+});
 
 function applyCors(req, res) {
   const origin = req.get('Origin');
