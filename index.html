@@ -308,6 +308,8 @@ body.economy ~ .footer{display:none!important}
 
 /* A qualidade do raster é processada em canvas antes de chegar ao Leaflet. */
 .leaflet-image-layer,.leaflet-radar-raster{image-rendering:auto;filter:none;}
+body.render-turbo .leaflet-radar-raster{image-rendering:pixelated;will-change:opacity;transform:translateZ(0)}
+body.render-turbo .leaflet-image-layer{image-rendering:auto;transform:translateZ(0)}
 
 /* ACABAMENTO VISUAL CLOUDGOD · painel meteorológico */
 :root{
@@ -712,6 +714,31 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cptec-radar-timeline{width:100%;margin-top:8px;accent-color:#1677ff}
 
 .cptec-radar-legend{margin-top:10px;padding:10px;border:1px solid #dce5ef;border-radius:10px;background:rgba(248,251,255,.96);color:#23364d}.cptec-radar-legend-title{font-size:9px;font-weight:900;letter-spacing:.6px;margin-bottom:8px}.cptec-radar-legend-content{font-size:10px;color:#53677f}.cptec-legend-row{display:flex;align-items:center;gap:6px;margin:4px 0}.cptec-legend-swatch{width:18px;height:11px;border:1px solid #71809666;border-radius:3px;flex:0 0 18px}.cptec-legend-scale{display:flex;height:12px;border-radius:5px;overflow:hidden;margin:6px 0}.cptec-legend-scale i{display:block;flex:1}.cptec-legend-labels{display:flex;justify-content:space-between;font-size:9px;color:#64748b}.cptec-legend-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto;font:9px/1.4 monospace;color:#53677f}
+
+/* NOWCASTING · indicadores meteorológicos */
+.cg-nowcasting{margin:18px auto 22px;max-width:1666px;padding:0 17px}
+.cg-nowcasting-card{background:#fff;border:1px solid #dce8f5;border-radius:17px;overflow:hidden;box-shadow:0 8px 30px #234b7710}
+.cg-nowcasting-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:15px 17px;border-bottom:1px solid #e8eef5}
+.cg-nowcasting-head h2{font-size:14px;margin:0 0 5px;color:#19304b}
+.cg-nowcasting-head p{font-size:10px;line-height:1.5;margin:0;color:#71839a}
+.cg-nowcasting-actions{display:flex;gap:7px;flex-wrap:wrap}
+.cg-nowcasting-actions button{display:inline-flex;align-items:center;justify-content:center}
+.cg-nowcasting-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px}
+.cg-nowcast-value{min-height:130px;border:1px solid #dce8f5;border-radius:14px;background:linear-gradient(145deg,#f7fbff,#edf6ff);padding:18px;display:flex;flex-direction:column;justify-content:center}
+.cg-nowcast-value small{font-size:10px;font-weight:800;letter-spacing:.8px;color:#647b95}
+.cg-nowcast-number{font-size:clamp(30px,6vw,48px);font-weight:900;line-height:1.1;color:#123b65;margin-top:10px;font-variant-numeric:tabular-nums}
+.cg-nowcast-number em{font-size:17px;font-style:normal;font-weight:800;margin-left:5px;color:#3e6d9c}
+.cg-nowcasting-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:0 16px 15px;font-size:9px;line-height:1.5;color:#71839a}
+@media(max-width:700px){.cg-nowcasting{padding:0 10px;margin:12px auto}.cg-nowcasting-head{padding:12px}.cg-nowcasting-values{padding:11px;gap:8px}.cg-nowcast-value{min-height:112px;padding:13px}}
+@media(max-width:380px){.cg-nowcasting-values{grid-template-columns:1fr}}
+</style>
+
+<style>
+/* Fallback visual para imagens cuja origem bloqueia leitura de pixels por CORS. */
+.leaflet-radar-raster.radar-quality-css-fallback img{transform:none!important}
+.leaflet-radar-raster.radar-quality-css-fallback.radar-quality-smooth img{filter:none!important}
+.leaflet-radar-raster.radar-quality-css-fallback.radar-quality-ultra img{filter:saturate(1.18) contrast(1.08)!important}
+.leaflet-radar-raster.radar-quality-css-fallback.radar-quality-realgod img{filter:saturate(1.25) contrast(1.12) brightness(1.02)!important}
 </style>
 </head>
 <body>
@@ -722,19 +749,19 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <div><h1>CLOUDGOD</h1><small>RADAR METEOROLÓGICO · CENTRAL DE INICIALIZAÇÃO</small></div>
 </div>
 <h2>Configuração de renderização da reflectividade</h2>
-<p class="startup-intro">Escolha como o CLOUDGOD deve apresentar os quadros de radar. A opção pode ser alterada depois, sem trocar a fonte meteorológica.</p>
+<p class="startup-intro">O motor TURBO já inicia automaticamente em segundo plano. Escolha apenas o tratamento visual da reflectividade.</p>
 <div class="render-presets" id="startupPresets">
-<button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')">
+<button class="render-preset" data-quality="smooth" onclick="setRenderQuality('smooth')">
 <strong>SUAVE</strong><small>Imagem normal, sem processamento extra.</small>
 </button>
 <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')">
 <strong>ULTRA CLOUD</strong><small>Interpolação avançada para reduzir o aspecto quadriculado.</small>
 </button>
-<button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')">
-<strong>REALGOD</strong><small>Suavização máxima em tempo real, para uma imagem visualmente muito limpa.</small>
+<button class="render-preset selected" data-quality="realgod" onclick="setRenderQuality('realgod')">
+<strong>REALGOD</strong><small>Suavização e reforço visual de detalhes.</small>
 </button>
 </div>
-<p class="startup-note">ULTRA CLOUD e REALGOD reprocessam os pixels recebidos para reduzir blocos visíveis. Não criam medições meteorológicas nem aumentam a resolução nativa do radar.</p>
+<p class="startup-note">TURBO permanece ativo automaticamente para acelerar consultas, pré-carregamento e atualização dos quadros. SUAVE, ULTRA CLOUD e REALGOD controlam somente o tratamento visual; nenhum perfil cria medições nem aumenta a resolução nativa da fonte.</p>
 <div class="startup-actions">
 <label for="startupMapMode">MAPA BASE
     <select id="startupMapMode"><option value="street">OpenStreetMap · ORIGINAL</option><option value="satellite">Satélite · Esri World Imagery</option></select>
@@ -855,11 +882,12 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <label>OPACIDADE DA IMAGEM</label>
 <input id="opacity" max="100" min="10" type="range" value="90"/>
 <div class="render-quality-panel">
-<label style="margin-top:0">QUALIDADE DE RENDERIZAÇÃO DA REFLECTIVIDADE</label>
+<label style="margin-top:0">TRATAMENTO VISUAL DA REFLECTIVIDADE · MOTOR TURBO AUTOMÁTICO</label>
 <div class="render-presets">
-<button class="render-preset selected" data-quality="smooth" onclick="setRenderQuality('smooth')"><strong>SUAVE</strong><small>Reflectividade normal, sem suavização adicional.</small></button>
+<button class="render-preset" data-quality="smooth" onclick="setRenderQuality('smooth')"><strong>SUAVE</strong><small>Reflectividade normal, sem suavização adicional.</small></button>
 <button class="render-preset" data-quality="ultra" onclick="setRenderQuality('ultra')"><strong>ULTRA CLOUD</strong><small>Suavização avançada e transições de cor mais limpas.</small></button>
-<button class="render-preset" data-quality="realgod" onclick="setRenderQuality('realgod')"><strong>REALGOD</strong><small>Suavização máxima e interpolação de alta qualidade, sem lupa ou ampliação.</small></button>
+<button class="render-preset selected" data-quality="realgod" onclick="setRenderQuality('realgod')"><strong>REALGOD</strong><small>Suavização e reforço visual de detalhes.</small></button>
+
 </div>
 <div class="storm-panel">
 <strong>CLOUDGOD STORM · PALETA ÚNICA COM 200 TONS</strong>
@@ -892,7 +920,7 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <div id="message">Preparando radar...</div>
 <div class="cptec-radar-card cg-search-item" data-search-item="1" hidden="" id="cptecRadarProduct">
 <h4>CAMADA RADAR · CPTEC/INPE</h4>
-<p>Reflectividade CAPPI 3 km sobre o mapa ativo. Horários e imagens são consultados automaticamente no Nowcasting/CPTEC; a camada acompanha o mapa-base OpenStreetMap ou Esri.</p>
+<p>Reflectividade CAPPI 3 km sobre o mapa ativo. A imagem é exibida na resolução original entregue pelo CPTEC; o TURBO acelera a renderização, sem fabricar pixels meteorológicos. A camada acompanha o mapa-base OpenStreetMap ou Esri.</p>
 <div class="cptec-radar-meta">
 <span id="cptecRadarStationLabel">INEA · Macaé</span>
 <strong id="cptecRadarFrameLabel">— / —</strong>
@@ -1269,6 +1297,29 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 </section></div><div class="cg-search-empty" hidden="True">Nenhuma opção encontrada nesta categoria.</div></aside>
 </div>
 </main>
+
+<section class="cg-nowcasting cg-search-item" data-search-item="1" id="cgNowcastingModule" aria-label="Indicadores meteorológicos de curtíssimo prazo">
+ <div class="cg-nowcasting-card">
+  <div class="cg-nowcasting-head">
+   <div>
+    <h2>NOWCASTING · CONDIÇÕES METEOROLÓGICAS</h2>
+    <p>Temperatura atual e probabilidade de chuva estimada para o centro do mapa.</p>
+   </div>
+   <div class="cg-nowcasting-actions">
+    <button class="secondary" type="button" onclick="refreshCGNowcasting()">ATUALIZAR</button>
+   </div>
+  </div>
+  <div class="cg-nowcasting-values">
+   <div class="cg-nowcast-value"><small>TEMPERATURA</small><div class="cg-nowcast-number" id="cgNowcastTemp">??<em>Graus</em></div></div>
+   <div class="cg-nowcast-value"><small>CHANCE DE CHUVA</small><div class="cg-nowcast-number" id="cgNowcastRain">??<em>% chuva</em></div></div>
+  </div>
+  <div class="cg-nowcasting-foot">
+   <span id="cgNowcastStatus" role="status">Aguardando consulta meteorológica…</span>
+   <span>Estimativa de modelo meteorológico · independente dos radares Macaé e Araranguá.</span>
+  </div>
+ </div>
+</section>
+
 <!-- CARTÃO TRANSPARENTE -->
 <div class="distance-card" id="distanceCard" onclick="expandDistanceCard()">
 <div class="distance-top">
@@ -1312,7 +1363,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <div class="footer">CLOUDGOD · REDEMET/DECEA · NOAA GOES-19 ABI BAND 13 · GOES-19 GLM · OPENSTREETMAP</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 // Inicializa o visualizador regional CPTEC sem interferir na REDEMET.
-// O radar é carregado somente após o usuário selecionar um produto.
+document.addEventListener("DOMContentLoaded",()=>{cptecLoadStation();});
 
 </script>
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
@@ -1357,6 +1408,19 @@ const API={
  "05km":"https://api-redemet.decea.mil.br/produtos/radar/05km",
  infrared:"https://api-redemet.decea.mil.br/produtos/satelite/realcada"
 };
+
+// Ajuste fino horizontal do raster REDEMET. Mantém a borda oeste fixa e
+// comprime levemente a extensão para corrigir o erro crescente no lado leste.
+// 1.000 = sem correção; 0.990 = redução horizontal de 1%.
+// Usa exatamente os limites geográficos entregues pela fonte do radar.
+// Não aplica escala arbitrária: ela gera erro crescente de alinhamento.
+function radarDisplayBounds(bounds){
+ if(!Array.isArray(bounds)||!Array.isArray(bounds[0])||!Array.isArray(bounds[1]))return bounds;
+ const south=Number(bounds[0][0]),west=Number(bounds[0][1]);
+ const north=Number(bounds[1][0]),east=Number(bounds[1][1]);
+ if(![south,west,north,east].every(Number.isFinite)||north<=south||east<=west)return bounds;
+ return [[south,west],[north,east]];
+}
 
 let currentProduct="maxcappi";
 let frames=[];
@@ -2161,15 +2225,16 @@ function closeEconomyMenu(){
  // ============================================
 const RENDER_PROFILES={
  smooth:{className:"render-smooth",speed:800,description:"Suave — raster original"},
- ultra:{className:"render-ultra",speed:800,description:"Ultra Cloud — suavização real dos pixels"},
- realgod:{className:"render-realgod",speed:800,description:"Realgod — suavização e reforço de detalhes"}
-};
-let currentRenderQuality="smooth";
+ ultra:{className:"render-ultra",speed:800,description:"Ultra Cloud — suavização dos pixels"},
+ realgod:{className:"render-realgod",speed:800,description:"Realgod — suavização e reforço visual"},
+ };
+const TURBO_ENGINE=true; // Motor de desempenho sempre ativo; não é uma opção visual.
+let currentRenderQuality="realgod";
 function setRenderQuality(name){
- const profile=RENDER_PROFILES[name]||RENDER_PROFILES.smooth;
- currentRenderQuality=RENDER_PROFILES[name]?name:"smooth";
+ const profile=RENDER_PROFILES[name]||RENDER_PROFILES.realgod;
+ currentRenderQuality=(name==="turbo"?"realgod":(RENDER_PROFILES[name]?name:"realgod"));
  if(typeof radarRasterCache!=="undefined")radarRasterCache.clear();
- document.body.classList.remove("render-smooth","render-ultra","render-realgod");
+ document.body.classList.remove("render-smooth","render-ultra","render-realgod","render-turbo");
  document.body.classList.add(profile.className);
  document.querySelectorAll("[data-quality]").forEach(button=>{
   button.classList.toggle("selected",button.dataset.quality===currentRenderQuality);
@@ -2189,7 +2254,7 @@ function enterCloudgod(){
  requestAnimationFrame(()=>map.invalidateSize({pan:false,animate:false}));
 }
 document.addEventListener("DOMContentLoaded",()=>{
- setRenderQuality("smooth");
+ setRenderQuality("realgod");
  const startMap=document.getElementById("startupMapMode");
  if(startMap && !startMap.value)startMap.value="street";
  renderStorm200Palette();
@@ -2212,16 +2277,14 @@ const CPTEC_RADAR_CONFIG = {
   path:"inea~macae~cappi~cappi3km",
   center:[-22.4058,-41.8605],
   rangeKm:250,
-  // Quadros informados pelo usuário: fallback visual quando /times falhar.
-  times:["202611140950","202611141000","202611141010","202611141020","202611141030","202611141055","202611141100","202611141105","202611141125","202611141130","202611141135"]
+  times:[]
  },
  ararangua: {
   label:"SDCSC · Araranguá (SC)",
   path:"sdcsc~ararangua~cappi~cappi3km",
   center:[-28.9346,-49.3627],
   rangeKm:150,
-  // Quadros informados pelo usuário: fallback visual quando /times falhar.
-  times:["202611140852","202611140854","202611140858","202611140906","202611140915","202611140921","202611140925","202611140929","202611140937","202611140941","202611140950","202611140952","202611140956"]
+  times:[]
  },
  gama: {
   label:"DECEA · Gama (DF)",
@@ -2249,63 +2312,10 @@ const CPTEC_RADAR_API="https://nowcasting.cptec.inpe.br/api/v1";
 let cptecRadarFrames=[];
 let cptecRadarIndex=0;
 let cptecRadarLoop=null;
+let cptecRadarLoopToken=0;
 let cptecRadarRequest=0;
 let cptecRadarActiveKey=null;
 let cptecRadarOverlay=null;
-let cptecRenderAttempt=0;
-const cptecUnavailableFrames=new Set();
-let cptecRadarLiveTimer=null;
-let cptecRadarLiveBusy=false;
-const CPTEC_RADAR_LIVE_POLL_MS=60000;
-
-function cptecTimesUrl(station){
- return CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/times";
-}
-function cptecStartLivePolling(){
- if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
- cptecRadarLiveTimer=setInterval(()=>cptecPollLatestFrames(),CPTEC_RADAR_LIVE_POLL_MS);
-}
-function cptecStopLivePolling(){
- if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
- cptecRadarLiveTimer=null;
-}
-async function cptecPollLatestFrames(){
- const key=cptecRadarActiveKey;
- const station=key&&CPTEC_RADAR_CONFIG[key];
- if(!station||cptecRadarLiveBusy)return;
- cptecRadarLiveBusy=true;
- try{
-  const response=await fetch(cptecTimesUrl(station),{cache:"no-store"});
-  if(!response.ok)throw new Error("HTTP "+response.status);
-  const payload=await response.json();
-  const fresh=cptecExtractTimes(payload);
-  if(!fresh.length)throw new Error("A API /times não retornou horários reconhecíveis.");
-  if(key!==cptecRadarActiveKey)return;
-  const oldFrames=cptecRadarFrames.slice();
-  const oldTime=oldFrames[cptecRadarIndex]||null;
-  const wasAtLatest=!oldTime||cptecRadarIndex>=oldFrames.length-1;
-  const changed=fresh.length!==oldFrames.length||fresh[fresh.length-1]!==oldFrames[oldFrames.length-1];
-  cptecRadarFrames=fresh;
-  if(wasAtLatest){
-   cptecRadarIndex=fresh.length-1;
-  }else{
-   const preserved=fresh.indexOf(oldTime);
-   cptecRadarIndex=preserved>=0?preserved:Math.max(0,fresh.length-1);
-  }
-  const slider=document.getElementById("cptecRadarTimeline");
-  if(slider){slider.max=String(Math.max(0,fresh.length-1));slider.value=String(cptecRadarIndex);}
-  if(changed){
-   cptecRenderFrame();
-   cptecSetStatus("AO VIVO · "+fresh.length+" quadros · último quadro "+fresh[fresh.length-1]+" UTC · atualização automática a cada 60 s.");
-  }else{
-   cptecSetStatus("AO VIVO · sem novo quadro publicado · último horário "+fresh[fresh.length-1]+" UTC · próxima consulta em até 60 s.");
-  }
- }catch(error){
-  cptecSetStatus("CONEXÃO CPTEC · /times não respondeu ("+error.message+"). Mantendo o quadro atual e tentando novamente em 60 s.");
- }finally{
-  cptecRadarLiveBusy=false;
- }
-}
 
 function cptecFrameUrl(station,time){
  return CPTEC_RADAR_API+"/paths/frames/radar/"+station.path+"/"+time+"/full?v=3840203563";
@@ -2347,7 +2357,8 @@ function cptecRemoveOverlay(){
  cptecRadarOverlay=null;
 }
 function cptecStopLoop(){
- if(cptecRadarLoop)clearInterval(cptecRadarLoop);
+ cptecRadarLoopToken++;
+ if(cptecRadarLoop)clearTimeout(cptecRadarLoop);
  cptecRadarLoop=null;
  const button=document.getElementById("cptecRadarPlay");
  if(button)button.textContent="INICIAR LOOP";
@@ -2355,89 +2366,57 @@ function cptecStopLoop(){
 function cptecToggleLoop(){
  if(cptecRadarLoop){cptecStopLoop();return;}
  if(cptecRadarFrames.length<2){cptecSetStatus("São necessários pelo menos dois quadros para iniciar a animação.");return;}
+ const token=++cptecRadarLoopToken;
  const button=document.getElementById("cptecRadarPlay");
  if(button)button.textContent="PARAR LOOP";
- cptecRadarLoop=setInterval(()=>{
+ const tick=async()=>{
+  if(token!==cptecRadarLoopToken)return;
   cptecRadarIndex=(cptecRadarIndex+1)%cptecRadarFrames.length;
-  cptecRenderFrame();
- },500);
+  await cptecRenderFrame();
+  if(token!==cptecRadarLoopToken)return;
+  const delay=TURBO_ENGINE?180:500;
+  cptecRadarLoop=setTimeout(tick,delay);
+ };
+ cptecRadarLoop=setTimeout(tick,0);
 }
-function cptecProbeImage(url,timeoutMs=12000){
- return new Promise(resolve=>{
-  const image=new Image();
-  let settled=false;
-  const finish=ok=>{
-   if(settled)return;
-   settled=true;
-   clearTimeout(timer);
-   image.onload=null;
-   image.onerror=null;
-   resolve(ok);
-  };
-  const timer=setTimeout(()=>finish(false),timeoutMs);
-  image.onload=()=>finish(image.naturalWidth>0&&image.naturalHeight>0);
-  image.onerror=()=>finish(false);
-  image.src=url;
- });
+let cptecFrameRenderToken=0;
+const cptecImageWarmCache=new Set();
+function cptecPreloadFrame(index){
+ const station=CPTEC_RADAR_CONFIG[cptecRadarActiveKey],time=cptecRadarFrames[index];
+ if(!station||!time)return;
+ const url=cptecFrameUrl(station,time);
+ if(cptecImageWarmCache.has(url))return;
+ cptecImageWarmCache.add(url);
+ const img=new Image();img.decoding="async";img.onload=()=>{if(cptecImageWarmCache.size>24)cptecImageWarmCache.clear();};img.onerror=()=>cptecImageWarmCache.delete(url);img.src=url;
 }
-async function cptecRenderFrame(){
+function cptecRenderFrame(){
  const station=CPTEC_RADAR_CONFIG[cptecRadarActiveKey];
- const requestedIndex=cptecRadarIndex;
+ const time=cptecRadarFrames[cptecRadarIndex];
  const slider=document.getElementById("cptecRadarTimeline");
  const label=document.getElementById("cptecRadarFrameLabel");
  const stationLabel=document.getElementById("cptecRadarStationLabel");
- if(!station||!cptecRadarFrames.length)return;
- const attempt=++cptecRenderAttempt;
- cptecRemoveOverlay();
- cptecSetStatus("Verificando a disponibilidade da imagem CAPPI 3 km no CPTEC…");
-
- // Testa primeiro o horário escolhido; se estiver indisponível, procura
- // o quadro anterior mais próximo e, depois, os horários seguintes.
- const order=[requestedIndex];
- for(let i=requestedIndex-1;i>=0;i--)order.push(i);
- for(let i=requestedIndex+1;i<cptecRadarFrames.length;i++)order.push(i);
-
- let availableIndex=-1;
- for(const index of order){
-  if(attempt!==cptecRenderAttempt)return;
-  const time=cptecRadarFrames[index];
-  if(!time||cptecUnavailableFrames.has(station.path+"/"+time))continue;
-  const ok=await cptecProbeImage(cptecFrameUrl(station,time));
-  if(attempt!==cptecRenderAttempt)return;
-  if(ok){availableIndex=index;break;}
-  cptecUnavailableFrames.add(station.path+"/"+time);
- }
- if(attempt!==cptecRenderAttempt)return;
- if(availableIndex<0){
-  if(label)label.textContent="Imagem indisponível";
-  cptecSetStatus("Nenhum dos horários listados retornou uma imagem válida do CPTEC. O sistema continuará consultando novos horários; não será exibida uma imagem fictícia.");
-  return;
- }
-
- cptecRadarIndex=availableIndex;
- const time=cptecRadarFrames[availableIndex];
+ if(!time||!station)return Promise.resolve(false);
+ const token=++cptecFrameRenderToken;
  const pretty=time.slice(6,8)+"/"+time.slice(4,6)+"/"+time.slice(0,4)+" · "+time.slice(8,10)+":"+time.slice(10,12)+" UTC";
+ const previous=cptecRadarOverlay;
  const overlay=L.imageOverlay(cptecFrameUrl(station,time),cptecRadarBounds(station),{
-  opacity:0.86,interactive:false,crossOrigin:false,zIndex:650
+  opacity:0,interactive:false,crossOrigin:false,zIndex:651
  });
- overlay.on("load",()=>{
-  if(attempt===cptecRenderAttempt){
-   cptecSetStatus("IMAGEM CARREGADA · CAPPI 3 km · "+station.label+" · "+pretty+" · Nowcasting/CPTEC.");
-  }
- });
- overlay.on("error",()=>{
-  if(attempt===cptecRenderAttempt){
-   cptecUnavailableFrames.add(station.path+"/"+time);
-   cptecSetStatus("O quadro passou no teste inicial, mas falhou ao entrar no mapa. Tente outro horário ou atualize a lista do CPTEC.");
-  }
- });
- cptecRadarOverlay=overlay.addTo(map);
  if(slider){slider.max=String(cptecRadarFrames.length-1);slider.value=String(cptecRadarIndex);}
  if(label)label.textContent=(cptecRadarIndex+1)+" / "+cptecRadarFrames.length+" · "+pretty;
  if(stationLabel)stationLabel.textContent=station.label;
- if(availableIndex!==requestedIndex){
-  cptecSetStatus("O horário solicitado estava indisponível. Exibindo o quadro válido mais próximo: "+pretty+".");
- }
+ return new Promise(resolve=>{
+  let done=false;let timeout;
+  const finish=(ok)=>{
+   if(done)return;done=true;clearTimeout(timeout);
+   if(token!==cptecFrameRenderToken){if(map.hasLayer(overlay))map.removeLayer(overlay);resolve(false);return;}
+   if(ok){overlay.setOpacity(.86);if(previous&&map.hasLayer(previous))map.removeLayer(previous);cptecRadarOverlay=overlay;cptecSetStatus("CAPPI 3 km ativo · "+station.label+" · "+pretty+" · CPTEC/INPE.");cptecPreloadFrame((cptecRadarIndex+1)%cptecRadarFrames.length);}
+   else{if(map.hasLayer(overlay))map.removeLayer(overlay);cptecSetStatus("Falha ao carregar este frame. O último quadro válido foi mantido; tente outro horário ou atualizar.");}
+   resolve(ok);
+  };
+  overlay.once("load",()=>finish(true));overlay.once("error",()=>finish(false));
+  overlay.addTo(map);timeout=setTimeout(()=>{const el=overlay.getElement();finish(Boolean(el&&el.complete&&el.naturalWidth>0));},18000);
+ });
 }
 function cptecGoToFrame(index){
  if(!cptecRadarFrames.length)return;
@@ -2497,38 +2476,32 @@ async function cptecLoadLegend(key,request){
 }
 
 async function cptecLoadStation(key){
- const station=CPTEC_RADAR_CONFIG[key];
- if(!station){cptecSetStatus("Selecione um radar CAPPI 3 km para carregar os quadros.");return;}
  const request=++cptecRadarRequest;
  cptecStopLoop();
  cptecRadarActiveKey=key;
+ const station=CPTEC_RADAR_CONFIG[key];
  const label=document.getElementById("cptecRadarFrameLabel");
  const slider=document.getElementById("cptecRadarTimeline");
  cptecRemoveOverlay();
  if(label)label.textContent="Carregando…";
  cptecSetStatus("Consultando horários disponíveis no Nowcasting/CPTEC…");
  cptecLoadLegend(key,request);
- let times=station.times.slice();
- let usingFallback=false;
+ let times=[];
  try{
-  const response=await fetch(cptecTimesUrl(station),{cache:"no-store"});
+  const response=await fetch(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/times",{cache:"no-store"});
   if(!response.ok)throw new Error("HTTP "+response.status);
   const payload=await response.json();
   const apiTimes=cptecExtractTimes(payload);
-  if(!apiTimes.length)throw new Error("A API não retornou horários reconhecíveis.");
-  times=apiTimes;
-  cptecSetStatus("Horários carregados do endpoint oficial /times · monitoramento ao vivo ativado.");
+  if(apiTimes.length)times=apiTimes;
+  else throw new Error("A API não retornou horários reconhecíveis.");
+  cptecSetStatus("Horários carregados do endpoint oficial /times.");
  }catch(error){
-  usingFallback=times.length>0;
-  if(!usingFallback){
-   cptecRadarFrames=[];
-   if(label)label.textContent="— / —";
-   if(slider){slider.max="0";slider.value="0";}
-   cptecSetStatus("Não foi possível consultar /times de "+station.label+": "+error.message+". Não há horários alternativos cadastrados.");
-   cptecStartLivePolling();
-   return;
-  }
-  cptecSetStatus("API /times indisponível ("+error.message+"). Exibindo os horários previamente fornecidos; o sistema continuará tentando atualizar automaticamente.");
+  if(request!==cptecRadarRequest)return;
+  cptecRadarFrames=[];
+  if(label)label.textContent="— / —";
+  if(slider){slider.max="0";slider.value="0";}
+  cptecSetStatus("Não foi possível consultar horários atuais de "+station.label+": "+error.message+". Nenhum horário antigo será exibido como se fosse atual.");
+  return;
  }
  if(request!==cptecRadarRequest)return;
  cptecRadarFrames=times;
@@ -2539,18 +2512,10 @@ async function cptecLoadStation(key){
   return;
  }
  cptecRenderFrame();
- if(usingFallback){
-  cptecSetStatus("MODO DE CONTINGÊNCIA · "+times.length+" quadros previamente informados · último horário "+times[times.length-1]+" UTC. A atualização ao vivo depende de /times voltar a responder.");
- }else{
-  cptecSetStatus("AO VIVO · "+times.length+" quadros disponíveis · último quadro "+times[times.length-1]+" UTC · consulta automática a cada 60 s.");
- }
- cptecStartLivePolling();
+ cptecSetStatus(times.length+" quadros disponíveis · CAPPI 3 km · fonte Nowcasting/CPTEC.");
 }
 function cptecRefresh(){
- if(cptecRadarActiveKey){
-  cptecSetStatus("Atualizando horários e quadro mais recente no Nowcasting/CPTEC…");
-  cptecLoadStation(cptecRadarActiveKey);
- }
+ if(cptecRadarActiveKey)cptecLoadStation(cptecRadarActiveKey);
 }
 function cptecSelectProduct(product){
  const stationKeys={
@@ -2565,7 +2530,6 @@ function cptecSelectProduct(product){
  const panel=document.getElementById("cptecRadarProduct");
  if(panel)panel.hidden=false;
  cptecStopLoop();
- cptecStopLivePolling();
  cptecRadarFrames=[];
  cptecRemoveOverlay();
  radarGroup.clearLayers();
@@ -2580,8 +2544,6 @@ function cptecSelectProduct(product){
 }
 function cptecDeactivate(){
  cptecStopLoop();
- cptecStopLivePolling();
- cptecRadarActiveKey=null;
  cptecRemoveOverlay();
  const panel=document.getElementById("cptecRadarProduct");
  if(panel)panel.hidden=true;
@@ -2666,31 +2628,31 @@ async function fetchSelectedFrames(signal){
  if(message)message.textContent="Iniciando busca de quadros...";
  const maxBatches=Math.min(48,Math.max(4,Math.ceil(requested/15)+12));
  let nextBatch=0;
- const concurrency=Math.min(4,maxBatches);
+ const concurrency=Math.min(TURBO_ENGINE?8:4,maxBatches);
+ const batchErrors=[];
  async function worker(){
   while(nextBatch<maxBatches&&collected.size<requested){
    if(signal?.aborted)throw new DOMException("Busca cancelada","AbortError");
    const batch=nextBatch++;
    const dataHour=utcHour(-batch);
-   const response=await fetch(buildURL(dataHour,15),{signal,cache:"no-store"});
-   if(!response.ok)throw new Error("REDEMET respondeu HTTP "+response.status);
-   const json=await response.json();
-   if(json?.error||json?.status===false)throw new Error(json.message||"A API retornou um erro.");
-   let batchFrames=[];
-   if(currentProduct==="infrared"){
-    batchFrames=parseSatelliteResponse(json);
-   }else{
-    const parsed=parseRadarResponse(json,dataHour);
-    updateRadarStations(parsed.stations);
-    batchFrames=parsed.frames;
+   try{
+    const response=await fetch(buildURL(dataHour,15),{signal,cache:"no-store"});
+    if(!response.ok)throw new Error("HTTP "+response.status);
+    const json=await response.json();
+    if(json?.error||json?.status===false)throw new Error(json.message||"API retornou erro");
+    let batchFrames=[];
+    if(currentProduct==="infrared")batchFrames=parseSatelliteResponse(json);
+    else{const parsed=parseRadarResponse(json,dataHour);updateRadarStations(parsed.stations);batchFrames=parsed.frames;}
+    batchFrames.forEach(frame=>{
+     const imageKeys=(frame.images||[]).map(image=>image.url).filter(Boolean).sort().join("|");
+     const key=String(frame.time||"")+"|"+imageKeys;
+     if(imageKeys&&!collected.has(key)&&collected.size<requested)collected.set(key,{...frame,_order:collected.size});
+    });
+   }catch(error){
+    if(signal?.aborted)throw error;
+    batchErrors.push("lote "+(batch+1)+": "+error.message);
+    console.warn("Falha isolada ao consultar histórico REDEMET",batch,error);
    }
-   batchFrames.forEach(frame=>{
-    const imageKeys=(frame.images||[]).map(image=>image.url).filter(Boolean).sort().join("|");
-    const key=String(frame.time||"")+"|"+imageKeys;
-    if(imageKeys&&!collected.has(key)&&collected.size<requested){
-     collected.set(key,{...frame,_order:collected.size});
-    }
-   });
    updateProgress();
   }
  }
@@ -2708,7 +2670,8 @@ async function fetchSelectedFrames(signal){
    : "A REDEMET não retornou quadros válidos.";
  }
  if(result.length<requested){
-  console.warn("REDEMET retornou menos quadros únicos que o solicitado:",result.length,"/",requested);
+  console.warn("REDEMET retornou menos quadros únicos que o solicitado:",result.length,"/",requested,batchErrors);
+  if(!result.length&&batchErrors.length)throw new Error("Nenhum lote da REDEMET respondeu corretamente. "+batchErrors.slice(0,3).join("; "));
  }
  return result;
 }
@@ -2978,14 +2941,19 @@ async function showFrame(index){
  // Não força CORS nas imagens REDEMET: alguns servidores entregam o raster
  // sem Access-Control-Allow-Origin. Com crossorigin=anonymous o navegador
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
- const preparedSources=await Promise.all(frame.images.map(image=>
-  prepareRadarRaster(radarExportSafeUrl(image.url))
-  ));
+ const originalSources=frame.images.map(image=>radarExportSafeUrl(image.url));
+ const preparedSources=await Promise.all(originalSources.map(url=>prepareRadarRaster(url)));
  if(renderToken!==frameRenderToken)return;
- const nextLayers=frame.images.map((image,i)=>L.imageOverlay(
-  preparedSources[i]||radarExportSafeUrl(image.url),image.bounds,
-  {opacity:0,interactive:false,crossOrigin:false,className:"leaflet-radar-raster"}
-  ));
+ const qualityClass=({smooth:"radar-quality-smooth",ultra:"radar-quality-ultra",realgod:"radar-quality-realgod"})[currentRenderQuality]||"radar-quality-smooth";
+ const nextLayers=frame.images.map((image,i)=>{
+  // Se o servidor bloquear CORS, aplica fallback visual CSS à imagem original.
+  const needsCssFallback=!preparedSources[i]||preparedSources[i]===originalSources[i];
+  const fallbackClass=needsCssFallback?" radar-quality-css-fallback":"";
+  return L.imageOverlay(
+   preparedSources[i]||originalSources[i],radarDisplayBounds(image.bounds),
+   {opacity:0,interactive:false,crossOrigin:false,className:"leaflet-radar-raster "+qualityClass+fallbackClass}
+  );
+ });
 
  // Registrar os eventos ANTES de adicionar as imagens evita perder o evento
  // load quando o navegador já tem o arquivo em cache.
@@ -3086,7 +3054,7 @@ async function showFrame(index){
  document.getElementById("frameDate").textContent=String(frame.time);
  if(document.getElementById("cloud3dModal")?.classList.contains("open")&&window.cloud3dReflectivityGroup){
   window.cloud3dReflectivityGroup.clearLayers();
-  frame.images.forEach(im=>{if(im.bounds&&im.url)L.imageOverlay(radarExportSafeUrl(im.url),im.bounds,{opacity:.88,interactive:false,crossOrigin:false}).addTo(window.cloud3dReflectivityGroup);});
+  frame.images.forEach(im=>{if(im.bounds&&im.url)L.imageOverlay(radarExportSafeUrl(im.url),radarDisplayBounds(im.bounds),{opacity:.88,interactive:false,crossOrigin:false}).addTo(window.cloud3dReflectivityGroup);});
  }
  document.getElementById("message").textContent=
   frame.images.length+(currentProduct==="infrared"?" imagem(ns) de satélite Infravermelho realçado no quadro selecionado.":" imagem(ns) de radar no quadro selecionado.");
@@ -3154,10 +3122,11 @@ async function preloadRadarLoopFrames(indexes, startPosition, token){
   if(frame)for(const item of (frame.images||[]))jobs.push(item.url);
  }
  let cursor=0;
- const workers=Array.from({length:8},async()=>{
+ const workerCount=TURBO_ENGINE?12:8;
+ const workers=Array.from({length:workerCount},async()=>{
   while(cursor<jobs.length&&token===loopPreloadToken){
    const url=jobs[cursor++];
-   try{await prepareRadarRaster(radarExportSafeUrl(url));}catch(_){/* showFrame fará a tentativa normal */}
+   try{await (prepareRadarRaster(radarExportSafeUrl(url)));}catch(_){/* showFrame fará a tentativa normal */}
   }
  });
  await Promise.all(workers);
@@ -4647,7 +4616,7 @@ clearRadiosonde=function(){
   if(frame&&Array.isArray(frame.images)){
    frame.images.forEach(im=>{
     if(im.bounds&&im.url){
-     L.imageOverlay(radarExportSafeUrl(im.url),im.bounds,{opacity:.88,interactive:false,crossOrigin:false}).addTo(window.cloud3dReflectivityGroup);
+     L.imageOverlay(radarExportSafeUrl(im.url),radarDisplayBounds(im.bounds),{opacity:.88,interactive:false,crossOrigin:false}).addTo(window.cloud3dReflectivityGroup);
     }
    });
    if(frame.images.length)window.cloud3dReflectivityGroup.addTo(areaMap);
@@ -5100,5 +5069,44 @@ if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=d
    });
  }
 })();
-</script></body>
+</script><script>
+async function refreshCGNowcasting(){
+ const tempEl=document.getElementById("cgNowcastTemp");
+ const rainEl=document.getElementById("cgNowcastRain");
+ const statusEl=document.getElementById("cgNowcastStatus");
+ if(!tempEl||!rainEl||!statusEl)return;
+ tempEl.innerHTML='??<em>Graus</em>';
+ rainEl.innerHTML='??<em>% chuva</em>';
+ statusEl.textContent='Consultando previsão para o centro do mapa…';
+ try{
+  const center=(typeof map!=='undefined'&&map&&map.getCenter)?map.getCenter():{lat:-14.235,lng:-51.9253};
+  const params=new URLSearchParams({latitude:center.lat.toFixed(4),longitude:center.lng.toFixed(4),current:'temperature_2m',hourly:'precipitation_probability',forecast_days:'1',timezone:'auto'});
+  const response=await fetch('https://api.open-meteo.com/v1/forecast?'+params.toString(),{cache:'no-store'});
+  if(!response.ok)throw new Error('HTTP '+response.status);
+  const data=await response.json();
+  const temperature=data.current?.temperature_2m;
+  const times=data.hourly?.time||[];
+  const probabilities=data.hourly?.precipitation_probability||[];
+  if(typeof temperature!=='number')throw new Error('Temperatura indisponível');
+  const now=Date.now();
+  let idx=times.findIndex(t=>new Date(t).getTime()>=now);
+  if(idx<0)idx=times.length-1;
+  const probability=probabilities[idx];
+  tempEl.innerHTML=String(Math.round(temperature))+'<em>Graus</em>';
+  rainEl.innerHTML=(typeof probability==='number'?Math.round(probability):'??')+'<em>% chuva</em>';
+  const updated=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  statusEl.textContent='Centro do mapa · atualizado às '+updated+' · fonte: Open-Meteo';
+ }catch(error){
+  statusEl.textContent='Não foi possível obter os dados agora. Tente atualizar novamente.';
+ }
+}
+window.addEventListener('load',()=>{
+ refreshCGNowcasting();
+ if(typeof map!=='undefined'&&map&&map.on){
+  let refreshTimer;
+  map.on('moveend',()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(refreshCGNowcasting,700);});
+ }
+});
+</script>
+</body>
 </html>
