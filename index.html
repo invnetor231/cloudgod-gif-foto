@@ -2349,9 +2349,15 @@ async function cptecFetchAttempt(url,timeoutMs=25000){
 }
 async function cptecFetchJson(url){
  // Só aceita URLs do endpoint oficial e encaminha apenas o caminho ao servidor próprio.
+ const apiBase=new URL(CPTEC_RADAR_API);
  const upstream=new URL(url);
- if(upstream.origin!==CPTEC_RADAR_API)throw new Error("URL CPTEC não autorizada");
- const path=upstream.pathname+upstream.search;
+ const apiPath=apiBase.pathname.endsWith("/")?apiBase.pathname.slice(0,-1):apiBase.pathname;
+ if(
+  upstream.protocol!=="https:" ||
+  upstream.origin!==apiBase.origin ||
+  !upstream.pathname.startsWith(apiPath+"/")
+ )throw new Error("URL CPTEC não autorizada");
+ const path=upstream.pathname.slice(apiPath.length)+upstream.search;
  const proxyUrl=CPTEC_PROXY_API+"?path="+encodeURIComponent(path);
  try{
   return await cptecFetchAttempt(proxyUrl,25000);
