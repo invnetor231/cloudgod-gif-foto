@@ -860,6 +860,15 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 </div><div class="product" data-product="cptec_ararangua" onclick="selectProduct('cptec_ararangua')">
 <div><strong>CAPPI 3 KM · SDCSC ARARANGUÁ</strong><small>Radar regional · CPTEC/INPE · Santa Catarina</small></div><div class="dot"></div>
 </div>
+<div class="product" data-product="cptec_gama" onclick="selectProduct('cptec_gama')">
+<div><strong>CAPPI 3 KM · DECEA GAMA</strong><small>Radar regional · CPTEC/INPE · Distrito Federal</small></div><div class="dot"></div>
+</div>
+<div class="product" data-product="cptec_morroigreja" onclick="selectProduct('cptec_morroigreja')">
+<div><strong>CAPPI 3 KM · MORRO DA IGREJA</strong><small>Radar regional · CPTEC/INPE · Santa Catarina</small></div><div class="dot"></div>
+</div>
+<div class="product" data-product="cptec_picocouto" onclick="selectProduct('cptec_picocouto')">
+<div><strong>CAPPI 3 KM · PICO DO COUTO</strong><small>Radar regional · CPTEC/INPE · Rio de Janeiro</small></div><div class="dot"></div>
+</div>
 <div aria-label="Tabela de cores de referência da temperatura de brilho" class="bt-legend" id="btColorLegend">
 <h4>LEGENDA BT · COLOR ENHANCED</h4>
 <table class="bt-table">
@@ -2309,6 +2318,7 @@ const CPTEC_RADAR_CONFIG = {
  }
 };
 const CPTEC_RADAR_API="https://nowcasting.cptec.inpe.br/api/v1";
+const CPTEC_PROXY_API="https://cloudgod-cptec-proxy.onrender.com/api/cptec";
 let cptecRadarFrames=[];
 let cptecRadarIndex=0;
 let cptecRadarLoop=null;
@@ -2319,6 +2329,36 @@ let cptecRadarOverlay=null;
 
 function cptecFrameUrl(station,time){
  return CPTEC_RADAR_API+"/paths/frames/radar/"+station.path+"/"+time+"/full?v=3840203563";
+}
+// Consulta JSON pelo proxy próprio do CLOUDGOD hospedado no Render.
+// As imagens dos frames continuam sendo carregadas diretamente do CPTEC/INPE.
+async function cptecFetchAttempt(url,timeoutMs=25000){
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),timeoutMs);
+ try{
+  const response=await fetch(url,{method:"GET",cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal});
+  const body=await response.text();
+  if(!response.ok){
+   let detail="";
+   try{detail=JSON.parse(body).error||JSON.parse(body).message||"";}catch(_){}
+   throw new Error("HTTP "+response.status+(detail?" · "+detail:""));
+  }
+  if(!body||!body.trim())throw new Error("resposta vazia");
+  try{return JSON.parse(body);}catch(_){throw new Error("resposta do proxy não é JSON válido");}
+ }finally{clearTimeout(timer);}
+}
+async function cptecFetchJson(url){
+ // Só aceita URLs do endpoint oficial e encaminha apenas o caminho ao servidor próprio.
+ const upstream=new URL(url);
+ if(upstream.origin!==CPTEC_RADAR_API)throw new Error("URL CPTEC não autorizada");
+ const path=upstream.pathname+upstream.search;
+ const proxyUrl=CPTEC_PROXY_API+"?path="+encodeURIComponent(path);
+ try{
+  return await cptecFetchAttempt(proxyUrl,25000);
+ }catch(error){
+  const reason=error&&error.name==="AbortError"?"tempo limite após 25 segundos":(error&&error.message)||"falha de conexão";
+  throw new Error("Proxy CLOUDGOD/Render: "+reason);
+ }
 }
 function cptecExtractTimes(payload){
  const found=new Set();
@@ -2453,9 +2493,7 @@ async function cptecLoadLegend(key,request){
  if(!station||!target)return;
  target.textContent="Carregando legenda oficial do CPTEC/INPE…";
  try{
-  const response=await fetch(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/legend",{cache:"no-store"});
-  if(!response.ok)throw new Error("HTTP "+response.status);
-  const payload=await response.json();
+  const payload=await cptecFetchJson(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/legend");
   if(request!==cptecRadarRequest)return;
   const entries=cptecLegendEntries(payload);
   target.replaceChildren();
@@ -2484,23 +2522,23 @@ async function cptecLoadStation(key){
  const slider=document.getElementById("cptecRadarTimeline");
  cptecRemoveOverlay();
  if(label)label.textContent="Carregando…";
- cptecSetStatus("Consultando horários disponíveis no Nowcasting/CPTEC…");
+ cptecSetStatus("Consultando os instantes disponíveis (UTC) no Nowcasting/CPTEC para "+station.label+"…");
  cptecLoadLegend(key,request);
  let times=[];
  try{
-  const response=await fetch(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/times",{cache:"no-store"});
-  if(!response.ok)throw new Error("HTTP "+response.status);
-  const payload=await response.json();
+  // A consulta tem timeout próprio por rota e não compartilha AbortSignal entre tentativas.
+  const payload=await cptecFetchJson(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/times?t="+Date.now());
   const apiTimes=cptecExtractTimes(payload);
   if(apiTimes.length)times=apiTimes;
   else throw new Error("A API não retornou horários reconhecíveis.");
-  cptecSetStatus("Horários carregados do endpoint oficial /times.");
+  cptecSetStatus("Horários carregados do endpoint oficial /times · CPTEC/INPE.");
  }catch(error){
   if(request!==cptecRadarRequest)return;
   cptecRadarFrames=[];
   if(label)label.textContent="— / —";
   if(slider){slider.max="0";slider.value="0";}
-  cptecSetStatus("Não foi possível consultar horários atuais de "+station.label+": "+error.message+". Nenhum horário antigo será exibido como se fosse atual.");
+  const reason=error&&error.message?error.message:"falha desconhecida";
+  cptecSetStatus("Não foi possível consultar os instantes atuais de "+station.label+": "+reason+". As rotas foram tentadas separadamente; nenhum horário antigo será apresentado como atual.");
   return;
  }
  if(request!==cptecRadarRequest)return;
@@ -2512,7 +2550,7 @@ async function cptecLoadStation(key){
   return;
  }
  cptecRenderFrame();
- cptecSetStatus(times.length+" quadros disponíveis · CAPPI 3 km · fonte Nowcasting/CPTEC.");
+ cptecSetStatus(times.length+" instantes oficiais disponíveis · CAPPI 3 km · horários em UTC · Nowcasting/CPTEC.");
 }
 function cptecRefresh(){
  if(cptecRadarActiveKey)cptecLoadStation(cptecRadarActiveKey);

@@ -1,0 +1,31 @@
+CLOUDGOD — PROXY PRÓPRIO CPTEC/INPE
+
+ARQUIVOS
+- server.js: servidor Node/Express que consulta o CPTEC e entrega JSON ao CLOUDGOD.
+- package.json: dependências e comando de inicialização.
+- render.yaml: configuração do novo Web Service no Render.
+- index.html: versão do site configurada para consultar o proxy novo.
+
+COMO FUNCIONA
+- O site atual continua hospedado em https://cloudgod-gif-foto.onrender.com.
+- O proxy será um serviço separado: cloudgod-cptec-proxy.onrender.com.
+- O navegador consulta o proxy do CLOUDGOD; o proxy consulta o Nowcasting/CPTEC.
+- A rota é restrita aos endpoints /times e /legend dos radares. Não é um proxy aberto.
+- Não há cache de horários antigos. Se o CPTEC estiver fora do ar, o site informa a falha em vez de inventar horários.
+- Os frames/imagens do radar continuam sendo carregados diretamente do CPTEC.
+
+PUBLICAÇÃO NO RENDER
+1. Crie um repositório/pasta para o serviço proxy com server.js, package.json e render.yaml.
+2. No Render, crie um New + Web Service e conecte esse repositório.
+3. Runtime: Node. Build Command: npm install. Start Command: npm start.
+4. O nome do serviço deve ser cloudgod-cptec-proxy para que o endereço usado no HTML corresponda ao domínio padrão do Render.
+5. Em Environment, confirme CLOUDGOD_ORIGIN=https://cloudgod-gif-foto.onrender.com e NODE_VERSION=20.
+6. Faça o deploy. Abra https://cloudgod-cptec-proxy.onrender.com/health; deve aparecer {"ok":true,"service":"CLOUDGOD CPTEC proxy"}.
+7. Publique o index.html atualizado no serviço atual do site CLOUDGOD.
+8. Teste os radares CPTEC.
+
+SE O RENDER ATRIBUIR OUTRO DOMÍNIO
+Altere a constante CPTEC_PROXY_API no index.html para https://DOMINIO-REAL-DO-PROXY/api/cptec e publique o HTML novamente.
+
+LIMITAÇÃO
+O código fica pronto, mas o deploy precisa ser confirmado na conta Render que controla o projeto. Não tenho acesso para publicar serviços ou alterar o repositório externo diretamente.
