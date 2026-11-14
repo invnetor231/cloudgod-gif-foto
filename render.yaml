@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: cloudgod-gif-foto
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: CLOUDGOD_ORIGIN
+        value: https://cloudgod-gif-foto.onrender.com
