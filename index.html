@@ -665,7 +665,7 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cg-global-search input{width:100%;height:42px;padding:0 15px 0 40px;border:1px solid var(--border);border-radius:12px;background:#f8faff;color:var(--text);font:12px Arial,sans-serif;outline:none;box-shadow:inset 0 1px 2px #19304b08}
 .cg-global-search:before{content:"⌕";position:absolute;left:14px;top:7px;font-size:22px;color:var(--muted);pointer-events:none}
 .cg-global-search input:focus{border-color:var(--blue);box-shadow:0 0 0 3px #1677ff18}
-.cg-tab-nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:7px;background:#edf4ff;border:1px solid var(--border);border-radius:13px;margin-bottom:12px;position:sticky;top:0;z-index:20}
+.cg-tab-nav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:7px;background:#edf4ff;border:1px solid var(--border);border-radius:13px;margin-bottom:12px;position:sticky;top:0;z-index:20}
 .cg-tab-btn{min-width:0;padding:10px 6px;border-radius:9px;background:transparent;color:#526b86;font-size:10px;white-space:nowrap}
 .cg-tab-btn:hover{transform:none;background:#ffffffa8}
 .cg-tab-btn.active{background:#fff;color:var(--blue);box-shadow:0 2px 8px #19304b12}
@@ -698,6 +698,20 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
  .cg-global-search input{height:39px}
  .side{display:block}
 }
+
+/* RADARES CPTEC/INPE · CAPPI 3 km */
+.cptec-radar-card{margin-top:12px;border:1px solid #dce8f5;border-radius:13px;padding:12px;background:#f8fbff}
+.cptec-radar-card h4{margin:0 0 7px;font-size:11px;color:#29415d}
+.cptec-radar-card p{font-size:9px;line-height:1.5;color:#71839a;margin:5px 0 10px}
+.cptec-radar-select{width:100%;padding:10px;border:1px solid #dce6f0;border-radius:9px;background:#fff;color:#29415d;font-size:11px}
+.cptec-radar-meta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:#60748b}
+.cptec-radar-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:9px}
+.cptec-radar-controls button{padding:9px 5px;font-size:9px;min-width:0}
+.cptec-radar-controls .primary{grid-column:span 2}
+.cptec-radar-status{font-size:9px;line-height:1.5;color:#60748b;margin-top:8px;overflow-wrap:anywhere}
+.cptec-radar-timeline{width:100%;margin-top:8px;accent-color:#1677ff}
+
+.cptec-radar-legend{margin-top:10px;padding:10px;border:1px solid #dce5ef;border-radius:10px;background:rgba(248,251,255,.96);color:#23364d}.cptec-radar-legend-title{font-size:9px;font-weight:900;letter-spacing:.6px;margin-bottom:8px}.cptec-radar-legend-content{font-size:10px;color:#53677f}.cptec-legend-row{display:flex;align-items:center;gap:6px;margin:4px 0}.cptec-legend-swatch{width:18px;height:11px;border:1px solid #71809666;border-radius:3px;flex:0 0 18px}.cptec-legend-scale{display:flex;height:12px;border-radius:5px;overflow:hidden;margin:6px 0}.cptec-legend-scale i{display:block;flex:1}.cptec-legend-labels{display:flex;justify-content:space-between;font-size:9px;color:#64748b}.cptec-legend-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:140px;overflow:auto;font:9px/1.4 monospace;color:#53677f}
 </style>
 </head>
 <body>
@@ -794,22 +808,11 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <div class="cg-live-count">Somente contas autenticadas com compartilhamento ativo aparecem no mapa. Posições antigas expiram automaticamente na visualização.</div>
 </section>
 </section>
-<aside class="side"><nav aria-label="Categorias do radar" class="cg-tab-nav"><button aria-selected="true" class="cg-tab-btn active" data-tab="radar" type="button">⌁ Radar</button><button aria-selected="false" class="cg-tab-btn" data-tab="atmosfera" type="button">◉ Atmosfera</button><button aria-selected="false" class="cg-tab-btn" data-tab="previsoes" type="button">↗ Previsões</button><button aria-selected="false" class="cg-tab-btn" data-tab="modelos" type="button">▦ Modelos</button><button aria-selected="false" class="cg-tab-btn" data-tab="ferramentas" type="button">⚙ Ferramentas</button></nav>
-
-
-
-
-
-
-
-
-
-
-
+<aside class="side"><nav aria-label="Categorias do radar" class="cg-tab-nav"><button aria-selected="true" class="cg-tab-btn active" data-tab="radar" type="button">⌁ Radar</button><button aria-selected="false" class="cg-tab-btn" data-tab="nowcasting" type="button">◉ Nowcasting</button><button aria-selected="false" class="cg-tab-btn" data-tab="atmosfera" type="button">◉ Atmosfera</button><button aria-selected="false" class="cg-tab-btn" data-tab="previsoes" type="button">↗ Previsões</button><button aria-selected="false" class="cg-tab-btn" data-tab="modelos" type="button">▦ Modelos</button><button aria-selected="false" class="cg-tab-btn" data-tab="ferramentas" type="button">⚙ Ferramentas</button></nav>
 <div class="cg-tab-content active" data-tab-content="radar"><section class="panel cg-search-item" data-search-item="1">
 <div class="panel-title">
 <h3>PRODUTOS METEOROLÓGICOS</h3>
-<span>REDEMET</span>
+<span>REDEMET · CPTEC/INPE</span>
 </div>
 <div class="product active" data-product="maxcappi" onclick="selectProduct('maxcappi')">
 <div><strong>MAXCAPPI</strong><small>Reflectividade máxima</small></div><div class="dot"></div>
@@ -825,6 +828,10 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 </div>
 <div class="product" data-product="brightness" onclick="selectProduct('brightness')">
 <div><strong>TEMPERATURA DE BRILHO (BT)</strong><small>GOES-19 ABI C13 · referência Color Enhanced · 10,3 µm</small></div><div class="dot"></div>
+</div><div class="product" data-product="cptec_macae" onclick="selectProduct('cptec_macae')">
+<div><strong>CAPPI 3 KM · INEA MACAÉ</strong><small>Radar regional · CPTEC/INPE · Rio de Janeiro</small></div><div class="dot"></div>
+</div><div class="product" data-product="cptec_ararangua" onclick="selectProduct('cptec_ararangua')">
+<div><strong>CAPPI 3 KM · SDCSC ARARANGUÁ</strong><small>Radar regional · CPTEC/INPE · Santa Catarina</small></div><div class="dot"></div>
 </div>
 <div aria-label="Tabela de cores de referência da temperatura de brilho" class="bt-legend" id="btColorLegend">
 <h4>LEGENDA BT · COLOR ENHANCED</h4>
@@ -883,7 +890,26 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 </div>
 <button class="primary" onclick="refreshRadar()" style="width:100%;margin-top:12px">ATUALIZAR REFLECTIVIDADE</button>
 <div id="message">Preparando radar...</div>
-</section><section class="panel cg-search-item" data-search-item="1">
+<div class="cptec-radar-card cg-search-item" data-search-item="1" hidden="" id="cptecRadarProduct">
+<h4>CAMADA RADAR · CPTEC/INPE</h4>
+<p>Reflectividade CAPPI 3 km sobre o mapa ativo. Horários e imagens são consultados automaticamente no Nowcasting/CPTEC; a camada acompanha o mapa-base OpenStreetMap ou Esri.</p>
+<div class="cptec-radar-meta">
+<span id="cptecRadarStationLabel">INEA · Macaé</span>
+<strong id="cptecRadarFrameLabel">— / —</strong>
+</div>
+<input class="cptec-radar-timeline" id="cptecRadarTimeline" max="0" min="0" oninput="cptecGoToFrame(Number(this.value))" step="1" type="range" value="0"/>
+<div class="cptec-radar-controls">
+<button class="secondary" onclick="cptecStep(-1)" type="button">ANTERIOR</button>
+<button class="primary" id="cptecRadarPlay" onclick="cptecToggleLoop()" type="button">INICIAR LOOP</button>
+<button class="secondary" onclick="cptecStep(1)" type="button">PRÓXIMO</button>
+<button class="secondary" onclick="cptecRefresh()" type="button">ATUALIZAR</button>
+</div>
+<div aria-live="polite" class="cptec-radar-legend" id="cptecRadarLegend">
+<div class="cptec-radar-legend-title">LEGENDA DE REFLECTIVIDADE · dBZ</div>
+<div class="cptec-radar-legend-content" id="cptecRadarLegendContent">A legenda oficial será carregada junto com o radar.</div>
+</div>
+<div class="cptec-radar-status" id="cptecRadarStatus">Selecione um dos produtos CAPPI 3 km.</div>
+</div></section><section class="panel cg-search-item" data-search-item="1">
 <h3>LEGENDA CLOUDGOD STORM · REFLECTIVIDADE</h3>
 <div class="storm-gradient"></div>
 <div class="storm-scale"><span>Fraca</span><span>Moderada</span><span>Forte</span><span>Severa</span><span>Extrema</span></div>
@@ -946,6 +972,24 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <option value="60">60 frames</option>
 </select>
 <label><input id="autoRefresh" type="checkbox"/> Atualização automática</label>
+</div>
+</section></div><div class="cg-tab-content" data-tab-content="nowcasting">
+<section class="panel cg-search-item" data-search-item="1">
+<div class="panel-title">
+<h3>NOWCASTING · RADARES REGIONAIS</h3>
+<span>CPTEC/INPE</span>
+</div>
+<div class="info" style="margin:10px 0 12px">
+Selecione uma estação para visualizar a reflectividade CAPPI 3 km, consultar os horários disponíveis e controlar a animação dos quadros no mapa.
+</div>
+<div class="product" data-product="cptec_gama" onclick="selectProduct('cptec_gama')">
+<div><strong>CAPPI 3 KM · GAMA</strong><small>Radar DECEA · Nowcasting/CPTEC · Distrito Federal</small></div><div class="dot"></div>
+</div>
+<div class="product" data-product="cptec_morroigreja" onclick="selectProduct('cptec_morroigreja')">
+<div><strong>CAPPI 3 KM · MORRO DA IGREJA</strong><small>Radar DECEA · Nowcasting/CPTEC · Santa Catarina</small></div><div class="dot"></div>
+</div>
+<div class="product" data-product="cptec_picocouto" onclick="selectProduct('cptec_picocouto')">
+<div><strong>CAPPI 3 KM · PICO DO COUTO</strong><small>Radar DECEA · Nowcasting/CPTEC · Rio de Janeiro</small></div><div class="dot"></div>
 </div>
 </section></div><div class="cg-tab-content" data-tab-content="atmosfera"><section class="panel instability-panel cg-search-item" data-search-item="1" id="instabilityPanel">
 <div class="instability-head">
@@ -1224,9 +1268,6 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <div id="locationStatus" style="font-size:10px;color:#75869a;margin-top:10px">Localização não solicitada.</div>
 </section></div><div class="cg-search-empty" hidden="True">Nenhuma opção encontrada nesta categoria.</div></aside>
 </div>
-
-
-
 </main>
 <!-- CARTÃO TRANSPARENTE -->
 <div class="distance-card" id="distanceCard" onclick="expandDistanceCard()">
@@ -1269,7 +1310,11 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <button class="secondary" onclick="requestLocation()">MINHA LOCALIZAÇÃO</button>
 </div>
 <div class="footer">CLOUDGOD · REDEMET/DECEA · NOAA GOES-19 ABI BAND 13 · GOES-19 GLM · OPENSTREETMAP</div>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+// Inicializa o visualizador regional CPTEC sem interferir na REDEMET.
+document.addEventListener("DOMContentLoaded",()=>{cptecLoadStation();});
+
+</script>
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
@@ -2154,6 +2199,322 @@ document.addEventListener("DOMContentLoaded",()=>{
 // PRODUTOS
 // ============================================
 
+
+// ============================================
+// CPTEC/INPE · RADARES REGIONAIS CAPPI 3 km
+// Camadas raster no mapa Leaflet (OSM ou Esri).
+// Os limites são aproximados a partir da localização e alcance publicado
+// dos radares; a imagem original não fornece bounds GIS no endpoint /full.
+// ============================================
+const CPTEC_RADAR_CONFIG = {
+ macae: {
+  label:"INEA · Macaé (RJ)",
+  path:"inea~macae~cappi~cappi3km",
+  center:[-22.4058,-41.8605],
+  rangeKm:250,
+  times:[]
+ },
+ ararangua: {
+  label:"SDCSC · Araranguá (SC)",
+  path:"sdcsc~ararangua~cappi~cappi3km",
+  center:[-28.9346,-49.3627],
+  rangeKm:150,
+  times:[]
+ },
+ gama: {
+  label:"DECEA · Gama (DF)",
+  path:"decea~gama~cappi~cappi3km",
+  center:[-16.02,-48.06],
+  rangeKm:150,
+  times:[]
+ },
+ morroigreja: {
+  label:"DECEA · Morro da Igreja (SC)",
+  path:"decea~morroigreja~cappi~cappi3km",
+  center:[-28.12,-49.48],
+  rangeKm:150,
+  times:[]
+ },
+ picocouto: {
+  label:"DECEA · Pico do Couto (RJ)",
+  path:"decea~picocouto~cappi~cappi3km",
+  center:[-22.46,-43.29],
+  rangeKm:150,
+  times:[]
+ }
+};
+const CPTEC_RADAR_API="https://nowcasting.cptec.inpe.br/api/v1";
+let cptecRadarFrames=[];
+let cptecRadarIndex=0;
+let cptecRadarLoop=null;
+let cptecRadarRequest=0;
+let cptecRadarActiveKey=null;
+let cptecRadarOverlay=null;
+let cptecRadarLiveTimer=null;
+let cptecRadarLiveBusy=false;
+const CPTEC_RADAR_LIVE_POLL_MS=60000;
+
+function cptecTimesUrl(station){
+ return CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/times";
+}
+function cptecStartLivePolling(){
+ if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
+ cptecRadarLiveTimer=setInterval(()=>cptecPollLatestFrames(),CPTEC_RADAR_LIVE_POLL_MS);
+}
+function cptecStopLivePolling(){
+ if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
+ cptecRadarLiveTimer=null;
+}
+async function cptecPollLatestFrames(){
+ const key=cptecRadarActiveKey;
+ const station=key&&CPTEC_RADAR_CONFIG[key];
+ if(!station||cptecRadarLiveBusy)return;
+ cptecRadarLiveBusy=true;
+ try{
+  const response=await fetch(cptecTimesUrl(station),{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const payload=await response.json();
+  const fresh=cptecExtractTimes(payload);
+  if(!fresh.length)throw new Error("A API /times não retornou horários reconhecíveis.");
+  if(key!==cptecRadarActiveKey)return;
+  const oldFrames=cptecRadarFrames.slice();
+  const oldTime=oldFrames[cptecRadarIndex]||null;
+  const wasAtLatest=!oldTime||cptecRadarIndex>=oldFrames.length-1;
+  const changed=fresh.length!==oldFrames.length||fresh[fresh.length-1]!==oldFrames[oldFrames.length-1];
+  cptecRadarFrames=fresh;
+  if(wasAtLatest){
+   cptecRadarIndex=fresh.length-1;
+  }else{
+   const preserved=fresh.indexOf(oldTime);
+   cptecRadarIndex=preserved>=0?preserved:Math.max(0,fresh.length-1);
+  }
+  const slider=document.getElementById("cptecRadarTimeline");
+  if(slider){slider.max=String(Math.max(0,fresh.length-1));slider.value=String(cptecRadarIndex);}
+  if(changed){
+   cptecRenderFrame();
+   cptecSetStatus("AO VIVO · "+fresh.length+" quadros · último quadro "+fresh[fresh.length-1]+" UTC · atualização automática a cada 60 s.");
+  }else{
+   cptecSetStatus("AO VIVO · sem novo quadro publicado · último horário "+fresh[fresh.length-1]+" UTC · próxima consulta em até 60 s.");
+  }
+ }catch(error){
+  cptecSetStatus("AO VIVO · não foi possível atualizar /times ("+error.message+"). Mantendo o último quadro disponível e tentando novamente.");
+ }finally{
+  cptecRadarLiveBusy=false;
+ }
+}
+
+function cptecFrameUrl(station,time){
+ return CPTEC_RADAR_API+"/paths/frames/radar/"+station.path+"/"+time+"/full?v=3840203563";
+}
+function cptecExtractTimes(payload){
+ const found=new Set();
+ const add=value=>{
+  if(typeof value==="number"&&Number.isFinite(value)){
+   const ms=value>1e12?value:value>1e9?value*1000:NaN;
+   if(Number.isFinite(ms)){const d=new Date(ms);if(!isNaN(d))found.add(d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0"));}
+   return;
+  }
+  if(typeof value!=="string")return;
+  const compact=value.match(/20\d{10}/g)||[];
+  compact.forEach(t=>found.add(t));
+  // Também aceita datas ISO retornadas pela API (ex.: 2026-11-14T12:30:00Z).
+  const iso=value.match(/20\d{2}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/g)||[];
+  iso.forEach(t=>{const d=new Date(t);if(!isNaN(d))found.add(d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0"));});
+ };
+ const visit=value=>{
+  if(typeof value==="string"||typeof value==="number")add(value);
+  else if(Array.isArray(value))value.forEach(visit);
+  else if(value&&typeof value==="object")Object.values(value).forEach(visit);
+ };
+ visit(payload);
+ return [...found].sort();
+}
+function cptecSetStatus(message){
+ const el=document.getElementById("cptecRadarStatus");
+ if(el)el.textContent=message;
+}
+function cptecRadarBounds(station){
+ const lat=station.center[0], lon=station.center[1], dLat=station.rangeKm/111.32;
+ const dLon=station.rangeKm/(111.32*Math.cos(lat*Math.PI/180));
+ return [[lat-dLat,lon-dLon],[lat+dLat,lon+dLon]];
+}
+function cptecRemoveOverlay(){
+ if(cptecRadarOverlay&&map.hasLayer(cptecRadarOverlay))map.removeLayer(cptecRadarOverlay);
+ cptecRadarOverlay=null;
+}
+function cptecStopLoop(){
+ if(cptecRadarLoop)clearInterval(cptecRadarLoop);
+ cptecRadarLoop=null;
+ const button=document.getElementById("cptecRadarPlay");
+ if(button)button.textContent="INICIAR LOOP";
+}
+function cptecToggleLoop(){
+ if(cptecRadarLoop){cptecStopLoop();return;}
+ if(cptecRadarFrames.length<2){cptecSetStatus("São necessários pelo menos dois quadros para iniciar a animação.");return;}
+ const button=document.getElementById("cptecRadarPlay");
+ if(button)button.textContent="PARAR LOOP";
+ cptecRadarLoop=setInterval(()=>{
+  cptecRadarIndex=(cptecRadarIndex+1)%cptecRadarFrames.length;
+  cptecRenderFrame();
+ },500);
+}
+function cptecRenderFrame(){
+ const station=CPTEC_RADAR_CONFIG[cptecRadarActiveKey];
+ const time=cptecRadarFrames[cptecRadarIndex];
+ const slider=document.getElementById("cptecRadarTimeline");
+ const label=document.getElementById("cptecRadarFrameLabel");
+ const stationLabel=document.getElementById("cptecRadarStationLabel");
+ if(!time||!station)return;
+ const pretty=time.slice(6,8)+"/"+time.slice(4,6)+"/"+time.slice(0,4)+" · "+time.slice(8,10)+":"+time.slice(10,12)+" UTC";
+ cptecRemoveOverlay();
+ const overlay=L.imageOverlay(cptecFrameUrl(station,time),cptecRadarBounds(station),{
+  opacity:0.86,interactive:false,crossOrigin:false,zIndex:650
+ });
+ overlay.on("load",()=>cptecSetStatus("Camada CAPPI 3 km ativa no mapa · "+station.label+" · "+pretty+" · fonte Nowcasting/CPTEC."));
+ overlay.on("error",()=>cptecSetStatus("Falha ao carregar a imagem do CPTEC. Verifique a disponibilidade do quadro e tente atualizar."));
+ cptecRadarOverlay=overlay.addTo(map);
+ if(slider){slider.max=String(cptecRadarFrames.length-1);slider.value=String(cptecRadarIndex);}
+ if(label)label.textContent=(cptecRadarIndex+1)+" / "+cptecRadarFrames.length+" · "+pretty;
+ if(stationLabel)stationLabel.textContent=station.label;
+}
+function cptecGoToFrame(index){
+ if(!cptecRadarFrames.length)return;
+ cptecRadarIndex=Math.max(0,Math.min(cptecRadarFrames.length-1,index));
+ cptecRenderFrame();
+}
+function cptecStep(direction){
+ if(!cptecRadarFrames.length)return;
+ cptecRadarIndex=(cptecRadarIndex+direction+cptecRadarFrames.length)%cptecRadarFrames.length;
+ cptecRenderFrame();
+}
+function cptecSafeColor(value){
+ if(typeof value!=="string")return "";
+ const v=value.trim();
+ return /^(#[0-9a-f]{3,8}|rgba?\([0-9.,%\s]+\)|hsla?\([0-9.,%\s]+\))$/i.test(v)?v:"";
+}
+function cptecLegendEntries(payload){
+ const entries=[];
+ const seen=new Set();
+ const walk=value=>{
+  if(Array.isArray(value)){value.forEach(walk);return;}
+  if(!value||typeof value!=="object")return;
+  const color=cptecSafeColor(value.color||value.colour||value.hex||value.fill||value.background);
+  const label=value.label??value.name??value.value??value.dbz??value.class??value.description;
+  if(color&&label!==undefined&&label!==null){const key=color+"|"+String(label);if(!seen.has(key)){seen.add(key);entries.push({color,label:String(label)});}}
+  Object.values(value).forEach(child=>{if(child&&typeof child==="object")walk(child);});
+ };
+ walk(payload);
+ return entries;
+}
+async function cptecLoadLegend(key,request){
+ const station=CPTEC_RADAR_CONFIG[key];
+ const target=document.getElementById("cptecRadarLegendContent");
+ if(!station||!target)return;
+ target.textContent="Carregando legenda oficial do CPTEC/INPE…";
+ try{
+  const response=await fetch(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/legend",{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const payload=await response.json();
+  if(request!==cptecRadarRequest)return;
+  const entries=cptecLegendEntries(payload);
+  target.replaceChildren();
+  if(entries.length){
+   entries.forEach(entry=>{
+    const row=document.createElement("div");row.className="cptec-legend-row";
+    const swatch=document.createElement("span");swatch.className="cptec-legend-swatch";swatch.style.background=entry.color;
+    const label=document.createElement("span");label.textContent=entry.label;
+    row.append(swatch,label);target.append(row);
+   });
+  }else{
+   const pre=document.createElement("pre");pre.className="cptec-legend-json";pre.textContent=JSON.stringify(payload,null,2);target.append(pre);
+  }
+ }catch(error){
+  if(request!==cptecRadarRequest)return;
+  target.textContent="Não foi possível carregar a legenda oficial nesta conexão. A consulta dos quadros do radar continua independente; tente atualizar a legenda mais tarde.";
+ }
+}
+
+async function cptecLoadStation(key){
+ const request=++cptecRadarRequest;
+ cptecStopLoop();
+ cptecRadarActiveKey=key;
+ const station=CPTEC_RADAR_CONFIG[key];
+ const label=document.getElementById("cptecRadarFrameLabel");
+ const slider=document.getElementById("cptecRadarTimeline");
+ cptecRemoveOverlay();
+ if(label)label.textContent="Carregando…";
+ cptecSetStatus("Consultando horários disponíveis no Nowcasting/CPTEC…");
+ cptecLoadLegend(key,request);
+ let times=station.times.slice();
+ try{
+  const response=await fetch(cptecTimesUrl(station),{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const payload=await response.json();
+  const apiTimes=cptecExtractTimes(payload);
+  if(!apiTimes.length)throw new Error("A API não retornou horários reconhecíveis.");
+  times=apiTimes;
+  cptecSetStatus("Horários carregados do endpoint oficial /times · monitoramento ao vivo ativado.");
+ }catch(error){
+  cptecRadarFrames=[];
+  if(label)label.textContent="— / —";
+  if(slider){slider.max="0";slider.value="0";}
+  cptecSetStatus("Não foi possível consultar os horários de "+station.label+": "+error.message+". O radar tentará novamente automaticamente.");
+  cptecStartLivePolling();
+  return;
+ }
+ if(request!==cptecRadarRequest)return;
+ cptecRadarFrames=times;
+ cptecRadarIndex=Math.max(0,times.length-1);
+ if(!times.length){
+  if(label)label.textContent="— / —";
+  cptecSetStatus("Nenhum quadro disponível para esta estação.");
+  return;
+ }
+ cptecRenderFrame();
+ cptecSetStatus("AO VIVO · "+times.length+" quadros disponíveis · último quadro "+times[times.length-1]+" UTC · consulta automática a cada 60 s.");
+ cptecStartLivePolling();
+}
+function cptecRefresh(){
+ if(cptecRadarActiveKey){
+  cptecSetStatus("Atualizando horários e quadro mais recente no Nowcasting/CPTEC…");
+  cptecLoadStation(cptecRadarActiveKey);
+ }
+}
+function cptecSelectProduct(product){
+ const stationKeys={
+  cptec_macae:"macae",
+  cptec_ararangua:"ararangua",
+  cptec_gama:"gama",
+  cptec_morroigreja:"morroigreja",
+  cptec_picocouto:"picocouto"
+ };
+ const key=stationKeys[product];
+ if(!key||!CPTEC_RADAR_CONFIG[key])return;
+ const panel=document.getElementById("cptecRadarProduct");
+ if(panel)panel.hidden=false;
+ cptecStopLoop();
+ cptecStopLivePolling();
+ cptecRadarFrames=[];
+ cptecRemoveOverlay();
+ radarGroup.clearLayers();
+ if(goes13Layer&&map.hasLayer(goes13Layer))map.removeLayer(goes13Layer);
+ goes13Enabled=false;
+ clearInterval(goes13RefreshTimer);goes13RefreshTimer=null;
+ const station=CPTEC_RADAR_CONFIG[key];
+ document.getElementById("subtitle").textContent="CPTEC/INPE · "+station.label.toUpperCase()+" · CAPPI 3 KM";
+ document.querySelector(".loop h3").textContent="ANIMAÇÃO TEMPORAL · RADAR REGIONAL CPTEC/INPE";
+ map.fitBounds(cptecRadarBounds(station),{padding:[18,18],maxZoom:7});
+ cptecLoadStation(key);
+}
+function cptecDeactivate(){
+ cptecStopLoop();
+ cptecStopLivePolling();
+ cptecRadarActiveKey=null;
+ cptecRemoveOverlay();
+ const panel=document.getElementById("cptecRadarProduct");
+ if(panel)panel.hidden=true;
+}
+
 function selectProduct(product){
  pauseLoop();
  currentProduct=product;
@@ -2165,6 +2526,11 @@ function selectProduct(product){
   if(button)button.classList.toggle("selected",id===product);
  });
  document.getElementById("btColorLegend").classList.toggle("open",product==="brightness");
+ if(["cptec_macae","cptec_ararangua","cptec_gama","cptec_morroigreja","cptec_picocouto"].includes(product)){
+  cptecSelectProduct(product);
+  return;
+ }
+ cptecDeactivate();
   if(product==="brightness"){
   frames=[];currentFrame=0;
   document.getElementById("subtitle").textContent="GOES-19 ABI C13 · LEGENDA COLOR ENHANCED";
