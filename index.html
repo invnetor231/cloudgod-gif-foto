@@ -5047,6 +5047,7 @@ let cgActiveChatUser = null;
 let cgChatChannel = null;
 let cgChatLoadToken = 0;
 let cgChatMode = "private";
+let cgChatSending = false;
 let cgLiveRefreshTimer = null;
 let cgHeartbeatTimer = null;
 let cgSharingBusy = false;
@@ -5261,10 +5262,14 @@ async function cgOpenPublicChat(){
  document.getElementById('cgChatInput').focus();
 }
 function cgAppendPublicMessage(row){
- const box=document.getElementById('cgChatMessages');if(!box)return;
+ const box=document.getElementById('cgChatMessages');if(!box||!row)return;
+ // O mesmo INSERT pode chegar pelo Realtime e também pela consulta inicial/pós-envio.
+ // O ID do banco garante que cada mensagem seja desenhada apenas uma vez.
+ if(row.id!=null&&box.querySelector(`[data-cg-message-id=\"${CSS.escape(String(row.id))}\"]`))return;
  const empty=box.querySelector('.cg-chat-empty');if(empty)box.replaceChildren();
  const profile=cgLiveProfiles.get(row.sender_id);
  const bubble=document.createElement('div');bubble.className='cg-chat-bubble'+(row.sender_id===cgCurrentUser?.id?' mine':'');
+ if(row.id!=null)bubble.dataset.cgMessageId=String(row.id);
  if(row.sender_id!==cgCurrentUser?.id){const who=document.createElement('b');who.textContent=profile?.username||'Usuário';who.style.display='block';who.style.fontSize='11px';bubble.appendChild(who);}
  const body=document.createElement('div');body.textContent=row.content||'';bubble.appendChild(body);
  const time=document.createElement('time');const date=new Date(row.created_at);time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit'});bubble.appendChild(time);
@@ -5285,18 +5290,24 @@ function cgClosePrivateChat(){
 }
 async function cgSendPrivateMessage(event){
  event?.preventDefault?.();
+ if(cgChatSending)return;
  const input=document.getElementById('cgChatInput'),content=input.value.trim();
  if(!content||!cgCurrentUser)return;
- input.disabled=true;let error;
- if(cgChatMode==='public')({error}=await cgSupabase.from('cg_public_messages').insert({sender_id:cgCurrentUser.id,content}));
- else{
-  if(!cgActiveChatUser){input.disabled=false;return;}
-  ({error}=await cgSupabase.from('cg_private_messages').insert({sender_id:cgCurrentUser.id,receiver_id:cgActiveChatUser.id,content}));
+ cgChatSending=true;input.disabled=true;let error;
+ try{
+  if(cgChatMode==='public')({error}=await cgSupabase.from('cg_public_messages').insert({sender_id:cgCurrentUser.id,content}));
+  else{
+   if(!cgActiveChatUser){input.disabled=false;cgChatSending=false;return;}
+   ({error}=await cgSupabase.from('cg_private_messages').insert({sender_id:cgCurrentUser.id,receiver_id:cgActiveChatUser.id,content}));
+  }
+  if(error){cgChatStatus('Falha ao enviar: '+error.message+'. Confira o SQL atualizado.',true);return;}
+  input.value='';cgChatStatus('Mensagem enviada.');
+  // O Realtime já pode ter exibido o INSERT; a consulta reconstrói a lista
+  // e a proteção por ID impede qualquer duplicação.
+  if(cgChatMode==='public')await cgLoadPublicMessages(cgChatLoadToken);else await cgLoadChatMessages(cgChatLoadToken);
+ }finally{
+  input.disabled=false;cgChatSending=false;
  }
- input.disabled=false;
- if(error){cgChatStatus('Falha ao enviar: '+error.message+'. Confira o SQL atualizado.',true);return;}
- input.value='';cgChatStatus('Mensagem enviada.');
- if(cgChatMode==='public')await cgLoadPublicMessages(cgChatLoadToken);else await cgLoadChatMessages(cgChatLoadToken);
 }
 if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=data.session?.user||null;if(cgCurrentUser)cgCloseLiveGate();await cgUpdateAuthUI();cgInitLiveGate();cgStatus(cgCurrentUser?'Conectado.':'Entre ou crie uma conta, ou escolha NÃO OBRIGADO.');});cgSupabase.auth.onAuthStateChange((_event,session)=>{cgCurrentUser=session?.user||null;if(cgCurrentUser)cgCloseLiveGate();setTimeout(async()=>{await cgUpdateAuthUI();if(!cgCurrentUser)cgInitLiveGate();},0);});}else{cgStatus('Não foi possível carregar Supabase JS. Verifique a conexão.',true);}
 </script>
