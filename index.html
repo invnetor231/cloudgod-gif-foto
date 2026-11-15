@@ -763,6 +763,17 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cg-chat-open-btn{margin-top:10px;width:100%}
 @media(max-width:520px){.cg-chat-modal{padding:0}.cg-chat-window{height:100dvh;width:100%;border-radius:0}.cg-chat-person b,.cg-chat-person small{max-width:245px}}
 </style>
+<style>
+.cg-public-chat-launcher{position:fixed;z-index:850;right:18px;bottom:24px;border:1px solid #69cfff;background:#062746;color:#fff;border-radius:13px;padding:11px 15px;font-weight:900;box-shadow:0 7px 24px #001a35a8;cursor:pointer}
+.cg-public-chat-launcher span{color:#4cffad;margin-left:5px}
+.cg-chat-window{width:min(510px,calc(100vw - 28px));height:min(590px,72dvh)}
+.cg-chat-header{gap:10px;flex-wrap:wrap}
+.cg-chat-tabs{display:flex;gap:5px;margin-left:auto}
+.cg-chat-tabs button{border:1px solid #ffffff55;background:#ffffff12;color:#d9edff;border-radius:9px;padding:8px 10px;font-size:10px;font-weight:900;cursor:pointer}
+.cg-chat-tabs button.active{background:#13a4e8;color:#fff;border-color:#13a4e8}
+.cg-live-marker{cursor:pointer}
+@media(max-width:520px){.cg-public-chat-launcher{right:12px;bottom:18px}.cg-chat-window{height:min(590px,72dvh);width:calc(100vw - 24px);border-radius:16px}.cg-chat-header{padding:10px}.cg-chat-tabs{margin-left:0}.cg-chat-person b,.cg-chat-person small{max-width:145px}}
+</style>
 </head>
 <body>
 <div class="startup-screen" id="startupScreen">
@@ -4979,6 +4990,7 @@ let cgLiveProfiles = new Map();
 let cgActiveChatUser = null;
 let cgChatChannel = null;
 let cgChatLoadToken = 0;
+let cgChatMode = "private";
 let cgLiveRefreshTimer = null;
 let cgHeartbeatTimer = null;
 let cgSharingBusy = false;
@@ -5002,6 +5014,8 @@ function cgUpsertMarker(profile){
  let marker=cgLiveMarkers.get(profile.id);
  if(marker){marker.setLatLng([lat,lon]);marker.setIcon(icon);}
  else{marker=L.marker([lat,lon],{icon,keyboard:false}).addTo(map);cgLiveMarkers.set(profile.id,marker);}
+ marker.off('click');
+ if(cgCurrentUser&&profile.id!==cgCurrentUser.id)marker.on('click',()=>cgOpenPrivateChat(profile.id));
  const popup=document.createElement('div');
  const title=document.createElement('b');title.textContent=profile.username||'Usuário';popup.appendChild(title);
  const line=document.createElement('div');line.textContent='Compartilhando localização ao vivo';line.style.marginTop='4px';popup.appendChild(line);
@@ -5147,8 +5161,9 @@ async function cgOpenPrivateChat(userId){
   if(error||!data)return cgStatus('Não foi possível abrir o perfil desse usuário.',true);
   peer=data;
  }
- cgActiveChatUser=peer;const token=++cgChatLoadToken;
+ cgActiveChatUser=peer;cgChatMode="private";const token=++cgChatLoadToken;
  const modal=document.getElementById('cgPrivateChat');modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+ cgSwitchChatMode('private');
  document.getElementById('cgChatTitle').textContent=peer.username||'Usuário';
  const avatar=document.getElementById('cgChatAvatar'),safe=cgSafeAvatar(peer.avatar_url);if(safe){avatar.src=safe;avatar.style.display='block';}else{avatar.removeAttribute('src');avatar.style.display='none';}
  document.getElementById('cgChatSubtitle').textContent='Conversa privada';
@@ -5156,6 +5171,56 @@ async function cgOpenPrivateChat(userId){
  cgChatStatus('Mensagens visíveis somente para os participantes.');
  cgStartChatRealtime();await cgLoadChatMessages(token);
  document.getElementById('cgChatInput').focus();
+}
+function cgSwitchChatMode(mode){
+ cgChatMode=mode;
+ document.getElementById('cgChatPrivateTab')?.classList.toggle('active',mode==='private');
+ document.getElementById('cgChatPublicTab')?.classList.toggle('active',mode==='public');
+ const input=document.getElementById('cgChatInput');
+ if(mode==='public'){
+  document.getElementById('cgChatTitle').textContent='Chat público';
+  document.getElementById('cgChatSubtitle').textContent='Todos os usuários conectados';
+  document.getElementById('cgChatAvatar').style.display='none';
+  input.placeholder='Mensagem para todos…';
+ }else{
+  document.getElementById('cgChatTitle').textContent=cgActiveChatUser?.username||'Chat privado';
+  document.getElementById('cgChatSubtitle').textContent='Conversa privada 1:1';
+  const av=document.getElementById('cgChatAvatar'),safe=cgSafeAvatar(cgActiveChatUser?.avatar_url);
+  if(safe){av.src=safe;av.style.display='block';}else av.style.display='none';
+  input.placeholder='Escreva uma mensagem…';
+ }
+}
+async function cgOpenPublicChat(){
+ if(!cgCurrentUser)return cgStatus('Entre na sua conta para participar do chat público.',true);
+ cgChatMode='public';cgActiveChatUser=null;const token=++cgChatLoadToken;
+ const modal=document.getElementById('cgPrivateChat');modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+ cgSwitchChatMode('public');
+ document.getElementById('cgChatMessages').innerHTML='<div class="cg-chat-empty">Carregando chat público…</div>';
+ cgChatStatus('Mensagens visíveis para todos os usuários autenticados.');
+ if(cgChatChannel&&cgSupabase){cgSupabase.removeChannel(cgChatChannel);cgChatChannel=null;}
+ cgChatChannel=cgSupabase.channel('cg-public-room')
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'cg_public_messages'},payload=>{if(payload.new)cgAppendPublicMessage(payload.new);})
+  .subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')cgChatStatus('Chat público sem Realtime. Confira o SQL atualizado.',true);});
+ await cgLoadPublicMessages(token);
+ document.getElementById('cgChatInput').focus();
+}
+function cgAppendPublicMessage(row){
+ const box=document.getElementById('cgChatMessages');if(!box)return;
+ const empty=box.querySelector('.cg-chat-empty');if(empty)box.replaceChildren();
+ const profile=cgLiveProfiles.get(row.sender_id);
+ const bubble=document.createElement('div');bubble.className='cg-chat-bubble'+(row.sender_id===cgCurrentUser?.id?' mine':'');
+ if(row.sender_id!==cgCurrentUser?.id){const who=document.createElement('b');who.textContent=profile?.username||'Usuário';who.style.display='block';who.style.fontSize='11px';bubble.appendChild(who);}
+ const body=document.createElement('div');body.textContent=row.content||'';bubble.appendChild(body);
+ const time=document.createElement('time');const date=new Date(row.created_at);time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit'});bubble.appendChild(time);
+ box.appendChild(bubble);box.scrollTop=box.scrollHeight;
+}
+async function cgLoadPublicMessages(token){
+ const {data,error}=await cgSupabase.from('cg_public_messages').select('id,sender_id,content,created_at').order('created_at',{ascending:true}).limit(150);
+ if(token!==cgChatLoadToken||cgChatMode!=='public')return;
+ if(error){cgChatStatus('Erro ao carregar chat público: '+error.message+'. Execute o SQL atualizado.',true);return;}
+ const box=document.getElementById('cgChatMessages');box.replaceChildren();
+ if(!data?.length){const empty=document.createElement('div');empty.className='cg-chat-empty';empty.textContent='O chat público está vazio. Envie a primeira mensagem!';box.appendChild(empty);return;}
+ data.forEach(cgAppendPublicMessage);
 }
 function cgClosePrivateChat(){
  const modal=document.getElementById('cgPrivateChat');modal.classList.remove('open');modal.setAttribute('aria-hidden','true');
@@ -5165,12 +5230,17 @@ function cgClosePrivateChat(){
 async function cgSendPrivateMessage(event){
  event?.preventDefault?.();
  const input=document.getElementById('cgChatInput'),content=input.value.trim();
- if(!content||!cgCurrentUser||!cgActiveChatUser)return;
- input.disabled=true;
- const {error}=await cgSupabase.from('cg_private_messages').insert({sender_id:cgCurrentUser.id,receiver_id:cgActiveChatUser.id,content});
+ if(!content||!cgCurrentUser)return;
+ input.disabled=true;let error;
+ if(cgChatMode==='public')({error}=await cgSupabase.from('cg_public_messages').insert({sender_id:cgCurrentUser.id,content}));
+ else{
+  if(!cgActiveChatUser){input.disabled=false;return;}
+  ({error}=await cgSupabase.from('cg_private_messages').insert({sender_id:cgCurrentUser.id,receiver_id:cgActiveChatUser.id,content}));
+ }
  input.disabled=false;
- if(error){cgChatStatus('Falha ao enviar: '+error.message+'. Confira as políticas e a tabela do SQL.',true);return;}
- input.value='';cgChatStatus('Mensagem enviada.');await cgLoadChatMessages(cgChatLoadToken);
+ if(error){cgChatStatus('Falha ao enviar: '+error.message+'. Confira o SQL atualizado.',true);return;}
+ input.value='';cgChatStatus('Mensagem enviada.');
+ if(cgChatMode==='public')await cgLoadPublicMessages(cgChatLoadToken);else await cgLoadChatMessages(cgChatLoadToken);
 }
 if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=data.session?.user||null;if(cgCurrentUser)cgCloseLiveGate();await cgUpdateAuthUI();cgInitLiveGate();cgStatus(cgCurrentUser?'Conectado.':'Entre ou crie uma conta, ou escolha NÃO OBRIGADO.');});cgSupabase.auth.onAuthStateChange((_event,session)=>{cgCurrentUser=session?.user||null;if(cgCurrentUser)cgCloseLiveGate();setTimeout(async()=>{await cgUpdateAuthUI();if(!cgCurrentUser)cgInitLiveGate();},0);});}else{cgStatus('Não foi possível carregar Supabase JS. Verifique a conexão.',true);}
 </script>
@@ -5251,10 +5321,12 @@ window.addEventListener('load',()=>{
 });
 </script>
 
+<button id="cgPublicChatLauncher" class="cg-public-chat-launcher" type="button" onclick="cgOpenPublicChat()">CHAT PÚBLICO <span>●</span></button>
 <div id="cgPrivateChat" class="cg-chat-modal" aria-hidden="true">
  <section class="cg-chat-window" role="dialog" aria-modal="true" aria-labelledby="cgChatTitle">
   <header class="cg-chat-header">
    <div class="cg-chat-person"><img id="cgChatAvatar" alt=""><div><b id="cgChatTitle">Chat privado</b><small id="cgChatSubtitle">Conversa privada</small></div></div>
+   <div class="cg-chat-tabs"><button id="cgChatPrivateTab" type="button" class="active" onclick="cgSwitchChatMode('private')">PRIVADO</button><button id="cgChatPublicTab" type="button" onclick="cgOpenPublicChat()">PÚBLICO</button></div>
    <button type="button" class="cg-chat-close" onclick="cgClosePrivateChat()" aria-label="Fechar chat">×</button>
   </header>
   <div id="cgChatMessages" class="cg-chat-messages" aria-live="polite"><div class="cg-chat-empty">Carregando conversa…</div></div>
