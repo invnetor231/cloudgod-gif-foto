@@ -65,35 +65,57 @@ app.options(['/api/cptec', '/api/lightning'], (req, res) => {
   return res.status(204).end();
 });
 
-// Proxy CPTEC preservado: aceita somente times e legend dos produtos de radar.
+// Proxy CPTEC: horários, legenda e imagens CAPPI 3 km.
+// O navegador usa esta rota no mesmo domínio do CLOUDGOD para evitar bloqueios CORS.
 app.get('/api/cptec', async (req, res) => {
   if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem não autorizada.' });
-  setApiHeaders(res);
 
   const requestedPath = typeof req.query.path === 'string' ? req.query.path : '';
-  const match = requestedPath.match(/^\/paths\/radar\/layers\/([a-z0-9~_-]+)\/(times|legend)(?:\?[^#]*)?$/i);
-  if (!match) return res.status(400).json({ error: 'Caminho CPTEC inválido ou não permitido.' });
+  const isJsonEndpoint = /^\/paths\/radar\/layers\/[a-z0-9~_-]+\/(times|legend)$/i.test(requestedPath);
+  const isFrameEndpoint = /^\/paths\/frames\/radar\/[a-z0-9~_-]+\/20\d{10}\/full$/i.test(requestedPath);
+  if (!isJsonEndpoint && !isFrameEndpoint) {
+    return res.status(400).json({ error: 'Caminho CPTEC inválido ou não permitido.' });
+  }
 
   try {
     const upstream = await fetchWithTimeout(CPTEC_BASE + requestedPath, {
-      headers: { Accept: 'application/json, text/plain, */*', 'User-Agent': 'CLOUDGOD-CPTEC-Proxy/1.0' },
+      headers: {
+        Accept: isFrameEndpoint ? 'image/*, application/octet-stream;q=0.9, */*;q=0.8' : 'application/json, text/plain, */*',
+        'User-Agent': 'CLOUDGOD-CPTEC-Proxy/1.1'
+      },
       cache: 'no-store'
-    });
-    const body = await upstream.text();
+    }, isFrameEndpoint ? 30000 : REQUEST_TIMEOUT_MS);
+
     if (!upstream.ok) {
-      return res.status(502).json({ error: `O CPTEC respondeu HTTP ${upstream.status}.`, upstreamStatus: upstream.status });
+      const message = `O CPTEC respondeu HTTP ${upstream.status}.`;
+      if (isFrameEndpoint) return res.status(502).type('text/plain').send(message);
+      return res.status(502).json({ error: message, upstreamStatus: upstream.status });
     }
+
+    if (isFrameEndpoint) {
+      const contentType = upstream.headers.get('content-type') || 'image/png';
+      const bytes = Buffer.from(await upstream.arrayBuffer());
+      if (!bytes.length) return res.status(502).type('text/plain').send('O CPTEC retornou uma imagem vazia.');
+      res.set({
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'X-Content-Type-Options': 'nosniff',
+        'Content-Type': contentType
+      });
+      return res.status(200).send(bytes);
+    }
+
+    const body = await upstream.text();
     try {
+      res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Content-Type': 'application/json; charset=utf-8' });
       return res.status(200).json(JSON.parse(body));
     } catch (_error) {
       return res.status(502).json({ error: 'O CPTEC retornou uma resposta que não é JSON válido.' });
     }
   } catch (error) {
     const timedOut = error?.name === 'AbortError';
-    return res.status(502).json({
-      error: timedOut ? 'Tempo limite ao consultar o CPTEC (20 segundos).' : 'Não foi possível conectar ao serviço do CPTEC.',
-      detail: timedOut ? 'upstream_timeout' : 'upstream_connection_failed'
-    });
+    const message = timedOut ? 'Tempo limite ao consultar o CPTEC.' : 'Não foi possível conectar ao serviço do CPTEC.';
+    if (isFrameEndpoint) return res.status(502).type('text/plain').send(message);
+    return res.status(502).json({ error: message, detail: timedOut ? 'upstream_timeout' : 'upstream_connection_failed' });
   }
 });
 

@@ -740,6 +740,40 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .leaflet-radar-raster.radar-quality-css-fallback.radar-quality-ultra img{filter:saturate(1.18) contrast(1.08)!important}
 .leaflet-radar-raster.radar-quality-css-fallback.radar-quality-realgod img{filter:saturate(1.25) contrast(1.12) brightness(1.02)!important}
 </style>
+<style>
+.cg-live-marker{cursor:pointer}
+.cg-chat-modal{position:fixed;inset:0;z-index:12000;background:rgba(3,12,25,.68);display:none;align-items:center;justify-content:center;padding:14px}
+.cg-chat-modal.open{display:flex}
+.cg-chat-window{width:min(520px,100%);height:min(680px,88dvh);background:#f8fbff;color:#14263d;border:1px solid #b8d0e8;border-radius:18px;box-shadow:0 22px 70px #0008;display:flex;flex-direction:column;overflow:hidden}
+.cg-chat-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:#061b36;color:#fff}
+.cg-chat-person{display:flex;align-items:center;gap:10px;min-width:0}
+.cg-chat-person img{width:42px;height:42px;border-radius:50%;object-fit:cover;background:#29445f}
+.cg-chat-person b,.cg-chat-person small{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:330px}
+.cg-chat-person small{font-size:11px;opacity:.75;margin-top:3px}
+.cg-chat-close{border:0;background:#ffffff20;color:#fff;font-size:26px;border-radius:9px;width:38px;height:38px;cursor:pointer}
+.cg-chat-messages{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:9px;background:linear-gradient(#f7fbff,#edf4fb)}
+.cg-chat-empty{margin:auto;color:#687b90;text-align:center;font-size:13px}
+.cg-chat-bubble{max-width:82%;padding:9px 12px;border-radius:14px;background:#fff;border:1px solid #d8e3ef;align-self:flex-start;overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 2px 6px #17324a0d}
+.cg-chat-bubble.mine{align-self:flex-end;background:#dff3ff;border-color:#b8e3fa}
+.cg-chat-bubble time{display:block;font-size:10px;color:#718197;margin-top:5px;text-align:right}
+.cg-chat-compose{display:flex;gap:8px;padding:10px;border-top:1px solid #d9e4ef;background:#fff}
+.cg-chat-compose input{flex:1;min-width:0;border:1px solid #c7d5e4;border-radius:11px;padding:11px;font:inherit}
+.cg-chat-compose button,.cg-chat-open-btn{border:0;border-radius:10px;background:#087fc4;color:#fff;padding:10px 14px;font-weight:800;cursor:pointer}
+.cg-chat-status{padding:6px 12px 10px;font-size:10px;color:#718197;background:#fff}
+.cg-chat-open-btn{margin-top:10px;width:100%}
+@media(max-width:520px){.cg-chat-modal{padding:0}.cg-chat-window{height:100dvh;width:100%;border-radius:0}.cg-chat-person b,.cg-chat-person small{max-width:245px}}
+</style>
+<style>
+.cg-public-chat-launcher{position:fixed;z-index:850;right:18px;bottom:24px;border:1px solid #69cfff;background:#062746;color:#fff;border-radius:13px;padding:11px 15px;font-weight:900;box-shadow:0 7px 24px #001a35a8;cursor:pointer}
+.cg-public-chat-launcher span{color:#4cffad;margin-left:5px}
+.cg-chat-window{width:min(510px,calc(100vw - 28px));height:min(590px,72dvh)}
+.cg-chat-header{gap:10px;flex-wrap:wrap}
+.cg-chat-tabs{display:flex;gap:5px;margin-left:auto}
+.cg-chat-tabs button{border:1px solid #ffffff55;background:#ffffff12;color:#d9edff;border-radius:9px;padding:8px 10px;font-size:10px;font-weight:900;cursor:pointer}
+.cg-chat-tabs button.active{background:#13a4e8;color:#fff;border-color:#13a4e8}
+.cg-live-marker{cursor:pointer}
+@media(max-width:520px){.cg-public-chat-launcher{right:12px;bottom:18px}.cg-chat-window{height:min(590px,72dvh);width:calc(100vw - 24px);border-radius:16px}.cg-chat-header{padding:10px}.cg-chat-tabs{margin-left:0}.cg-chat-person b,.cg-chat-person small{max-width:145px}}
+</style>
 </head>
 <body>
 <div class="startup-screen" id="startupScreen">
@@ -859,15 +893,6 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 <div><strong>CAPPI 3 KM · INEA MACAÉ</strong><small>Radar regional · CPTEC/INPE · Rio de Janeiro</small></div><div class="dot"></div>
 </div><div class="product" data-product="cptec_ararangua" onclick="selectProduct('cptec_ararangua')">
 <div><strong>CAPPI 3 KM · SDCSC ARARANGUÁ</strong><small>Radar regional · CPTEC/INPE · Santa Catarina</small></div><div class="dot"></div>
-</div>
-<div class="product" data-product="cptec_gama" onclick="selectProduct('cptec_gama')">
-<div><strong>CAPPI 3 KM · DECEA GAMA</strong><small>Radar regional · CPTEC/INPE · Distrito Federal</small></div><div class="dot"></div>
-</div>
-<div class="product" data-product="cptec_morroigreja" onclick="selectProduct('cptec_morroigreja')">
-<div><strong>CAPPI 3 KM · MORRO DA IGREJA</strong><small>Radar regional · CPTEC/INPE · Santa Catarina</small></div><div class="dot"></div>
-</div>
-<div class="product" data-product="cptec_picocouto" onclick="selectProduct('cptec_picocouto')">
-<div><strong>CAPPI 3 KM · PICO DO COUTO</strong><small>Radar regional · CPTEC/INPE · Rio de Janeiro</small></div><div class="dot"></div>
 </div>
 <div aria-label="Tabela de cores de referência da temperatura de brilho" class="bt-legend" id="btColorLegend">
 <h4>LEGENDA BT · COLOR ENHANCED</h4>
@@ -2317,8 +2342,15 @@ const CPTEC_RADAR_CONFIG = {
   times:[]
  }
 };
-const CPTEC_RADAR_API="https://nowcasting.cptec.inpe.br/api/v1";
-const CPTEC_PROXY_API="/api/cptec";
+const CPTEC_RADAR_LIVE_POLL_MS=60000;
+let cptecRadarLiveTimer=null;
+let cptecRadarLiveBusy=false;
+function cptecProxyUrl(apiPath){
+ return "/api/cptec?path="+encodeURIComponent(apiPath);
+}
+function cptecTimesPath(station){
+ return "/paths/radar/layers/"+station.path+"/times";
+}
 let cptecRadarFrames=[];
 let cptecRadarIndex=0;
 let cptecRadarLoop=null;
@@ -2328,37 +2360,7 @@ let cptecRadarActiveKey=null;
 let cptecRadarOverlay=null;
 
 function cptecFrameUrl(station,time){
- return CPTEC_RADAR_API+"/paths/frames/radar/"+station.path+"/"+time+"/full?v=3840203563";
-}
-// Consulta JSON pelo proxy próprio do CLOUDGOD hospedado no Render.
-// As imagens dos frames continuam sendo carregadas diretamente do CPTEC/INPE.
-async function cptecFetchAttempt(url,timeoutMs=25000){
- const controller=new AbortController();
- const timer=setTimeout(()=>controller.abort(),timeoutMs);
- try{
-  const response=await fetch(url,{method:"GET",cache:"no-store",headers:{Accept:"application/json"},signal:controller.signal});
-  const body=await response.text();
-  if(!response.ok){
-   let detail="";
-   try{detail=JSON.parse(body).error||JSON.parse(body).message||"";}catch(_){}
-   throw new Error("HTTP "+response.status+(detail?" · "+detail:""));
-  }
-  if(!body||!body.trim())throw new Error("resposta vazia");
-  try{return JSON.parse(body);}catch(_){throw new Error("resposta do proxy não é JSON válido");}
- }finally{clearTimeout(timer);}
-}
-async function cptecFetchJson(url){
- // Só aceita URLs do endpoint oficial e encaminha apenas o caminho ao servidor próprio.
- const upstream=new URL(url);
- if(upstream.origin!==CPTEC_RADAR_API)throw new Error("URL CPTEC não autorizada");
- const path=upstream.pathname+upstream.search;
- const proxyUrl=CPTEC_PROXY_API+"?path="+encodeURIComponent(path);
- try{
-  return await cptecFetchAttempt(proxyUrl,25000);
- }catch(error){
-  const reason=error&&error.name==="AbortError"?"tempo limite após 25 segundos":(error&&error.message)||"falha de conexão";
-  throw new Error("Proxy CLOUDGOD/Render: "+reason);
- }
+ return cptecProxyUrl("/paths/frames/radar/"+station.path+"/"+time+"/full");
 }
 function cptecExtractTimes(payload){
  const found=new Set();
@@ -2493,7 +2495,9 @@ async function cptecLoadLegend(key,request){
  if(!station||!target)return;
  target.textContent="Carregando legenda oficial do CPTEC/INPE…";
  try{
-  const payload=await cptecFetchJson(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/legend");
+  const response=await fetch(cptecProxyUrl("/paths/radar/layers/"+station.path+"/legend"),{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const payload=await response.json();
   if(request!==cptecRadarRequest)return;
   const entries=cptecLegendEntries(payload);
   target.replaceChildren();
@@ -2513,6 +2517,51 @@ async function cptecLoadLegend(key,request){
  }
 }
 
+function cptecStopLivePolling(){
+ if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
+ cptecRadarLiveTimer=null;
+ cptecRadarLiveBusy=false;
+}
+function cptecStartLivePolling(){
+ if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
+ cptecRadarLiveTimer=setInterval(cptecPollLatestFrames,CPTEC_RADAR_LIVE_POLL_MS);
+}
+async function cptecPollLatestFrames(){
+ const key=cptecRadarActiveKey;
+ const station=key&&CPTEC_RADAR_CONFIG[key];
+ if(!station||cptecRadarLiveBusy)return;
+ cptecRadarLiveBusy=true;
+ try{
+  const response=await fetch(cptecProxyUrl(cptecTimesPath(station)),{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const payload=await response.json();
+  const fresh=cptecExtractTimes(payload);
+  if(!fresh.length)throw new Error("A API não retornou horários reconhecíveis.");
+  if(key!==cptecRadarActiveKey)return;
+  const oldTime=cptecRadarFrames[cptecRadarIndex]||null;
+  const wasAtLatest=!oldTime||cptecRadarIndex>=cptecRadarFrames.length-1;
+  const changed=fresh.length!==cptecRadarFrames.length||fresh[fresh.length-1]!==cptecRadarFrames[cptecRadarFrames.length-1];
+  cptecRadarFrames=fresh;
+  if(wasAtLatest)cptecRadarIndex=fresh.length-1;
+  else{
+   const preserved=fresh.indexOf(oldTime);
+   cptecRadarIndex=preserved>=0?preserved:fresh.length-1;
+  }
+  const slider=document.getElementById("cptecRadarTimeline");
+  if(slider){slider.max=String(Math.max(0,fresh.length-1));slider.value=String(cptecRadarIndex);}
+  if(changed){
+   await cptecRenderFrame();
+   if(key===cptecRadarActiveKey)cptecSetStatus("AO VIVO · novo quadro recebido · "+fresh[fresh.length-1]+" UTC · consulta a cada 60 s.");
+  }else{
+   cptecSetStatus("AO VIVO · sem novo quadro publicado · último horário "+fresh[fresh.length-1]+" UTC · próxima consulta em até 60 s.");
+  }
+ }catch(error){
+  cptecSetStatus("AO VIVO · falha ao consultar quadros ("+error.message+"). Mantendo a última imagem e tentando novamente.");
+ }finally{
+  cptecRadarLiveBusy=false;
+ }
+}
+
 async function cptecLoadStation(key){
  const request=++cptecRadarRequest;
  cptecStopLoop();
@@ -2522,23 +2571,23 @@ async function cptecLoadStation(key){
  const slider=document.getElementById("cptecRadarTimeline");
  cptecRemoveOverlay();
  if(label)label.textContent="Carregando…";
- cptecSetStatus("Consultando os instantes disponíveis (UTC) no Nowcasting/CPTEC para "+station.label+"…");
+ cptecSetStatus("Consultando horários disponíveis no Nowcasting/CPTEC…");
  cptecLoadLegend(key,request);
  let times=[];
  try{
-  // A consulta tem timeout próprio por rota e não compartilha AbortSignal entre tentativas.
-  const payload=await cptecFetchJson(CPTEC_RADAR_API+"/paths/radar/layers/"+station.path+"/times?t="+Date.now());
+  const response=await fetch(cptecProxyUrl(cptecTimesPath(station)),{cache:"no-store"});
+  if(!response.ok)throw new Error("HTTP "+response.status);
+  const payload=await response.json();
   const apiTimes=cptecExtractTimes(payload);
   if(apiTimes.length)times=apiTimes;
   else throw new Error("A API não retornou horários reconhecíveis.");
-  cptecSetStatus("Horários carregados do endpoint oficial /times · CPTEC/INPE.");
+  cptecSetStatus("Horários carregados do endpoint oficial /times.");
  }catch(error){
   if(request!==cptecRadarRequest)return;
   cptecRadarFrames=[];
   if(label)label.textContent="— / —";
   if(slider){slider.max="0";slider.value="0";}
-  const reason=error&&error.message?error.message:"falha desconhecida";
-  cptecSetStatus("Não foi possível consultar os instantes atuais de "+station.label+": "+reason+". As rotas foram tentadas separadamente; nenhum horário antigo será apresentado como atual.");
+  cptecSetStatus("Não foi possível consultar horários atuais de "+station.label+": "+error.message+". Nenhum horário antigo será exibido como se fosse atual.");
   return;
  }
  if(request!==cptecRadarRequest)return;
@@ -2549,13 +2598,15 @@ async function cptecLoadStation(key){
   cptecSetStatus("Nenhum quadro disponível para esta estação.");
   return;
  }
- cptecRenderFrame();
- cptecSetStatus(times.length+" instantes oficiais disponíveis · CAPPI 3 km · horários em UTC · Nowcasting/CPTEC.");
+ await cptecRenderFrame();
+ cptecSetStatus("AO VIVO · "+times.length+" quadros disponíveis · CAPPI 3 km · atualização automática a cada 60 s.");
+ cptecStartLivePolling();
 }
 function cptecRefresh(){
  if(cptecRadarActiveKey)cptecLoadStation(cptecRadarActiveKey);
 }
 function cptecSelectProduct(product){
+ cptecStopLivePolling();
  const stationKeys={
   cptec_macae:"macae",
   cptec_ararangua:"ararangua",
@@ -2581,6 +2632,7 @@ function cptecSelectProduct(product){
  cptecLoadStation(key);
 }
 function cptecDeactivate(){
+ cptecStopLivePolling();
  cptecStopLoop();
  cptecRemoveOverlay();
  const panel=document.getElementById("cptecRadarProduct");
@@ -4990,6 +5042,11 @@ let cgCurrentUser = null;
 let cgWatchId = null;
 let cgLastPosition = null;
 let cgLiveMarkers = new Map();
+let cgLiveProfiles = new Map();
+let cgActiveChatUser = null;
+let cgChatChannel = null;
+let cgChatLoadToken = 0;
+let cgChatMode = "private";
 let cgLiveRefreshTimer = null;
 let cgHeartbeatTimer = null;
 let cgSharingBusy = false;
@@ -5002,9 +5059,41 @@ function cgToggleLivePanel(force){const panel=document.getElementById('cgLivePan
 function cgSafeAvatar(url){try{const u=new URL(url);return ['https:','http:'].includes(u.protocol)?u.href:'';}catch(_){return '';}}
 function cgInitials(name){return (name||'CG').trim().slice(0,1).toUpperCase()||'C';}
 function cgMarkerHtml(profile){const avatar=cgSafeAvatar(profile.avatar_url);const name=String(profile.username||'Usuário').slice(0,28);const inner=avatar?`<img src="${avatar.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" alt="">`:`<span style="display:grid;place-items:center;width:100%;height:100%;color:#fff;font-weight:900">${cgInitials(name)}</span>`;return `<div class="cg-live-marker"><div class="cg-live-avatar">${inner}</div><div class="cg-live-label">${name.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}</div></div>`;}
-function cgUpsertMarker(profile){if(!window.map||!profile)return;const lat=Number(profile.latitude),lon=Number(profile.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;const age=Date.now()-new Date(profile.updated_at||0).getTime();if(age>120000)return;const icon=L.divIcon({className:'',html:cgMarkerHtml(profile),iconSize:[100,58],iconAnchor:[50,54]});let marker=cgLiveMarkers.get(profile.id);if(marker){marker.setLatLng([lat,lon]);marker.setIcon(icon);}else{marker=L.marker([lat,lon],{icon,keyboard:false}).addTo(map);marker.bindPopup('');cgLiveMarkers.set(profile.id,marker);}const popup=document.createElement('div');const title=document.createElement('b');title.textContent=profile.username||'Usuário';popup.appendChild(title);const line=document.createElement('div');line.textContent='Usuário compartilhando localização ao vivo';line.style.marginTop='4px';popup.appendChild(line);marker.bindPopup(popup);}
-function cgRemoveMarker(id){const marker=cgLiveMarkers.get(id);if(marker&&window.map)map.removeLayer(marker);cgLiveMarkers.delete(id);}
-async function cgLoadLiveUsers(){if(!cgSupabase||!cgCurrentUser)return;const {data,error}=await cgSupabase.from('profiles').select('id,username,avatar_url,share_location,latitude,longitude,updated_at').eq('share_location',true);if(error){cgStatus('Falha ao carregar usuários: '+error.message,true);return;}const visible=new Set();(data||[]).forEach(p=>{const age=Date.now()-new Date(p.updated_at||0).getTime();if(age<=120000){visible.add(p.id);cgUpsertMarker(p);}});for(const id of [...cgLiveMarkers.keys()])if(!visible.has(id))cgRemoveMarker(id);const count=visible.size;const countEl=document.getElementById('cgLiveCount');if(countEl)countEl.textContent=String(count);}
+function cgUpsertMarker(profile){
+ if(!window.map||!profile)return;
+ const lat=Number(profile.latitude),lon=Number(profile.longitude);
+ if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return;
+ const age=Date.now()-new Date(profile.updated_at||0).getTime();
+ if(!Number.isFinite(age)||age>180000)return;
+ cgLiveProfiles.set(profile.id,profile);
+ const icon=L.divIcon({className:'',html:cgMarkerHtml(profile),iconSize:[100,58],iconAnchor:[50,54]});
+ let marker=cgLiveMarkers.get(profile.id);
+ if(marker){marker.setLatLng([lat,lon]);marker.setIcon(icon);}
+ else{marker=L.marker([lat,lon],{icon,keyboard:false}).addTo(map);cgLiveMarkers.set(profile.id,marker);}
+ marker.off('click');
+ if(cgCurrentUser&&profile.id!==cgCurrentUser.id)marker.on('click',()=>cgOpenPrivateChat(profile.id));
+ const popup=document.createElement('div');
+ const title=document.createElement('b');title.textContent=profile.username||'Usuário';popup.appendChild(title);
+ const line=document.createElement('div');line.textContent='Compartilhando localização ao vivo';line.style.marginTop='4px';popup.appendChild(line);
+ if(cgCurrentUser&&profile.id!==cgCurrentUser.id){
+  const button=document.createElement('button');button.type='button';button.className='cg-chat-open-btn';button.textContent='ABRIR CHAT';
+  button.addEventListener('click',()=>cgOpenPrivateChat(profile.id));popup.appendChild(button);
+ }
+ marker.bindPopup(popup);
+}
+function cgRemoveMarker(id){const marker=cgLiveMarkers.get(id);if(marker&&window.map)map.removeLayer(marker);cgLiveMarkers.delete(id);cgLiveProfiles.delete(id);}
+async function cgLoadLiveUsers(){
+ if(!cgSupabase||!cgCurrentUser)return;
+ const {data,error}=await cgSupabase.from('profiles').select('id,username,avatar_url,share_location,latitude,longitude,updated_at').eq('share_location',true);
+ if(error){cgStatus('Falha ao carregar usuários ao vivo: '+error.message+' Confira as políticas RLS do SQL fornecido.',true);return;}
+ const visible=new Set();
+ (data||[]).forEach(p=>{
+  const age=Date.now()-new Date(p.updated_at||0).getTime();
+  if(p.share_location&&Number.isFinite(age)&&age<=180000){visible.add(p.id);cgUpsertMarker(p);}
+ });
+ for(const id of [...cgLiveMarkers.keys()])if(!visible.has(id))cgRemoveMarker(id);
+ const countEl=document.getElementById('cgLiveCount');if(countEl)countEl.textContent=String(visible.size);
+}
 async function cgEnsureProfile(){
   if(!cgSupabase)return;
   // Confirma o usuário diretamente no Auth do mesmo projeto antes de gravar o perfil.
@@ -5057,7 +5146,7 @@ async function cgUploadAvatar(){
  document.getElementById('cgLiveAvatar').value=data.publicUrl;cgPreviewAvatar(data.publicUrl);
  cgStatus('Foto enviada. Salvando perfil…');await cgSaveProfile();
 }
-async function cgSaveProfile(){if(!cgCurrentUser)return;const username=document.getElementById('cgLiveName').value.trim().slice(0,28),avatar_url=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(username.length<2)return cgStatus('Nome obrigatório: use pelo menos 2 caracteres.',true);if(!avatar_url)return cgStatus('Foto de perfil obrigatória. Escolha uma foto da galeria ou informe uma URL válida.',true);const {error}=await cgSupabase.from('profiles').upsert({id:cgCurrentUser.id,username,avatar_url,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)return cgStatus('Erro ao salvar perfil: '+error.message,true);cgStatus('Perfil completo e salvo automaticamente.');if(document.getElementById('cgLiveShare').checked)await cgLoadLiveUsers();}
+async function cgSaveProfile(){if(!cgCurrentUser)return;const username=document.getElementById('cgLiveName').value.trim().slice(0,28),avatar_url=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(username.length<2)return cgStatus('Nome obrigatório: use pelo menos 2 caracteres.',true);if(!avatar_url)return cgStatus('Foto de perfil obrigatória. Escolha uma foto da galeria ou informe uma URL válida.',true);const {error}=await cgSupabase.from('profiles').upsert({id:cgCurrentUser.id,username,avatar_url,updated_at:new Date().toISOString()},{onConflict:'id'});if(error)return cgStatus('Erro ao salvar perfil: '+error.message,true);cgStatus('Perfil completo e salvo automaticamente.');await cgLoadLiveUsers();}
 let cgAutoSaveTimer=null;function cgAutoSaveProfile(){if(!cgCurrentUser)return;clearTimeout(cgAutoSaveTimer);cgAutoSaveTimer=setTimeout(async()=>{const name=document.getElementById('cgLiveName').value.trim(),avatar=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(name.length<2||!avatar)return;await cgSaveProfile();},700);}
 async function cgSetSharing(enabled){if(!cgCurrentUser||cgSharingBusy)return;cgSharingBusy=true;const checkbox=document.getElementById('cgLiveShare');if(enabled){const requiredName=document.getElementById('cgLiveName').value.trim(),requiredAvatar=cgSafeAvatar(document.getElementById('cgLiveAvatar').value.trim());if(requiredName.length<2||!requiredAvatar){checkbox.checked=false;cgSharingBusy=false;return cgStatus('Antes de compartilhar, preencha o nome e a foto. O perfil será salvo automaticamente.',true);}const {data:profileCheck,error:profileError}=await cgSupabase.from('profiles').select('username,avatar_url').eq('id',cgCurrentUser.id).maybeSingle();if(profileError||!profileCheck||profileCheck.username?.trim().length<2||!cgSafeAvatar(profileCheck.avatar_url)){checkbox.checked=false;cgSharingBusy=false;return cgStatus('Preencha primeiro seu nome e sua foto de perfil; o salvamento é automático.',true);}if(!navigator.geolocation){checkbox.checked=false;cgSharingBusy=false;return cgStatus('Este navegador não oferece GPS.',true);}cgStatus('Solicitando permissão de localização…');navigator.geolocation.getCurrentPosition(async pos=>{cgLastPosition={latitude:pos.coords.latitude,longitude:pos.coords.longitude};const {error}=await cgSupabase.from('profiles').update({share_location:true,latitude:cgLastPosition.latitude,longitude:cgLastPosition.longitude,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);cgSharingBusy=false;if(error){checkbox.checked=false;cgStatus('Não foi possível ativar: '+error.message,true);return;}cgStartLocationWatch();cgStartHeartbeat();cgStatus('Compartilhamento ativo. Sua posição aparece para usuários conectados.');await cgLoadLiveUsers();},err=>{checkbox.checked=false;cgSharingBusy=false;cgStatus('Permissão não concedida ou GPS indisponível: '+err.message,true);},{enableHighAccuracy:false,timeout:15000,maximumAge:30000});}else{cgStopLocationWatch();cgStopHeartbeat();const {error}=await cgSupabase.from('profiles').update({share_location:false,latitude:null,longitude:null,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);checkbox.checked=false;cgSharingBusy=false;if(error)return cgStatus('Erro ao desligar compartilhamento: '+error.message,true);cgStatus('Compartilhamento desligado. Sua posição foi retirada do mapa.');await cgLoadLiveUsers();}}
 async function cgPublishPosition(pos){if(!cgCurrentUser||!document.getElementById('cgLiveShare').checked)return;const latitude=pos.coords.latitude,longitude=pos.coords.longitude;cgLastPosition={latitude,longitude};const {error}=await cgSupabase.from('profiles').update({latitude,longitude,updated_at:new Date().toISOString()}).eq('id',cgCurrentUser.id);if(error)cgStatus('Falha ao atualizar posição: '+error.message,true);}
@@ -5066,8 +5155,149 @@ function cgStartHeartbeat(){cgStopHeartbeat();cgHeartbeatTimer=setInterval(async
 function cgStopHeartbeat(){if(cgHeartbeatTimer){clearInterval(cgHeartbeatTimer);cgHeartbeatTimer=null;}}
 function cgStopLocationWatch(){if(cgWatchId!==null){navigator.geolocation.clearWatch(cgWatchId);cgWatchId=null;}cgStopHeartbeat();}
 let cgRealtimeChannel=null;
-function cgStartRealtime(){cgStopRealtime();cgRealtimeChannel=cgSupabase.channel('cg-live-profiles').on('postgres_changes',{event:'*',schema:'public',table:'profiles'},payload=>{const p=payload.new||payload.old;if(!p)return;if(payload.eventType==='DELETE'||!p.share_location){cgRemoveMarker(p.id);}else cgUpsertMarker(p);}).subscribe();if(cgLiveRefreshTimer)clearInterval(cgLiveRefreshTimer);cgLiveRefreshTimer=setInterval(cgLoadLiveUsers,30000);}
+function cgStartRealtime(){
+ cgStopRealtime();
+ cgRealtimeChannel=cgSupabase.channel('cg-live-profiles')
+  .on('postgres_changes',{event:'*',schema:'public',table:'profiles'},payload=>{
+   const p=payload.new||payload.old;if(!p)return;
+   if(payload.eventType==='DELETE'||!p.share_location)cgRemoveMarker(p.id);
+   else cgUpsertMarker(p);
+   const countEl=document.getElementById('cgLiveCount');if(countEl)countEl.textContent=String(cgLiveMarkers.size);
+  })
+  .subscribe((status)=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')cgStatus('Tempo real indisponível; atualização automática por consulta ativa.',true);});
+ if(cgLiveRefreshTimer)clearInterval(cgLiveRefreshTimer);
+ // Polling de contingência: não depende do evento Realtime estar habilitado.
+ cgLiveRefreshTimer=setInterval(cgLoadLiveUsers,8000);
+}
 function cgStopRealtime(){if(cgRealtimeChannel&&cgSupabase){cgSupabase.removeChannel(cgRealtimeChannel);cgRealtimeChannel=null;}if(cgLiveRefreshTimer){clearInterval(cgLiveRefreshTimer);cgLiveRefreshTimer=null;}}
+function cgEscapeChatText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function cgChatStatus(message,isError=false){const el=document.getElementById('cgChatStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'#718197';}}
+function cgRenderChatMessages(rows){
+ const box=document.getElementById('cgChatMessages');if(!box)return;
+ box.replaceChildren();
+ if(!rows?.length){const empty=document.createElement('div');empty.className='cg-chat-empty';empty.textContent='Inicie a conversa enviando uma mensagem.';box.appendChild(empty);return;}
+ rows.forEach(row=>{
+  const bubble=document.createElement('div');bubble.className='cg-chat-bubble'+(row.sender_id===cgCurrentUser?.id?' mine':'');
+  const body=document.createElement('div');body.textContent=row.content||'';bubble.appendChild(body);
+  const time=document.createElement('time');const date=new Date(row.created_at);time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit'});bubble.appendChild(time);
+  box.appendChild(bubble);
+ });
+ box.scrollTop=box.scrollHeight;
+}
+async function cgLoadChatMessages(token){
+ if(!cgSupabase||!cgCurrentUser||!cgActiveChatUser)return;
+ const peer=cgActiveChatUser.id,me=cgCurrentUser.id;
+ const {data,error}=await cgSupabase.from('cg_private_messages').select('id,sender_id,receiver_id,content,created_at')
+  .or(`and(sender_id.eq.${me},receiver_id.eq.${peer}),and(sender_id.eq.${peer},receiver_id.eq.${me})`)
+  .order('created_at',{ascending:true}).limit(200);
+ if(token!==cgChatLoadToken)return;
+ if(error){cgChatStatus('Não foi possível carregar mensagens: '+error.message+'. Execute o SQL de configuração.',true);return;}
+ cgRenderChatMessages(data||[]);
+}
+function cgStartChatRealtime(){
+ if(cgChatChannel&&cgSupabase){cgSupabase.removeChannel(cgChatChannel);cgChatChannel=null;}
+ if(!cgActiveChatUser||!cgCurrentUser)return;
+ const peer=cgActiveChatUser.id,me=cgCurrentUser.id;
+ cgChatChannel=cgSupabase.channel('cg-private-'+[me,peer].sort().join('-'))
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'cg_private_messages'},payload=>{
+   const row=payload.new;if(!row||!((row.sender_id===me&&row.receiver_id===peer)||(row.sender_id===peer&&row.receiver_id===me)))return;
+   const box=document.getElementById('cgChatMessages');
+   const bubble=document.createElement('div');bubble.className='cg-chat-bubble'+(row.sender_id===me?' mine':'');
+   const body=document.createElement('div');body.textContent=row.content||'';bubble.appendChild(body);
+   const time=document.createElement('time');const date=new Date(row.created_at);time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit'});bubble.appendChild(time);
+   if(box){const empty=box.querySelector('.cg-chat-empty');if(empty)box.replaceChildren();box.appendChild(bubble);box.scrollTop=box.scrollHeight;}
+  }).subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')cgChatStatus('Chat sem conexão em tempo real. Reabra a conversa ou confira a publicação Realtime.',true);});
+}
+async function cgOpenPrivateChat(userId){
+ if(!cgCurrentUser)return cgStatus('Entre na sua conta para conversar.',true);
+ if(userId===cgCurrentUser.id)return;
+ let peer=cgLiveProfiles.get(userId);
+ if(!peer){
+  const {data,error}=await cgSupabase.from('profiles').select('id,username,avatar_url').eq('id',userId).maybeSingle();
+  if(error||!data)return cgStatus('Não foi possível abrir o perfil desse usuário.',true);
+  peer=data;
+ }
+ cgActiveChatUser=peer;cgChatMode="private";const token=++cgChatLoadToken;
+ const modal=document.getElementById('cgPrivateChat');modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+ cgSwitchChatMode('private');
+ document.getElementById('cgChatTitle').textContent=peer.username||'Usuário';
+ const avatar=document.getElementById('cgChatAvatar'),safe=cgSafeAvatar(peer.avatar_url);if(safe){avatar.src=safe;avatar.style.display='block';}else{avatar.removeAttribute('src');avatar.style.display='none';}
+ document.getElementById('cgChatSubtitle').textContent='Conversa privada';
+ document.getElementById('cgChatMessages').innerHTML='<div class="cg-chat-empty">Carregando conversa…</div>';
+ cgChatStatus('Mensagens visíveis somente para os participantes.');
+ cgStartChatRealtime();await cgLoadChatMessages(token);
+ document.getElementById('cgChatInput').focus();
+}
+function cgSwitchChatMode(mode){
+ cgChatMode=mode;
+ document.getElementById('cgChatPrivateTab')?.classList.toggle('active',mode==='private');
+ document.getElementById('cgChatPublicTab')?.classList.toggle('active',mode==='public');
+ const input=document.getElementById('cgChatInput');
+ if(mode==='public'){
+  document.getElementById('cgChatTitle').textContent='Chat público';
+  document.getElementById('cgChatSubtitle').textContent='Todos os usuários conectados';
+  document.getElementById('cgChatAvatar').style.display='none';
+  input.placeholder='Mensagem para todos…';
+ }else{
+  document.getElementById('cgChatTitle').textContent=cgActiveChatUser?.username||'Chat privado';
+  document.getElementById('cgChatSubtitle').textContent='Conversa privada 1:1';
+  const av=document.getElementById('cgChatAvatar'),safe=cgSafeAvatar(cgActiveChatUser?.avatar_url);
+  if(safe){av.src=safe;av.style.display='block';}else av.style.display='none';
+  input.placeholder='Escreva uma mensagem…';
+ }
+}
+async function cgOpenPublicChat(){
+ if(!cgCurrentUser)return cgStatus('Entre na sua conta para participar do chat público.',true);
+ cgChatMode='public';cgActiveChatUser=null;const token=++cgChatLoadToken;
+ const modal=document.getElementById('cgPrivateChat');modal.classList.add('open');modal.setAttribute('aria-hidden','false');
+ cgSwitchChatMode('public');
+ document.getElementById('cgChatMessages').innerHTML='<div class="cg-chat-empty">Carregando chat público…</div>';
+ cgChatStatus('Mensagens visíveis para todos os usuários autenticados.');
+ if(cgChatChannel&&cgSupabase){cgSupabase.removeChannel(cgChatChannel);cgChatChannel=null;}
+ cgChatChannel=cgSupabase.channel('cg-public-room')
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'cg_public_messages'},payload=>{if(payload.new)cgAppendPublicMessage(payload.new);})
+  .subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')cgChatStatus('Chat público sem Realtime. Confira o SQL atualizado.',true);});
+ await cgLoadPublicMessages(token);
+ document.getElementById('cgChatInput').focus();
+}
+function cgAppendPublicMessage(row){
+ const box=document.getElementById('cgChatMessages');if(!box)return;
+ const empty=box.querySelector('.cg-chat-empty');if(empty)box.replaceChildren();
+ const profile=cgLiveProfiles.get(row.sender_id);
+ const bubble=document.createElement('div');bubble.className='cg-chat-bubble'+(row.sender_id===cgCurrentUser?.id?' mine':'');
+ if(row.sender_id!==cgCurrentUser?.id){const who=document.createElement('b');who.textContent=profile?.username||'Usuário';who.style.display='block';who.style.fontSize='11px';bubble.appendChild(who);}
+ const body=document.createElement('div');body.textContent=row.content||'';bubble.appendChild(body);
+ const time=document.createElement('time');const date=new Date(row.created_at);time.textContent=Number.isNaN(date.getTime())?'':date.toLocaleString('pt-BR',{hour:'2-digit',minute:'2-digit'});bubble.appendChild(time);
+ box.appendChild(bubble);box.scrollTop=box.scrollHeight;
+}
+async function cgLoadPublicMessages(token){
+ const {data,error}=await cgSupabase.from('cg_public_messages').select('id,sender_id,content,created_at').order('created_at',{ascending:true}).limit(150);
+ if(token!==cgChatLoadToken||cgChatMode!=='public')return;
+ if(error){cgChatStatus('Erro ao carregar chat público: '+error.message+'. Execute o SQL atualizado.',true);return;}
+ const box=document.getElementById('cgChatMessages');box.replaceChildren();
+ if(!data?.length){const empty=document.createElement('div');empty.className='cg-chat-empty';empty.textContent='O chat público está vazio. Envie a primeira mensagem!';box.appendChild(empty);return;}
+ data.forEach(cgAppendPublicMessage);
+}
+function cgClosePrivateChat(){
+ const modal=document.getElementById('cgPrivateChat');modal.classList.remove('open');modal.setAttribute('aria-hidden','true');
+ cgActiveChatUser=null;cgChatLoadToken++;
+ if(cgChatChannel&&cgSupabase){cgSupabase.removeChannel(cgChatChannel);cgChatChannel=null;}
+}
+async function cgSendPrivateMessage(event){
+ event?.preventDefault?.();
+ const input=document.getElementById('cgChatInput'),content=input.value.trim();
+ if(!content||!cgCurrentUser)return;
+ input.disabled=true;let error;
+ if(cgChatMode==='public')({error}=await cgSupabase.from('cg_public_messages').insert({sender_id:cgCurrentUser.id,content}));
+ else{
+  if(!cgActiveChatUser){input.disabled=false;return;}
+  ({error}=await cgSupabase.from('cg_private_messages').insert({sender_id:cgCurrentUser.id,receiver_id:cgActiveChatUser.id,content}));
+ }
+ input.disabled=false;
+ if(error){cgChatStatus('Falha ao enviar: '+error.message+'. Confira o SQL atualizado.',true);return;}
+ input.value='';cgChatStatus('Mensagem enviada.');
+ if(cgChatMode==='public')await cgLoadPublicMessages(cgChatLoadToken);else await cgLoadChatMessages(cgChatLoadToken);
+}
 if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=data.session?.user||null;if(cgCurrentUser)cgCloseLiveGate();await cgUpdateAuthUI();cgInitLiveGate();cgStatus(cgCurrentUser?'Conectado.':'Entre ou crie uma conta, ou escolha NÃO OBRIGADO.');});cgSupabase.auth.onAuthStateChange((_event,session)=>{cgCurrentUser=session?.user||null;if(cgCurrentUser)cgCloseLiveGate();setTimeout(async()=>{await cgUpdateAuthUI();if(!cgCurrentUser)cgInitLiveGate();},0);});}else{cgStatus('Não foi possível carregar Supabase JS. Verifique a conexão.',true);}
 </script>
 <script>
@@ -5146,5 +5376,23 @@ window.addEventListener('load',()=>{
  }
 });
 </script>
+
+<button id="cgPublicChatLauncher" class="cg-public-chat-launcher" type="button" onclick="cgOpenPublicChat()">CHAT PÚBLICO <span>●</span></button>
+<div id="cgPrivateChat" class="cg-chat-modal" aria-hidden="true">
+ <section class="cg-chat-window" role="dialog" aria-modal="true" aria-labelledby="cgChatTitle">
+  <header class="cg-chat-header">
+   <div class="cg-chat-person"><img id="cgChatAvatar" alt=""><div><b id="cgChatTitle">Chat privado</b><small id="cgChatSubtitle">Conversa privada</small></div></div>
+   <div class="cg-chat-tabs"><button id="cgChatPrivateTab" type="button" class="active" onclick="cgSwitchChatMode('private')">PRIVADO</button><button id="cgChatPublicTab" type="button" onclick="cgOpenPublicChat()">PÚBLICO</button></div>
+   <button type="button" class="cg-chat-close" onclick="cgClosePrivateChat()" aria-label="Fechar chat">×</button>
+  </header>
+  <div id="cgChatMessages" class="cg-chat-messages" aria-live="polite"><div class="cg-chat-empty">Carregando conversa…</div></div>
+  <form id="cgChatForm" class="cg-chat-compose" onsubmit="cgSendPrivateMessage(event)">
+   <input id="cgChatInput" maxlength="2000" autocomplete="off" placeholder="Escreva uma mensagem…" required>
+   <button type="submit">ENVIAR</button>
+  </form>
+  <div id="cgChatStatus" class="cg-chat-status">Mensagens privadas entre as duas contas.</div>
+ </section>
+</div>
+
 </body>
 </html>

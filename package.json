@@ -1,8 +1,8 @@
 {
   "name": "cloudgod-cptec-proxy",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "private": true,
-  "description": "CLOUDGOD radar interface with a server-side CPTEC/INPE JSON proxy",
+  "description": "CLOUDGOD CPTEC/INPE proxy and NOAA GOES-19 GLM lightning API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -11,6 +11,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "netcdf4-wasm": "0.3.0"
   }
 }
