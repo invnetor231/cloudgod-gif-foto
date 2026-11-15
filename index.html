@@ -5173,6 +5173,34 @@ function cgStartRealtime(){
 function cgStopRealtime(){if(cgRealtimeChannel&&cgSupabase){cgSupabase.removeChannel(cgRealtimeChannel);cgRealtimeChannel=null;}if(cgLiveRefreshTimer){clearInterval(cgLiveRefreshTimer);cgLiveRefreshTimer=null;}}
 function cgEscapeChatText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function cgChatStatus(message,isError=false){const el=document.getElementById('cgChatStatus');if(el){el.textContent=message;el.style.color=isError?'#b42318':'#718197';}}
+// Limpeza local: não apaga mensagens do banco nem afeta outros usuários.
+function cgChatClearStorageKey(){
+ if(!cgCurrentUser?.id)return null;
+ const room=cgChatMode==='public'?'public':('private-'+(cgActiveChatUser?.id||'none'));
+ return 'cloudgod_chat_clear_v1:'+cgCurrentUser.id+':'+room;
+}
+function cgChatClearTimestamp(){
+ const key=cgChatClearStorageKey();if(!key)return 0;
+ try{return Number(localStorage.getItem(key)||0)||0;}catch(_){return 0;}
+}
+function cgChatRowIsVisible(row){
+ const cutoff=cgChatClearTimestamp();
+ if(!cutoff)return true;
+ const created=Date.parse(row?.created_at||'');
+ return !Number.isFinite(created)||created>cutoff;
+}
+function cgClearChatForCurrentUser(){
+ const key=cgChatClearStorageKey();
+ if(!key){cgChatStatus('Entre na sua conta para limpar sua visualização.',true);return;}
+ try{localStorage.setItem(key,String(Date.now()));}
+ catch(_){cgChatStatus('Não foi possível salvar a limpeza neste dispositivo.',true);return;}
+ const box=document.getElementById('cgChatMessages');
+ if(box){const empty=document.createElement('div');empty.className='cg-chat-empty';empty.textContent='Chat limpo somente para você. Novas mensagens aparecerão aqui.';box.replaceChildren(empty);}
+ cgChatStatus('Visualização limpa só para sua conta neste dispositivo. As mensagens continuam disponíveis para os outros usuários.');
+}
+function cgIsClearChatCommand(value){
+ return String(value||'').trim().replace(/^\[\s*/,'').replace(/\s*\]$/,'').replace(/\s+/g,'').toUpperCase()==='C:LIMPARC';
+}
 function cgRenderChatMessages(rows){
  const box=document.getElementById('cgChatMessages');if(!box)return;
  box.replaceChildren();
@@ -5193,7 +5221,7 @@ async function cgLoadChatMessages(token){
   .order('created_at',{ascending:true}).limit(200);
  if(token!==cgChatLoadToken)return;
  if(error){cgChatStatus('Não foi possível carregar mensagens: '+error.message+'. Execute o SQL de configuração.',true);return;}
- cgRenderChatMessages(data||[]);
+ cgRenderChatMessages((data||[]).filter(cgChatRowIsVisible));
 }
 function cgStartChatRealtime(){
  if(cgChatChannel&&cgSupabase){cgSupabase.removeChannel(cgChatChannel);cgChatChannel=null;}
@@ -5201,7 +5229,7 @@ function cgStartChatRealtime(){
  const peer=cgActiveChatUser.id,me=cgCurrentUser.id;
  cgChatChannel=cgSupabase.channel('cg-private-'+[me,peer].sort().join('-'))
   .on('postgres_changes',{event:'INSERT',schema:'public',table:'cg_private_messages'},payload=>{
-   const row=payload.new;if(!row||!((row.sender_id===me&&row.receiver_id===peer)||(row.sender_id===peer&&row.receiver_id===me)))return;
+   const row=payload.new;if(!row||!((row.sender_id===me&&row.receiver_id===peer)||(row.sender_id===peer&&row.receiver_id===me))||!cgChatRowIsVisible(row))return;
    const box=document.getElementById('cgChatMessages');
    const bubble=document.createElement('div');bubble.className='cg-chat-bubble'+(row.sender_id===me?' mine':'');
    const body=document.createElement('div');body.textContent=row.content||'';bubble.appendChild(body);
@@ -5256,13 +5284,13 @@ async function cgOpenPublicChat(){
  cgChatStatus('Mensagens visíveis para todos os usuários autenticados.');
  if(cgChatChannel&&cgSupabase){cgSupabase.removeChannel(cgChatChannel);cgChatChannel=null;}
  cgChatChannel=cgSupabase.channel('cg-public-room')
-  .on('postgres_changes',{event:'INSERT',schema:'public',table:'cg_public_messages'},payload=>{if(payload.new)cgAppendPublicMessage(payload.new);})
+  .on('postgres_changes',{event:'INSERT',schema:'public',table:'cg_public_messages'},payload=>{if(payload.new&&cgChatRowIsVisible(payload.new))cgAppendPublicMessage(payload.new);})
   .subscribe(status=>{if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')cgChatStatus('Chat público sem Realtime. Confira o SQL atualizado.',true);});
  await cgLoadPublicMessages(token);
  document.getElementById('cgChatInput').focus();
 }
 function cgAppendPublicMessage(row){
- const box=document.getElementById('cgChatMessages');if(!box||!row)return;
+ const box=document.getElementById('cgChatMessages');if(!box||!row||!cgChatRowIsVisible(row))return;
  // O mesmo INSERT pode chegar pelo Realtime e também pela consulta inicial/pós-envio.
  // O ID do banco garante que cada mensagem seja desenhada apenas uma vez.
  if(row.id!=null&&box.querySelector(`[data-cg-message-id=\"${CSS.escape(String(row.id))}\"]`))return;
@@ -5280,8 +5308,9 @@ async function cgLoadPublicMessages(token){
  if(token!==cgChatLoadToken||cgChatMode!=='public')return;
  if(error){cgChatStatus('Erro ao carregar chat público: '+error.message+'. Execute o SQL atualizado.',true);return;}
  const box=document.getElementById('cgChatMessages');box.replaceChildren();
- if(!data?.length){const empty=document.createElement('div');empty.className='cg-chat-empty';empty.textContent='O chat público está vazio. Envie a primeira mensagem!';box.appendChild(empty);return;}
- data.forEach(cgAppendPublicMessage);
+ const visible=(data||[]).filter(cgChatRowIsVisible);
+ if(!visible.length){const empty=document.createElement('div');empty.className='cg-chat-empty';empty.textContent='Nenhuma mensagem visível. Envie uma nova mensagem!';box.appendChild(empty);return;}
+ visible.forEach(cgAppendPublicMessage);
 }
 function cgClosePrivateChat(){
  const modal=document.getElementById('cgPrivateChat');modal.classList.remove('open');modal.setAttribute('aria-hidden','true');
@@ -5293,6 +5322,7 @@ async function cgSendPrivateMessage(event){
  if(cgChatSending)return;
  const input=document.getElementById('cgChatInput'),content=input.value.trim();
  if(!content||!cgCurrentUser)return;
+ if(cgIsClearChatCommand(content)){input.value='';cgClearChatForCurrentUser();return;}
  cgChatSending=true;input.disabled=true;let error;
  try{
   if(cgChatMode==='public')({error}=await cgSupabase.from('cg_public_messages').insert({sender_id:cgCurrentUser.id,content}));
