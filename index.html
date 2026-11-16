@@ -774,19 +774,6 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cg-live-marker{cursor:pointer}
 @media(max-width:520px){.cg-public-chat-launcher{right:12px;bottom:18px}.cg-chat-window{height:min(590px,72dvh);width:calc(100vw - 24px);border-radius:16px}.cg-chat-header{padding:10px}.cg-chat-tabs{margin-left:0}.cg-chat-person b,.cg-chat-person small{max-width:145px}}
 </style>
-
-<style>
-/* CLOUDGOD · gerador de análise meteorológica JPEG */
-.weather-jpeg-panel{margin-top:12px;border-left:3px solid #159b83}
-.weather-jpeg-panel .wj-help{font-size:10px;line-height:1.55;color:#71839a;margin:7px 0 10px}
-.wj-input{width:100%;padding:11px;border:1px solid #dce6f0;border-radius:9px;background:#f8faff;color:#29415d;font:12px Arial,sans-serif}
-.wj-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
-.wj-actions button{flex:1;min-width:135px}
-.wj-status{font-size:10px;line-height:1.5;color:#60748b;margin-top:9px;overflow-wrap:anywhere}
-.wj-status.good{color:#13834b}
-@media(max-width:480px){.wj-actions button{min-width:100%}}
-</style>
-
 </head>
 <body>
 <div class="startup-screen" id="startupScreen">
@@ -1330,20 +1317,7 @@ Selecione uma estação para visualizar a reflectividade CAPPI 3 km, consultar o
 <div class="export-help" style="margin-top:12px"><b>GIF · AMÉRICA DO SUL</b><br/>Enquadra a América do Sul e anima os quadros temporais reais de reflectividade carregados da REDEMET, em loop contínuo.</div>
 <button class="secondary" id="gifExportButton" onclick="exportSouthAmericaGif()">GERAR GIF DA AMÉRICA DO SUL</button>
 <div class="export-state" id="exportStatus">Aguardando seleção ou exportação.</div>
-</section>
-
-<section class="panel weather-jpeg-panel cg-search-item" data-search-item="1" id="weatherJpegPanel">
- <h3>GERADOR DE ANÁLISE METEOROLÓGICA · JPEG</h3>
- <div class="wj-help">Cruza NOAA GFS, previsão local CPTEC/INPE e observações da estação INMET mais próxima (quando autorizadas). Gera boletim JPEG técnico com campos atmosféricos, instabilidade, cisalhamento, precipitação e gráficos. O servidor Python precisa estar ligado.</div>
- <label for="weatherJpegPlace">LOCALIDADE</label>
- <input class="wj-input" id="weatherJpegPlace" type="text" value="Itaquaquecetuba, São Paulo, Brasil" placeholder="Ex.: Itaquaquecetuba, SP, Brasil"/>
- <div class="wj-actions">
-  <button class="secondary" type="button" onclick="wjUseGPS()">⌖ USAR MINHA LOCALIZAÇÃO</button>
-  <button class="primary" id="wjGenerateButton" type="button" onclick="wjGenerateReport()">GERAR ANÁLISE JPEG</button>
- </div>
- <div class="wj-status" id="wjStatus" role="status">Servidor meteorológico: http://127.0.0.1:8765 · Use GPS ou selecione uma cidade.</div>
-</section>
-<section class="panel cg-search-item" data-search-item="1">
+</section><section class="panel cg-search-item" data-search-item="1">
 <h3>MEDIDOR DE DISTÂNCIA</h3>
 <div class="info">
 Toque em qualquer local do mapa para medir a distância em linha reta a partir da sua posição.
@@ -5410,20 +5384,30 @@ async function refreshCGNowcasting(){
  const rainEl=document.getElementById("cgNowcastRain");
  const statusEl=document.getElementById("cgNowcastStatus");
  if(!tempEl||!rainEl||!statusEl)return;
- tempEl.innerHTML='—<em>Graus</em>';
- rainEl.innerHTML='—<em>% chuva</em>';
- statusEl.textContent='Consultando NOAA GFS no centro do mapa…';
+ tempEl.innerHTML='??<em>Graus</em>';
+ rainEl.innerHTML='??<em>% chuva</em>';
+ statusEl.textContent='Consultando previsão para o centro do mapa…';
  try{
   const center=(typeof map!=='undefined'&&map&&map.getCenter)?map.getCenter():{lat:-14.235,lng:-51.9253};
-  const response=await fetch((window.CLOUDGOD_API_BASE||"http://127.0.0.1:8765").replace(/\/$/,"")+`/api/analysis?lat=${center.lat.toFixed(4)}&lon=${center.lng.toFixed(4)}&city=Centro%20do%20mapa`,{cache:'no-store'});
+  const params=new URLSearchParams({latitude:center.lat.toFixed(4),longitude:center.lng.toFixed(4),current:'temperature_2m',hourly:'precipitation_probability',forecast_days:'1',timezone:'auto'});
+  const response=await fetch('https://api.open-meteo.com/v1/forecast?'+params.toString(),{cache:'no-store'});
   if(!response.ok)throw new Error('HTTP '+response.status);
   const data=await response.json();
   const temperature=data.current?.temperature_2m;
-  if(typeof temperature!=='number')throw new Error('Temperatura GFS indisponível');
+  const times=data.hourly?.time||[];
+  const probabilities=data.hourly?.precipitation_probability||[];
+  if(typeof temperature!=='number')throw new Error('Temperatura indisponível');
+  const now=Date.now();
+  let idx=times.findIndex(t=>new Date(t).getTime()>=now);
+  if(idx<0)idx=times.length-1;
+  const probability=probabilities[idx];
   tempEl.innerHTML=String(Math.round(temperature))+'<em>Graus</em>';
-  rainEl.innerHTML='—<em>% chuva</em>';
-  statusEl.textContent='Centro do mapa · NOAA GFS · chance percentual não calculada pelo GFS determinístico';
- }catch(error){statusEl.textContent='Servidor multifonte indisponível. Inicie o backend CLOUDGOD.';}
+  rainEl.innerHTML=(typeof probability==='number'?Math.round(probability):'??')+'<em>% chuva</em>';
+  const updated=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  statusEl.textContent='Centro do mapa · atualizado às '+updated+' · fonte: Open-Meteo';
+ }catch(error){
+  statusEl.textContent='Não foi possível obter os dados agora. Tente atualizar novamente.';
+ }
 }
 window.addEventListener('load',()=>{
  refreshCGNowcasting();
@@ -5432,118 +5416,6 @@ window.addEventListener('load',()=>{
   map.on('moveend',()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(refreshCGNowcasting,700);});
  }
 });
-
-// ============================================
-// CLOUDGOD · BOLETIM MULTIFONTE EM JPEG
-// Fontes: NOAA GFS, INMET e CPTEC/INPE via serviço Python local.
-// ============================================
-const WJ_API_BASE = (window.CLOUDGOD_API_BASE || "http://127.0.0.1:8765").replace(/\/$/,"");
-let wjCoordinates = null;
-function wjStatus(message, good=false){
- const el=document.getElementById("wjStatus");
- if(el){el.textContent=message;el.classList.toggle("good",!!good);}
-}
-function wjUseGPS(){
- if(!navigator.geolocation){wjStatus("Este navegador não oferece geolocalização.");return;}
- wjStatus("Solicitando sua localização ao navegador…");
- navigator.geolocation.getCurrentPosition(p=>{
-  wjCoordinates={latitude:p.coords.latitude,longitude:p.coords.longitude,name:"Localização GPS",accuracy:p.coords.accuracy};
-  document.getElementById("weatherJpegPlace").value=`GPS ${wjCoordinates.latitude.toFixed(4)}, ${wjCoordinates.longitude.toFixed(4)}`;
-  wjStatus(`GPS obtido (precisão aproximada de ${Math.round(p.coords.accuracy)} m). Gere o boletim.`,true);
- },e=>wjStatus("Não foi possível obter o GPS: "+e.message+". Digite a cidade manualmente."),{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
-}
-async function wjResolvePlace(){
- const typed=document.getElementById("weatherJpegPlace").value.trim();
- if(wjCoordinates && (typed.startsWith("GPS ") || typed==="Localização GPS"))return {...wjCoordinates,name:"Localização GPS"};
- if(!typed)throw new Error("Digite uma cidade ou use a localização GPS.");
- const res=await fetch(WJ_API_BASE+"/api/geocode?city="+encodeURIComponent(typed));
- if(!res.ok)throw new Error("Localidade não encontrada no catálogo CPTEC/INPE ou servidor indisponível.");
- const data=await res.json(),p=data.results&&data.results[0];
- if(!p)throw new Error("Localidade não encontrada. Informe cidade e estado.");
- // CPTEC localiza a cidade, mas não fornece coordenadas nesta resposta.
- // Coordenadas de cidade são resolvidas por Nominatim, apenas para geocodificação (não previsão).
- if(typeof p.latitude!=="number"||typeof p.longitude!=="number")throw new Error("Coordenadas não encontradas para a cidade selecionada.");
- return {latitude:p.latitude,longitude:p.longitude,name:[p.name,p.state,"Brasil"].filter(Boolean).join(", ")};
-}
-function wjFmt(v,unit="",digits=0){return typeof v==="number"&&Number.isFinite(v)?v.toFixed(digits).replace(".",",")+unit:"—";}
-function wjAssessment(c,h,d){
- const notes=[];
- if(typeof c.precipitation==="number"&&c.precipitation>0)notes.push("O GFS indica precipitação acumulada no período de previsão correspondente; confirme a evolução no radar.");
- else if(c.precipitation===0)notes.push("O campo de precipitação do GFS não indica acumulado no instante amostrado; isso não exclui chuva localizada.");
- if(typeof c.wind_speed_10m==="number"&&c.wind_speed_10m>=50)notes.push("Vento modelado forte; atenção a objetos soltos e atividades expostas.");
- if(typeof c.temperature_2m==="number"&&c.temperature_2m>=35)notes.push("Temperatura modelada elevada; atenção ao calor.");
- if(typeof c.relative_humidity_2m==="number"&&c.relative_humidity_2m<=30)notes.push("Umidade modelada baixa.");
- if(typeof c.cape==="number")notes.push(`CAPE: ${Math.round(c.cape)} J/kg. Avaliar junto com CIN, umidade e cisalhamento; CAPE isolado não confirma tempestade.`);
- if(typeof c.cin==="number")notes.push(`CIN: ${Math.round(c.cin)} J/kg; indica a inibição convectiva estimada pelo modelo.`);
- if(!notes.length)notes.push("Campos limitados ou sem sinal de condição adversa evidente neste conjunto de dados.");
- return {notes};
-}
-async function wjGenerateReport(){
- const btn=document.getElementById("wjGenerateButton");btn.disabled=true;btn.textContent="CONSULTANDO MODELOS…";
- try{
-  wjStatus("Resolvendo localidade e consultando NOAA GFS, CPTEC/INPE e estação INMET próxima…");
-  const place=await wjResolvePlace();
-  const url=`${WJ_API_BASE}/api/analysis?lat=${encodeURIComponent(place.latitude)}&lon=${encodeURIComponent(place.longitude)}&city=${encodeURIComponent(place.name)}`;
-  const response=await fetch(url,{cache:"no-store"});
-  if(!response.ok){const e=await response.json().catch(()=>({}));throw new Error(e.detail||"Servidor meteorológico indisponível (HTTP "+response.status+").");}
-  const data=await response.json();
-  if(data.sources?.gfs?.status!=="ok")throw new Error("NOAA GFS não retornou dados válidos: "+(data.sources?.gfs?.reason||"sem dados"));
-  const assessment=wjAssessment(data.current,data.hourly||{},data.daily||{});
-  wjRenderJPEG(place,data,assessment);
-  const src=["NOAA GFS",data.sources?.cptec?.status==="ok"?"CPTEC/INPE":"CPTEC indisponível",data.sources?.inmet?.status==="observations_ok"?"INMET observado":"INMET sem observação horária"];
-  wjStatus("JPEG gerado. Fontes: "+src.join(" · ")+". Consulte o quadro de qualidade e as limitações no próprio boletim.",true);
- }catch(e){wjStatus("Não foi possível gerar o boletim: "+e.message);}
- finally{btn.disabled=false;btn.textContent="GERAR ANÁLISE JPEG";}
-}
-function wjRenderJPEG(place,data,assessment){
- const W=2000,H=1700,canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
- const ctx=canvas.getContext("2d");if(!ctx)throw new Error("Canvas indisponível para gerar JPEG.");
- const c=data.current||{},h=data.hourly||{},d=data.daily||{},src=data.sources||{},conv=data.convective||{};
- const now=new Date(data.generated_at||Date.now());
- const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,"#071a31");bg.addColorStop(1,"#123f68");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
- const round=(x,y,w,hh,r,fill)=>{ctx.fillStyle=fill;ctx.beginPath();ctx.roundRect(x,y,w,hh,r);ctx.fill();};
- const txt=(t,x,y,size=27,color="#eaf5ff",weight="400")=>{ctx.fillStyle=color;ctx.font=`${weight} ${size}px Arial`;ctx.fillText(String(t??"—"),x,y);};
- const wrap=(text,x,y,maxWidth,lineHeight,size=18,color="#254b6b")=>{ctx.font=`${size}px Arial`;let line="",yy=y;for(const word of String(text).split(/\s+/)){const test=line?line+" "+word:word;if(ctx.measureText(test).width>maxWidth&&line){txt(line,x,yy,size,color);line=word;yy+=lineHeight;}else line=test;}if(line)txt(line,x,yy,size,color);return yy+lineHeight;};
- txt("CLOUDGOD",70,82,38,"#70d4ff","700");txt("BOLETIM MULTIFONTE DE ANÁLISE ATMOSFÉRICA",70,135,32,"#ffffff","700");
- txt(place.name,70,185,27,"#b9d9f2","700");
- txt(`Emitido ${now.toLocaleString("pt-BR")} · coordenadas ${place.latitude.toFixed(4)}, ${place.longitude.toFixed(4)}`,70,225,17,"#a9c5dc");
- round(60,255,1880,265,22,"#ffffff");
- txt("NOAA GFS · CONDIÇÃO MODELADA",95,300,21,"#15517e","700");
- txt(wjFmt(c.temperature_2m," °C",1),95,405,83,"#0879c9","700");txt("Temperatura a 2 m",100,445,18,"#607b95");
- const metrics=[["Umidade relativa",wjFmt(c.relative_humidity_2m," %",0)],["Pressão ao nível do mar",wjFmt(c.pressure_msl," hPa",1)],["Vento a 10 m",wjFmt(c.wind_speed_10m," km/h",1)],["Direção do vento",wjFmt(c.wind_direction_10m,"°",0)],["Precipitação GFS",wjFmt(c.precipitation," mm",1)],["CAPE",wjFmt(conv.cape," J/kg",0)],["CIN",wjFmt(conv.cin," J/kg",0)],["Cisalhamento 0–6 km",wjFmt(conv.shear_0_6km," km/h",1)],["Vento 500 hPa",wjFmt(conv.wind500," km/h",1)],["Rajadas",wjFmt(c.wind_gusts_10m," km/h",1)]];
- metrics.forEach((m,i)=>{const col=i%2,row=Math.floor(i/2),x=650+col*610,y=305+row*39;txt(m[0],x,y,16,"#68839b");txt(m[1],x+265,y,20,"#193b5b","700");});
- round(60,545,1880,160,18,"#eaf5ff");txt("INTERPRETAÇÃO AUTOMÁTICA",90,582,21,"#15517e","700");
- let yy=615;assessment.notes.slice(0,3).forEach(n=>{yy=wrap("• "+n,95,yy,1780,24,16,"#254b6b")+2;});
- txt("CHANCE DE CHUVA",70,755,23,"#70d4ff","700");
- round(60,775,1880,75,14,"#ffffff");
- txt("Não calculada nesta versão: GFS determinístico fornece precipitação prevista, não probabilidade estatística.",90,822,19,"#254b6b","700");
- // Forecast chart: temperature and precipitation at available GFS lead times.
- txt("EVOLUÇÃO PREVISTA · NOAA GFS",70,900,24,"#70d4ff","700");
- const chart={x:100,y:935,w:1800,h:245};round(chart.x,chart.y,chart.w,chart.h,16,"#ffffff");
- const temps=(h.temperature_2m||[]).filter(v=>typeof v==="number"), tmax=Math.max(40,...temps),tmin=Math.min(0,...temps);
- const times=h.time||[],tv=h.temperature_2m||[],rv=h.precipitation||[];
- const px=i=>chart.x+65+(chart.w-130)*(i/Math.max(1,times.length-1));
- const py=v=>chart.y+195-(chart.h-70)*((v-tmin)/Math.max(1,tmax-tmin));
- ctx.strokeStyle="#d6e2ee";ctx.lineWidth=1;for(let j=0;j<4;j++){const gy=chart.y+40+j*50;ctx.beginPath();ctx.moveTo(chart.x+55,gy);ctx.lineTo(chart.x+chart.w-25,gy);ctx.stroke();}
- ctx.strokeStyle="#0879c9";ctx.lineWidth=5;ctx.beginPath();let begun=false;tv.forEach((v,i)=>{if(typeof v!=="number")return;const x=px(i),y=py(v);if(!begun){ctx.moveTo(x,y);begun=true;}else ctx.lineTo(x,y);});ctx.stroke();
- tv.forEach((v,i)=>{if(typeof v!=="number")return;ctx.fillStyle="#0879c9";ctx.beginPath();ctx.arc(px(i),py(v),6,0,Math.PI*2);ctx.fill();});
- txt("Temperatura (°C)",chart.x+35,chart.y+30,14,"#0879c9","700");
- const rmax=Math.max(1,...rv.filter(v=>typeof v==="number"));ctx.fillStyle="#39a58b";rv.forEach((v,i)=>{if(typeof v!=="number"||v<=0)return;const bh=Math.min(100,(v/rmax)*100);ctx.fillRect(px(i)-7,chart.y+190-bh,14,bh);});
- txt("Barras: precipitação prevista (mm por período de saída)",chart.x+900,chart.y+30,14,"#21856e","700");
- // CPTEC daily forecast cards
- txt("PREVISÃO CPTEC/INPE · 7 DIAS",70,1230,24,"#70d4ff","700");
- const cp=src.cptec||{},days=cp.daily||[];
- if(days.length){days.slice(0,7).forEach((day,i)=>{const x=60+i*268;round(x,1250,248,175,14,"#ffffff");txt(day.date||"—",x+15,1285,17,"#52718e","700");txt(day.condition||"—",x+15,1320,16,"#31516d");txt(`${wjFmt(day.max,"°",0)} / ${wjFmt(day.min,"°",0)}`,x+15,1365,24,"#0879c9","700");txt(`IUV: ${wjFmt(day.uv,"",1)}`,x+15,1400,15,"#31516d");});}
- else {round(60,1250,1850,90,14,"#fff");txt("CPTEC/INPE não disponibilizou a previsão local nesta consulta.",90,1305,18,"#31516d");}
- // INMET station observations
- const im=src.inmet||{};round(60,1450,1880,105,15,"#eaf5ff");txt("INMET · OBSERVAÇÃO DE ESTAÇÃO",90,1485,19,"#15517e","700");
- const station=im.station?`${im.name||im.station} (${im.station}) · ${im.distance_km} km · ${im.status}`:(im.reason||im.status||"Sem estação disponível");
- wrap(station,90,1520,1780,22,16,"#254b6b");
- const gfs=src.gfs||{};txt(`GFS ciclo ${gfs.cycle||"—"} · ${gfs.model||"NOAA GFS"} · INMET: ${im.status||"—"} · CPTEC: ${cp.status||"—"}`,70,1600,15,"#b9d9f2");
- txt("Probabilidade de chuva não inferida de precipitação determinística. Campos ausentes são exibidos como —. Boletim informativo; não substitui avisos oficiais.",70,1635,13,"#a9c5dc");
- canvas.toBlob(blob=>{if(!blob){wjStatus("O navegador não conseguiu codificar o JPEG.");return;}const stamp=now.toISOString().replace(/[:.]/g,"-");const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`CLOUDGOD_ANALISE_MULTIFONTE_${stamp}.jpg`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);},"image/jpeg",0.96);
-}
-
 </script>
 
 <button id="cgPublicChatLauncher" class="cg-public-chat-launcher" type="button" onclick="cgOpenPublicChat()">CHAT PÚBLICO <span>●</span></button>
