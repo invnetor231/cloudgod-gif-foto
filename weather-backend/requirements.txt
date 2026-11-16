@@ -1,0 +1,4 @@
+fastapi>=0.110,<1
+uvicorn[standard]>=0.27,<1
+requests>=2.31,<3
+pygrib>=2.1.6
