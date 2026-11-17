@@ -14,7 +14,7 @@ const NOAA_BUCKET = 'https://noaa-goes19.s3.amazonaws.com';
 const GLM_PRODUCT = 'GLM-L2-LCFA';
 const REQUEST_TIMEOUT_MS = 20000;
 const MAX_LIGHTNING_MINUTES = 60;
-let netcdfModulePromise;
+let h5wasmModulePromise;
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -23,7 +23,7 @@ app.get(['/', '/index.html'], (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'index.html'), (error) => {
     if (error && !res.headersSent) {
-      res.status(500).type('text/plain').send('NÃ£o foi possÃ­vel carregar o index.html. Verifique se ele estÃ¡ na raiz do serviÃ§o.');
+      res.status(500).type('text/plain').send('Não foi possível carregar o index.html. Verifique se ele está na raiz do serviço.');
     }
   });
 });
@@ -66,14 +66,14 @@ app.options(['/api/cptec', '/api/lightning'], (req, res) => {
 
 // Proxy CPTEC
 app.get('/api/cptec', async (req, res) => {
-  if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem nÃ£o autorizada.' });
+  if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem não autorizada.' });
 
   const requestedPath = typeof req.query.path === 'string' ? req.query.path : '';
   const isJsonEndpoint = /^\/paths\/radar\/layers\/[a-z0-9~_-]+\/(times|legend)$/i.test(requestedPath);
   const isFrameEndpoint = /^\/paths\/frames\/radar\/[a-z0-9~_-]+\/20\d{10}\/full$/i.test(requestedPath);
 
   if (!isJsonEndpoint && !isFrameEndpoint) {
-    return res.status(400).json({ error: 'Caminho CPTEC invÃ¡lido ou nÃ£o permitido.' });
+    return res.status(400).json({ error: 'Caminho CPTEC inválido ou não permitido.' });
   }
 
   try {
@@ -109,11 +109,11 @@ app.get('/api/cptec', async (req, res) => {
       res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Content-Type': 'application/json; charset=utf-8' });
       return res.status(200).json(JSON.parse(body));
     } catch (_error) {
-      return res.status(502).json({ error: 'O CPTEC retornou uma resposta que nÃ£o Ã© JSON vÃ¡lido.' });
+      return res.status(502).json({ error: 'O CPTEC retornou uma resposta que não é JSON válido.' });
     }
   } catch (error) {
     const timedOut = error?.name === 'AbortError';
-    const message = timedOut ? 'Tempo limite ao consultar o CPTEC.' : 'NÃ£o foi possÃ­vel conectar ao serviÃ§o do CPTEC.';
+    const message = timedOut ? 'Tempo limite ao consultar o CPTEC.' : 'Não foi possível conectar ao serviço do CPTEC.';
     if (isFrameEndpoint) return res.status(502).type('text/plain').send(message);
     return res.status(502).json({ error: message, detail: timedOut ? 'upstream_timeout' : 'upstream_connection_failed' });
   }
@@ -183,8 +183,8 @@ async function listGlmFiles(startTime, endTime) {
         const mm = Number(stamp[1].slice(9, 11));
         const ss = Number(stamp[1].slice(11, 13));
 
-        // O campo DDD do nome NOAA Ã© o dia do ano (001â€“366), nÃ£o o dia do mÃªs.
-        // Converter a partir de 1Âº de janeiro evita descartar todos os arquivos recentes.
+        // O campo DDD do nome NOAA é o dia do ano (001–366), não o dia do mês.
+        // Converter a partir de 1º de janeiro evita descartar todos os arquivos recentes.
         const fileTime = new Date(
           Date.UTC(year, 0, 1, hh, mm, ss) + (day - 1) * 86400000
         );
@@ -211,21 +211,35 @@ async function listGlmFiles(startTime, endTime) {
 }
 
 async function getNetcdfDataset(filePath) {
-  if (!netcdfModulePromise) {
-    netcdfModulePromise = import('netcdf4-wasm').catch((error) => {
-      netcdfModulePromise = null;
-      throw error;
-    });
+  // NOAA GLM-L2-LCFA é NetCDF-4/HDF5. netcdf4-wasm usado anteriormente
+  // não abria corretamente esses arquivos no ambiente Node do serviço.
+  if (!h5wasmModulePromise) {
+    h5wasmModulePromise = import('h5wasm/node')
+      .then(async (module) => {
+        await module.ready;
+        return module;
+      })
+      .catch((error) => {
+        h5wasmModulePromise = null;
+        throw new Error(
+          `Não foi possível carregar h5wasm. Instale a dependência "h5wasm". Detalhe: ${error.message}`
+        );
+      });
   }
 
-  const module = await netcdfModulePromise;
-  const Dataset = module.Dataset || module.NetCDF4?.Dataset;
-
-  if (typeof Dataset !== 'function') {
-    throw new Error('A versÃ£o instalada de netcdf4-wasm nÃ£o disponibilizou a funÃ§Ã£o Dataset.');
+  const module = await h5wasmModulePromise;
+  const H5File = module.File || module.default?.File;
+  if (typeof H5File !== 'function') {
+    throw new Error('h5wasm não disponibilizou a classe File.');
   }
 
-  return await Dataset(filePath, 'r');
+  const file = new H5File(filePath, 'r');
+  if (typeof file.get !== 'function') {
+    try { file.close?.(); } catch (_error) {}
+    throw new Error('O arquivo HDF5 foi aberto, mas a API de leitura não está disponível.');
+  }
+
+  return file;
 }
 
 function finiteNumber(value) {
@@ -236,6 +250,24 @@ function finiteNumber(value) {
 async function getVariableAttribute(variable, name) {
   if (!variable) return null;
 
+  // h5wasm expõe atributos HDF5 no objeto attrs. Mantemos alternativas
+  // para compatibilidade com diferentes versões da biblioteca.
+  try {
+    const attrs = variable.attrs;
+    if (attrs && Object.prototype.hasOwnProperty.call(attrs, name)) {
+      const value = attrs[name];
+      if (value !== undefined && value !== null) return value;
+    }
+  } catch (_error) {}
+
+  try {
+    const metadata = variable.metadata;
+    if (metadata?.attributes &&
+        Object.prototype.hasOwnProperty.call(metadata.attributes, name)) {
+      return metadata.attributes[name];
+    }
+  } catch (_error) {}
+
   try {
     if (typeof variable.getAttr === 'function') {
       const value = await variable.getAttr(name);
@@ -243,83 +275,56 @@ async function getVariableAttribute(variable, name) {
     }
   } catch (_error) {}
 
-  try {
-    const value = variable[name];
-    if (value !== undefined && value !== null) return value;
-  } catch (_error) {}
-
   return null;
 }
 
-function firstNumeric(value, fallback) {
-  if (value === undefined || value === null) return fallback;
-
-  if (ArrayBuffer.isView(value) || Array.isArray(value)) {
-    return value.length ? finiteNumber(value[0]) ?? fallback : fallback;
-  }
-
-  return finiteNumber(value) ?? fallback;
+function normalizeH5Value(value) {
+  if (value === undefined || value === null) return [];
+  if (ArrayBuffer.isView(value)) return Array.from(value);
+  if (Array.isArray(value)) return value.flat(Infinity);
+  return [value];
 }
 
 async function unpackVariable(variable) {
-  const raw = await variable.getValue();
+  if (!variable) return [];
 
-  const scale = firstNumeric(
-    await getVariableAttribute(variable, 'scale_factor'),
-    1
-  );
-
-  const offset = firstNumeric(
-    await getVariableAttribute(variable, 'add_offset'),
-    0
-  );
-
-  const fill = await getVariableAttribute(variable, '_FillValue');
-  const missing = await getVariableAttribute(variable, 'missing_value');
-  const unsignedAttribute = await getVariableAttribute(variable, '_Unsigned');
-  const unsigned = String(unsignedAttribute ?? '').toLowerCase() === 'true'
-    || unsignedAttribute === 1;
-
-  const fillValues = [fill, missing]
-    .flatMap((value) =>
-      ArrayBuffer.isView(value) || Array.isArray(value)
-        ? Array.from(value)
-        : [value]
-    )
-    .map((value) => finiteNumber(value))
-    .filter((value) => value !== null);
-
-  // GLM pode armazenar coordenadas como inteiros assinados com _Unsigned=true.
-  // O valor de preenchimento deve ser verificado ANTES da conversÃ£o unsigned.
-  const typeName = String(variable.datatype || variable.type || '').toLowerCase();
-  const bitMatch = typeName.match(/(?:u?int|[iu])(8|16|32|64)$/);
-  const typeAliases = {
-    byte: 8, ubyte: 8, char: 8, short: 16, ushort: 16,
-    int: 32, uint: 32, long: 64, ulong: 64,
-    i1: 8, u1: 8, i2: 16, u2: 16, i4: 32, u4: 32,
-    i8: 64, u8: 64
-  };
-  const bits = bitMatch ? Number(bitMatch[1]) : (typeAliases[typeName] || 0);
-  const unsignedModulus = bits > 0 && bits <= 32 ? 2 ** bits : 0;
-
-  const values = new Array(raw.length);
-
-  for (let i = 0; i < raw.length; i++) {
-    const packed = finiteNumber(raw[i]);
-
-    if (packed === null || fillValues.includes(packed)) {
-      values[i] = null;
-      continue;
+  // Em h5wasm, Dataset.value contém os valores lidos do dataset.
+  // Algumas versões/formatos também disponibilizam to_array().
+  let raw;
+  try {
+    raw = variable.value;
+    if (raw === undefined && typeof variable.to_array === 'function') {
+      raw = variable.to_array();
     }
-
-    const unpacked = unsigned && unsignedModulus && packed < 0
-      ? packed + unsignedModulus
-      : packed;
-
-    values[i] = unpacked * scale + offset;
+    if (raw === undefined && typeof variable.getValue === 'function') {
+      raw = await variable.getValue();
+    }
+  } catch (error) {
+    throw new Error(`Falha ao ler dataset ${variable.path || ''}: ${error.message}`);
   }
 
-  return values;
+  const rawValues = normalizeH5Value(raw);
+  const scale = firstNumeric(await getVariableAttribute(variable, 'scale_factor'), 1);
+  const offset = firstNumeric(await getVariableAttribute(variable, 'add_offset'), 0);
+  const fill = await getVariableAttribute(variable, '_FillValue');
+  const missing = await getVariableAttribute(variable, 'missing_value');
+
+  const fillValues = [fill, missing]
+    .flatMap(normalizeH5Value)
+    .map(finiteNumber)
+    .filter((value) => value !== null);
+
+  return rawValues.map((item) => {
+    const packed = finiteNumber(item);
+    if (packed === null || fillValues.includes(packed)) return null;
+    return packed * scale + offset;
+  });
+}
+
+function getGlmVariable(dataset, name) {
+  // GLM-L2-LCFA normalmente armazena os datasets na raiz.
+  // O segundo caminho cobre arquivos que os agrupem em /.
+  return dataset.get(name) || dataset.get(`/${name}`) || null;
 }
 
 async function decodeGlmFile(fileInfo) {
@@ -349,15 +354,15 @@ async function decodeGlmFile(fileInfo) {
     await fs.writeFile(tempPath, bytes);
     dataset = await getNetcdfDataset(tempPath);
 
-    const latVar = dataset.variables?.flash_lat;
-    const lonVar = dataset.variables?.flash_lon;
+    const latVar = getGlmVariable(dataset, 'flash_lat');
+    const lonVar = getGlmVariable(dataset, 'flash_lon');
 
     if (!latVar || !lonVar) {
-      throw new Error('O NetCDF nÃ£o contÃ©m flash_lat e/ou flash_lon.');
+      throw new Error('O NetCDF não contém flash_lat e/ou flash_lon.');
     }
 
-    const energyVar = dataset.variables?.flash_energy;
-    const flashTimeVar = dataset.variables?.flash_time_offset_of_first_event;
+    const energyVar = getGlmVariable(dataset, 'flash_energy');
+    const flashTimeVar = getGlmVariable(dataset, 'flash_time_offset_of_first_event');
 
     const [latitudes, longitudes, energies, flashTimeOffsets] = await Promise.all([
       unpackVariable(latVar),
@@ -486,7 +491,7 @@ async function mapWithConcurrency(items, concurrency, mapper) {
 app.get('/api/lightning', async (req, res) => {
   if (!applyCors(req, res)) {
     return res.status(403).json({
-      error: 'Origem nÃ£o autorizada.'
+      error: 'Origem não autorizada.'
     });
   }
 
@@ -497,7 +502,7 @@ app.get('/api/lightning', async (req, res) => {
 
   if (satellite !== 19) {
     return res.status(400).json({
-      error: 'Somente GOES-19 estÃ¡ configurado.'
+      error: 'Somente GOES-19 está configurado.'
     });
   }
 
@@ -581,7 +586,7 @@ app.get('/api/lightning', async (req, res) => {
     );
 
     return res.status(502).json({
-      error: 'NÃ£o foi possÃ­vel consultar os dados GOES-19 GLM da NOAA.',
+      error: 'Não foi possível consultar os dados GOES-19 GLM da NOAA.',
       detail: error?.name === 'AbortError'
         ? 'noaa_timeout'
         : 'noaa_glm_upstream_failed'
@@ -589,14 +594,14 @@ app.get('/api/lightning', async (req, res) => {
   }
 });
 
-// Rota nÃ£o encontrada
+// Rota não encontrada
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Rota nÃ£o encontrada.'
+    error: 'Rota não encontrada.'
   });
 });
 
-// InicializaÃ§Ã£o
+// Inicialização
 app.listen(PORT, '0.0.0.0', () => {
   console.log(
     `CLOUDGOD CPTEC + NOAA GLM ativo na porta ${PORT}`
