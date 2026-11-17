@@ -183,7 +183,11 @@ async function listGlmFiles(startTime, endTime) {
         const mm = Number(stamp[1].slice(9, 11));
         const ss = Number(stamp[1].slice(11, 13));
 
-        const fileTime = new Date(Date.UTC(year, 0, day, hh, mm, ss));
+        // O campo DDD do nome NOAA é o dia do ano (001–366), não o dia do mês.
+        // Converter a partir de 1º de janeiro evita descartar todos os arquivos recentes.
+        const fileTime = new Date(
+          Date.UTC(year, 0, 1, hh, mm, ss) + (day - 1) * 86400000
+        );
 
         if (fileTime >= startTime && fileTime <= endTime) {
           found.push({
