@@ -23,7 +23,7 @@ app.get(['/', '/index.html'], (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'index.html'), (error) => {
     if (error && !res.headersSent) {
-      res.status(500).type('text/plain').send('Não foi possível carregar o index.html. Verifique se ele está na raiz do serviço.');
+      res.status(500).type('text/plain').send('NÃ£o foi possÃ­vel carregar o index.html. Verifique se ele estÃ¡ na raiz do serviÃ§o.');
     }
   });
 });
@@ -66,14 +66,14 @@ app.options(['/api/cptec', '/api/lightning'], (req, res) => {
 
 // Proxy CPTEC
 app.get('/api/cptec', async (req, res) => {
-  if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem não autorizada.' });
+  if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem nÃ£o autorizada.' });
 
   const requestedPath = typeof req.query.path === 'string' ? req.query.path : '';
   const isJsonEndpoint = /^\/paths\/radar\/layers\/[a-z0-9~_-]+\/(times|legend)$/i.test(requestedPath);
   const isFrameEndpoint = /^\/paths\/frames\/radar\/[a-z0-9~_-]+\/20\d{10}\/full$/i.test(requestedPath);
 
   if (!isJsonEndpoint && !isFrameEndpoint) {
-    return res.status(400).json({ error: 'Caminho CPTEC inválido ou não permitido.' });
+    return res.status(400).json({ error: 'Caminho CPTEC invÃ¡lido ou nÃ£o permitido.' });
   }
 
   try {
@@ -109,11 +109,11 @@ app.get('/api/cptec', async (req, res) => {
       res.set({ 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Content-Type': 'application/json; charset=utf-8' });
       return res.status(200).json(JSON.parse(body));
     } catch (_error) {
-      return res.status(502).json({ error: 'O CPTEC retornou uma resposta que não é JSON válido.' });
+      return res.status(502).json({ error: 'O CPTEC retornou uma resposta que nÃ£o Ã© JSON vÃ¡lido.' });
     }
   } catch (error) {
     const timedOut = error?.name === 'AbortError';
-    const message = timedOut ? 'Tempo limite ao consultar o CPTEC.' : 'Não foi possível conectar ao serviço do CPTEC.';
+    const message = timedOut ? 'Tempo limite ao consultar o CPTEC.' : 'NÃ£o foi possÃ­vel conectar ao serviÃ§o do CPTEC.';
     if (isFrameEndpoint) return res.status(502).type('text/plain').send(message);
     return res.status(502).json({ error: message, detail: timedOut ? 'upstream_timeout' : 'upstream_connection_failed' });
   }
@@ -183,8 +183,8 @@ async function listGlmFiles(startTime, endTime) {
         const mm = Number(stamp[1].slice(9, 11));
         const ss = Number(stamp[1].slice(11, 13));
 
-        // O campo DDD do nome NOAA é o dia do ano (001–366), não o dia do mês.
-        // Converter a partir de 1º de janeiro evita descartar todos os arquivos recentes.
+        // O campo DDD do nome NOAA Ã© o dia do ano (001â€“366), nÃ£o o dia do mÃªs.
+        // Converter a partir de 1Âº de janeiro evita descartar todos os arquivos recentes.
         const fileTime = new Date(
           Date.UTC(year, 0, 1, hh, mm, ss) + (day - 1) * 86400000
         );
@@ -222,7 +222,7 @@ async function getNetcdfDataset(filePath) {
   const Dataset = module.Dataset || module.NetCDF4?.Dataset;
 
   if (typeof Dataset !== 'function') {
-    throw new Error('A versão instalada de netcdf4-wasm não disponibilizou a função Dataset.');
+    throw new Error('A versÃ£o instalada de netcdf4-wasm nÃ£o disponibilizou a funÃ§Ã£o Dataset.');
   }
 
   return await Dataset(filePath, 'r');
@@ -290,7 +290,7 @@ async function unpackVariable(variable) {
     .filter((value) => value !== null);
 
   // GLM pode armazenar coordenadas como inteiros assinados com _Unsigned=true.
-  // O valor de preenchimento deve ser verificado ANTES da conversão unsigned.
+  // O valor de preenchimento deve ser verificado ANTES da conversÃ£o unsigned.
   const typeName = String(variable.datatype || variable.type || '').toLowerCase();
   const bitMatch = typeName.match(/(?:u?int|[iu])(8|16|32|64)$/);
   const typeAliases = {
@@ -353,7 +353,7 @@ async function decodeGlmFile(fileInfo) {
     const lonVar = dataset.variables?.flash_lon;
 
     if (!latVar || !lonVar) {
-      throw new Error('O NetCDF não contém flash_lat e/ou flash_lon.');
+      throw new Error('O NetCDF nÃ£o contÃ©m flash_lat e/ou flash_lon.');
     }
 
     const energyVar = dataset.variables?.flash_energy;
@@ -453,323 +453,15 @@ async function decodeGlmFile(fileInfo) {
         await dataset.close();
       } catch (_error) {}
     }
-// ============================================================
-// CLOUDGOD - LEITOR NOAA GOES-19 GLM COM H5WASM
-// Substitui completamente o antigo netcdf4-wasm
-// ============================================================
 
-let h5wasmModulePromise;
-
-async function getH5Module() {
-if (!h5wasmModulePromise) {
-h5wasmModulePromise = (async () => {
-const imported = await import('h5wasm/node');
-await imported.ready;
-
-const h5 = imported.File  
-    ? imported  
-    : imported.default;  
-
-  if (!h5 || typeof h5.File !== 'function') {  
-    throw new Error('h5wasm.File não encontrado.');  
-  }  
-
-  return h5;  
-})().catch((error) => {  
-  h5wasmModulePromise = null;  
-  throw error;  
-});
-
+    if (tempPath) {
+      try {
+        await fs.unlink(tempPath);
+      } catch (_error) {}
+    }
+  }
 }
-
-return h5wasmModulePromise;
-}
-
-async function getNetcdfDataset(filePath) {
-const h5 = await getH5Module();
-return new h5.File(filePath, 'r');
-}
-
-function finiteNumber(value) {
-if (value === undefined || value === null) return null;
-
-const number = Number(value);
-return Number.isFinite(number) ? number : null;
-}
-
-function getH5Attribute(variable, name) {
-try {
-const attr = variable?.attrs?.[name];
-
-if (attr === undefined || attr === null) return null;  
-
-return attr.value !== undefined ? attr.value : attr;
-
-} catch (_error) {
-return null;
-}
-}
-
-function firstNumeric(value, fallback) {
-if (value === undefined || value === null) return fallback;
-
-if (ArrayBuffer.isView(value) || Array.isArray(value)) {
-return value.length
-? finiteNumber(value[0]) ?? fallback
-: fallback;
-}
-
-return finiteNumber(value) ?? fallback;
-}
-
-function unpackVariable(variable) {
-if (!variable) {
-throw new Error('Variável GLM ausente.');
-}
-
-const raw = variable.value;
-
-if (!raw || typeof raw.length !== 'number') {
-throw new Error('Dataset HDF5 sem valores legíveis.');
-}
-
-const scale = firstNumeric(
-getH5Attribute(variable, 'scale_factor'),
-1
-);
-
-const offset = firstNumeric(
-getH5Attribute(variable, 'add_offset'),
-0
-);
-
-const fillValues = [
-getH5Attribute(variable, '_FillValue'),
-getH5Attribute(variable, 'missing_value')
-].flatMap((value) => {
-if (value === null || value === undefined) return [];
-
-const values = ArrayBuffer.isView(value) || Array.isArray(value)  
-  ? Array.from(value)  
-  : [value];  
-
-return values.map(finiteNumber).filter((v) => v !== null);
-
-});
-
-const unsigned = String(
-getH5Attribute(variable, '_Unsigned') ?? ''
-).toLowerCase() === 'true';
-
-const dtype = String(variable.dtype || '').toLowerCase();
-const match = dtype.match(/iu$/);
-const bits = match ? Number(match[1]) * 8 : 0;
-
-const modulus = bits > 0 && bits <= 32
-? 2 ** bits
-: 0;
-
-const result = new Array(raw.length);
-
-for (let i = 0; i < raw.length; i++) {
-const packed = finiteNumber(raw[i]);
-
-if (packed === null || fillValues.includes(packed)) {  
-  result[i] = null;  
-  continue;  
-}  
-
-const unpacked = unsigned && modulus && packed < 0  
-  ? packed + modulus  
-  : packed;  
-
-result[i] = unpacked * scale + offset;
-
-}
-
-return result;
-}
-
-function getGlmVariable(file, name) {
-try {
-return file.get(name);
-} catch (_error) {
-return null;
-}
-}
-
-async function decodeGlmFile(fileInfo) {
-let tempPath;
-let dataset;
-
-try {
-const response = await fetchWithTimeout(
-fileInfo.url,
-{
-headers: {
-Accept: 'application/octet-stream'
-}
-},
-30000
-);
-
-if (!response.ok) {  
-  throw new Error(`NOAA HTTP ${response.status}`);  
-}  
-
-const bytes = Buffer.from(await response.arrayBuffer());  
-
-if (!bytes.length) {  
-  throw new Error('Arquivo NOAA vazio.');  
-}  
-
-tempPath = path.join(  
-  os.tmpdir(),  
-  `cloudgod-glm-${process.pid}-${Date.now()}-${Math.random()  
-    .toString(16).slice(2)}.nc`  
-);  
-
-await fs.writeFile(tempPath, bytes);  
-
-// Abre o arquivo HDF5/NetCDF4 com h5wasm  
-dataset = await getNetcdfDataset(tempPath);  
-
-const latVar = getGlmVariable(dataset, 'flash_lat');  
-const lonVar = getGlmVariable(dataset, 'flash_lon');  
-
-if (!latVar || !lonVar) {  
-  throw new Error(  
-    'Não foram encontradas as variáveis flash_lat e flash_lon.'  
-  );  
-}  
-
-const energyVar = getGlmVariable(dataset, 'flash_energy');  
-
-const timeVar = getGlmVariable(  
-  dataset,  
-  'flash_time_offset_of_first_event'  
-);  
-
-const latitudes = unpackVariable(latVar);  
-const longitudes = unpackVariable(lonVar);  
-
-const energies = energyVar  
-  ? unpackVariable(energyVar)  
-  : null;  
-
-const timeOffsets = timeVar  
-  ? unpackVariable(timeVar)  
-  : null;  
-
-const count = Math.min(  
-  latitudes.length,  
-  longitudes.length  
-);  
-
-const features = [];  
-let invalidCoordinates = 0;  
-
-for (let i = 0; i < count; i++) {  
-  const lat = finiteNumber(latitudes[i]);  
-  const lon = finiteNumber(longitudes[i]);  
-
-  if (  
-    lat === null ||  
-    lon === null ||  
-    lat < -90 ||  
-    lat > 90 ||  
-    lon < -180 ||  
-    lon > 180  
-  ) {  
-    invalidCoordinates++;  
-    continue;  
-  }  
-
-  const energy = energies && i < energies.length  
-    ? finiteNumber(energies[i])  
-    : null;  
-
-  const timeOffset = timeOffsets && i < timeOffsets.length  
-    ? finiteNumber(timeOffsets[i])  
-    : null;  
-
-  const flashDate = timeOffset === null  
-    ? fileInfo.time  
-    : new Date(  
-        fileInfo.time.getTime() + timeOffset * 1000  
-      );  
-
-  const time = flashDate.toISOString();  
-  const id = `${fileInfo.key}:${i}`;  
-
-  features.push({  
-    type: 'Feature',  
-    id,  
-
-    geometry: {  
-      type: 'Point',  
-      coordinates: [lon, lat]  
-    },  
-
-    properties: {  
-      id,  
-      flash_id: id,  
-      type: 'flash',  
-      source: 'NOAA GOES-19 GLM',  
-      satellite: 19,  
-      instrument: 'GLM',  
-      product: GLM_PRODUCT,  
-      time,  
-      timestamp: time,  
-      flash_time: time,  
-      time_utc: time,  
-
-      ...(energy === null  
-        ? {}  
-        : {  
-            energy_j: energy,  
-            energy  
-          })  
-    }  
-  });  
-}  
-
-return {  
-  features,  
-  records_read: count,  
-  invalid_coordinates: invalidCoordinates,  
-  error: null  
-};
-
-} catch (error) {
-console.error(
-'[CLOUDGOD GLM] Erro de decodificação:',
-fileInfo.key,
-error?.stack || error
-);
-
-return {  
-  features: [],  
-  records_read: 0,  
-  invalid_coordinates: 0,  
-  error: error?.message || 'Erro ao decodificar GLM.'  
-};
-
-} finally {
-if (dataset?.close) {
-try {
-dataset.close();
-} catch (_error) {}
-}
-
-if (tempPath) {  
-  try {  
-    await fs.unlink(tempPath);  
-  } catch (_error) {}  
-}
-
-}
-}
+async function mapWithConcurrency(items, concurrency, mapper) {
   const output = new Array(items.length);
   let next = 0;
 
@@ -794,7 +486,7 @@ if (tempPath) {
 app.get('/api/lightning', async (req, res) => {
   if (!applyCors(req, res)) {
     return res.status(403).json({
-      error: 'Origem não autorizada.'
+      error: 'Origem nÃ£o autorizada.'
     });
   }
 
@@ -805,7 +497,7 @@ app.get('/api/lightning', async (req, res) => {
 
   if (satellite !== 19) {
     return res.status(400).json({
-      error: 'Somente GOES-19 está configurado.'
+      error: 'Somente GOES-19 estÃ¡ configurado.'
     });
   }
 
@@ -889,7 +581,7 @@ app.get('/api/lightning', async (req, res) => {
     );
 
     return res.status(502).json({
-      error: 'Não foi possível consultar os dados GOES-19 GLM da NOAA.',
+      error: 'NÃ£o foi possÃ­vel consultar os dados GOES-19 GLM da NOAA.',
       detail: error?.name === 'AbortError'
         ? 'noaa_timeout'
         : 'noaa_glm_upstream_failed'
@@ -897,14 +589,14 @@ app.get('/api/lightning', async (req, res) => {
   }
 });
 
-// Rota não encontrada
+// Rota nÃ£o encontrada
 app.use((req, res) => {
   res.status(404).json({
-    error: 'Rota não encontrada.'
+    error: 'Rota nÃ£o encontrada.'
   });
 });
 
-// Inicialização
+// InicializaÃ§Ã£o
 app.listen(PORT, '0.0.0.0', () => {
   console.log(
     `CLOUDGOD CPTEC + NOAA GLM ativo na porta ${PORT}`
