@@ -731,6 +731,27 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cg-nowcasting-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:0 16px 15px;font-size:9px;line-height:1.5;color:#71839a}
 @media(max-width:700px){.cg-nowcasting{padding:0 10px;margin:12px auto}.cg-nowcasting-head{padding:12px}.cg-nowcasting-values{padding:11px;gap:8px}.cg-nowcast-value{min-height:112px;padding:13px}}
 @media(max-width:380px){.cg-nowcasting-values{grid-template-columns:1fr}}
+
+/* BOLETIM METEOROLÓGICO PROFISSIONAL */
+.cg-bulletin{margin-top:14px;border:1px solid #cbd9e8;border-radius:15px;overflow:hidden;background:#fff;box-shadow:0 8px 26px #183b6012}
+.cg-bulletin-head{padding:15px 17px;background:linear-gradient(115deg,#0b2947,#15517d);color:#fff;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.cg-bulletin-head h3{margin:0;font-size:14px;letter-spacing:.7px}
+.cg-bulletin-head small{font-size:9px;color:#c3d9eb}
+.cg-bulletin-body{padding:14px}
+.cg-bulletin-status{font-size:10px;line-height:1.5;color:#5d7188;margin-bottom:10px}
+.cg-bulletin-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0}
+.cg-bulletin-metric{border:1px solid #e0e9f2;border-radius:10px;background:#f7faff;padding:10px;min-width:0}
+.cg-bulletin-metric b{display:block;font-size:9px;color:#6a7e94;margin-bottom:5px}
+.cg-bulletin-metric strong{font-size:16px;color:#173e63;overflow-wrap:anywhere}
+.cg-bulletin-section{margin-top:11px;padding:12px;border:1px solid #e1eaf3;border-radius:11px;background:#fbfdff}
+.cg-bulletin-section h4{margin:0 0 7px;font-size:10px;color:#24496d;letter-spacing:.5px}
+.cg-bulletin-section p{margin:0;font-size:11px;line-height:1.65;color:#40566e}
+.cg-bulletin-sources{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.cg-bulletin-sources a{font-size:9px;font-weight:800;color:#1767ad;text-decoration:none;border:1px solid #d6e5f4;border-radius:7px;padding:8px;background:#f5f9ff}
+.cg-bulletin-disclaimer{margin-top:10px;padding:10px;border-radius:9px;background:#fff7e8;color:#795d2b;font-size:9px;line-height:1.55}
+.cg-bulletin-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0 0 12px;padding:11px;border:1px solid #d8e4ef;border-radius:11px;background:#f5f9fd}.cg-bulletin-controls label{display:block;font-size:10px;font-weight:800;color:#38536d}.cg-bulletin-controls input,.cg-bulletin-controls select{display:block;width:100%;min-height:42px;margin-top:5px;padding:8px;border:1px solid #b8cadd;border-radius:8px;background:#fff;color:#173e63;font-size:14px}.cg-bulletin-export button{display:inline-flex!important;visibility:visible!important;opacity:1!important;min-height:44px;align-items:center;justify-content:center;flex:1 1 130px;font-weight:800;font-size:12px}@media(max-width:480px){.cg-bulletin-controls{grid-template-columns:1fr}}
+@media(max-width:480px){.cg-bulletin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cg-bulletin-head{align-items:flex-start}}
+
 </style>
 
 <style>
@@ -1075,7 +1096,52 @@ Selecione uma estação para visualizar a reflectividade CAPPI 3 km, consultar o
 <button class="primary instability-refresh" id="instabilityRefresh" onclick="refreshInstabilityPanel()">ATUALIZAR NO CENTRO DO MAPA</button>
 <div class="instability-status" id="instabilityStatus">Aguardando consulta dos parâmetros atmosféricos.</div>
 <div class="instability-note">SRH não é fornecido pelo conjunto de variáveis GFS usado nesta consulta e permanece como não disponível — não será estimado artificialmente. O wind shear é calculado pela diferença vetorial entre 10 m e 500 hPa (aprox. 5,6 km), uma aproximação do intervalo 0–6 km.</div>
-</section><section class="panel cg-search-item" data-search-item="1" id="tornadoRiskPanel">
+</section>
+<section class="cg-bulletin cg-search-item" data-search-item="1" id="professionalBulletin">
+ <div class="cg-bulletin-head">
+  <div><h3>BOLETIM DE ANÁLISE CONVECTIVA</h3><small>CLOUDGOD · DIAGNÓSTICO DO AMBIENTE E POTENCIAL DE NUVENS</small></div>
+  <span style="font-size:9px;font-weight:800;color:#bde8ff">GFS · ATUALIZÁVEL</span>
+ </div>
+ <div class="cg-bulletin-body">
+  <div class="cg-bulletin-controls">
+   <label for="bulletinDate">DATA DA ANÁLISE<input type="date" id="bulletinDate"></label>
+   <label for="bulletinHour">HORÁRIO (PREVISÃO GFS)<select id="bulletinHour"><option value="">Aguardando dados do GFS…</option></select></label>
+  </div>
+  <button type="button" class="secondary" id="bulletinLocateBtn" onclick="requestLocation()" style="width:100%;margin:0 0 12px">⌖ USAR MINHA LOCALIZAÇÃO GPS</button>
+  <div class="cg-bulletin-export" style="display:flex;gap:9px;flex-wrap:wrap;margin:0 0 14px">
+   <button type="button" class="primary" id="bulletinJpegBtn" onclick="exportProfessionalBulletin('jpeg')">⬇ BAIXAR JPEG</button>
+   <button type="button" class="secondary" id="bulletinPdfBtn" onclick="exportProfessionalBulletin('pdf')">⬇ BAIXAR PDF</button>
+  </div>
+  <div class="cg-bulletin-status" id="bulletinStatus">O boletim usa a localização GPS da pessoa ou, se ela mover o mapa, o centro da região escolhida. Selecione o dia para gerar a análise técnica local.</div>
+  <div class="cg-bulletin-grid">
+   <div class="cg-bulletin-metric"><b>ENERGIA CONVECTIVA</b><strong id="bulletinCape">—</strong></div>
+   <div class="cg-bulletin-metric"><b>INIBIÇÃO (CIN)</b><strong id="bulletinCin">—</strong></div>
+   <div class="cg-bulletin-metric"><b>LIFTED INDEX</b><strong id="bulletinLi">—</strong></div>
+   <div class="cg-bulletin-metric"><b>UMIDADE 2 m</b><strong id="bulletinRh">—</strong></div>
+   <div class="cg-bulletin-metric"><b>COBERTURA DE NUVENS</b><strong id="bulletinCloud">—</strong></div>
+   <div class="cg-bulletin-metric"><b>PRECIPITAÇÃO HORÁRIA</b><strong id="bulletinRain">—</strong></div>
+   <div class="cg-bulletin-metric"><b>UMIDADE · 700 hPa</b><strong id="bulletinRh700">—</strong></div>
+   <div class="cg-bulletin-metric"><b>UMIDADE · 500 hPa</b><strong id="bulletinRh500">—</strong></div>
+  </div>
+  <div class="cg-bulletin-section"><h4>1 · DIAGNÓSTICO SINÓTICO E TERMODINÂMICO</h4><p id="bulletinDiagnosis">Aguardando dados do modelo.</p></div>
+  <div class="cg-bulletin-section"><h4>LEITURA DO CAPE · O QUE ESSE VALOR INDICA</h4><p id="bulletinCapeText">Aguardando dados do modelo.</p></div>
+  <div class="cg-bulletin-section"><h4>2 · POTENCIAL DE DESENVOLVIMENTO CONVECTIVO</h4><p id="bulletinPotential">Aguardando dados do modelo.</p></div>
+  <div class="cg-bulletin-section"><h4>3 · NUVENS QUE PODERÃO SE DESENVOLVER</h4><p id="bulletinCloudTypes">Aguardando dados do modelo.</p></div>
+  <div class="cg-bulletin-section"><h4>4 · TENDÊNCIA E PONTOS DE ATENÇÃO</h4><p id="bulletinOutlook">Aguardando dados do modelo.</p></div>
+  <div class="cg-bulletin-section"><h4>5 · ASSUNTO TÉCNICO · EVOLUÇÃO PREVISTA PARA O DIA</h4><p id="bulletinDailyTechnical">Aguardando dados horários para elaborar a análise diária.</p></div>
+  <div class="cg-bulletin-section"><h4>FONTES METEOROLÓGICAS · SITUAÇÃO DA CONSULTA</h4><div class="cg-bulletin-source-status" id="bulletinSourceStatus" style="font-size:10px;line-height:1.7;color:#40566e">NOAA/GFS: aguardando consulta.</div></div>
+  <div class="cg-bulletin-sources">
+   <a href="https://www.ncei.noaa.gov/products/weather-climate-models/global-forecast" target="_blank" rel="noopener">NOAA · GFS</a>
+   <a href="https://previsaonumerica.cptec.inpe.br/wrf/aprec/ams/" target="_blank" rel="noopener">BRASIL · WRF 7 km</a>
+   <a href="https://previsaonumerica.cptec.inpe.br/monan/aprec/ams/" target="_blank" rel="noopener">CPTEC · MONAN</a>
+   <a href="https://nowcasting.cptec.inpe.br/" target="_blank" rel="noopener">CPTEC · NOWCASTING/RADAR</a>
+   <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">INMET · AVISOS</a>
+   <a href="https://prevots.org/previsao-convectiva/" target="_blank" rel="noopener">PREVOTS · CONVECÇÃO</a>
+  </div>
+  <div class="cg-bulletin-disclaimer">A análise numérica automática desta versão usa os campos do NOAA GFS via Open-Meteo no ponto selecionado. WRF 7 km/MONAN do CPTEC, radar/nowcasting do CPTEC, avisos do INMET e previsão convectiva PREVOTS são fontes complementares para comparação; não serão apresentados como valores integrados automaticamente quando não houver feed numérico conectado. Tipos de nuvens são cenários possíveis, não identificação observacional. Confirme com radar, satélite, sondagem e observações locais.</div>
+ </div>
+</section>
+<section class="panel cg-search-item" data-search-item="1" id="tornadoRiskPanel">
 <h3>RISCO AMBIENTAL DE TORNADO</h3>
 <div class="info">Estimativa experimental baseada em CAPE, inibição convectiva, cisalhamento do vento e nível de condensação. Não é probabilidade de tornado nem alerta oficial.</div>
 <button class="primary" id="tornadoRiskToggle" onclick="toggleTornadoRisk()" style="width:100%;margin-top:10px">ATIVAR RISCO NA ÁREA DO MAPA</button>
@@ -1402,6 +1468,7 @@ document.addEventListener("DOMContentLoaded",()=>{cptecLoadStation();});
 </script>
 <script src="https://unpkg.com/esri-leaflet@3.0.15/dist/esri-leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.152.2/three.min.js"></script>
 <div aria-hidden="true" id="cloud3dModal">
@@ -1755,7 +1822,7 @@ async function refreshTornadoRisk(){
   "wind_speed_925hPa","wind_direction_925hPa",
   "wind_speed_500hPa","wind_direction_500hPa"
  ].join(",");
- const url=`${TORNADO_RISK_API}?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&hourly=${hourly}&forecast_days=2&timezone=auto&wind_speed_unit=kmh`;
+ const url=`${TORNADO_RISK_API}?latitude=${encodeURIComponent(latitudes)}&longitude=${encodeURIComponent(longitudes)}&hourly=${hourly}&forecast_days=7&timezone=auto&wind_speed_unit=kmh`;
  try{
   const response=await fetch(url,{signal:tornadoRiskAbort.signal,cache:"no-store"});
   if(!response.ok)throw new Error(`Open-Meteo HTTP ${response.status}`);
@@ -2046,6 +2113,8 @@ function requestLocation(){
    "Localização GPS obtida.";
 
   if(selectedPoint)updateDistance();
+  // Ao obter o GPS, o boletim passa a usar imediatamente o ponto da pessoa.
+  if(window.refreshInstabilityPanel)setTimeout(()=>window.refreshInstabilityPanel(),450);
 
  },error=>{
 
@@ -2056,7 +2125,8 @@ function requestLocation(){
   };
 
   document.getElementById("locationStatus").textContent=
-   errors[error.code]||"Erro de localização.";
+   (errors[error.code]||"Erro de localização.")+" O boletim usará o centro atual do mapa até que a localização seja autorizada.";
+  if(window.refreshInstabilityPanel)setTimeout(()=>window.refreshInstabilityPanel(),250);
 
  },{
   enableHighAccuracy:true,
@@ -4084,6 +4154,39 @@ function drawSkewT(rows){
   ctx.stroke();
   const xx=x(temp,1000);ctx.fillStyle="#526a83";ctx.textAlign="center";ctx.font="12px Arial";ctx.fillText(String(temp),xx,H-B+22);
  }
+ // Adiabatas secas (linhas tracejadas): referência termodinâmica do Skew-T.
+ // theta é a temperatura potencial em kelvin; T = theta*(p/1000)^0.286.
+ ctx.save();
+ ctx.setLineDash([7,6]);
+ for(let thetaC=-20;thetaC<=120;thetaC+=10){
+  const thetaK=thetaC+273.15;
+  ctx.beginPath();ctx.strokeStyle="rgba(104,119,139,.72)";ctx.lineWidth=1;
+  let started=false;
+  for(let p=1050;p>=100;p-=5){
+   const tempK=thetaK*Math.pow(p/1000,0.286);
+   const tempC=tempK-273.15;
+   const xx=x(tempC,p),yy=y(p);
+   if(xx<L-2||xx>W-R+2){started=false;continue;}
+   if(!started){ctx.moveTo(xx,yy);started=true;}else ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+ }
+ // Linhas de razão de mistura (g/kg), calculadas pela pressão de vapor e Td.
+ ctx.setLineDash([3,5]);
+ for(const w of [0.4,1,2,4,8,12,16,20]){
+  ctx.beginPath();ctx.strokeStyle="rgba(31,145,119,.58)";ctx.lineWidth=1;
+  let started=false;
+  for(let p=1050;p>=400;p-=5){
+   const e=(w*p)/(622+w);
+   const log=Math.log(e/6.112);
+   const td=243.5*log/(17.67-log);
+   const xx=x(td,p),yy=y(p);
+   if(xx<L-2||xx>W-R+2){started=false;continue;}
+   if(!started){ctx.moveTo(xx,yy);started=true;}else ctx.lineTo(xx,yy);
+  }
+  ctx.stroke();
+ }
+ ctx.restore();
  // Moldura
  ctx.strokeStyle="#7890a8";ctx.lineWidth=2;ctx.strokeRect(L,T,W-L-R,H-T-B);
  function trace(key,color){
@@ -4988,6 +5091,107 @@ clearRadiosonde=function(){
   }catch(error){if(error.name!=="AbortError")pressureStatus.textContent="Falha ao consultar pressão: "+error.message+". Aguarde um pouco e tente novamente.";}
  }
 
+ let bulletinCache=null;
+ function setupBulletinDatePicker(h,location,defaultIndex){
+  bulletinCache={h,location};
+  const dateInput=document.getElementById("bulletinDate"),hourSelect=document.getElementById("bulletinHour"),times=h.time||[];
+  if(!dateInput||!hourSelect||!times.length)return;
+  const selectedTime=times[defaultIndex]||times[0],selectedDate=selectedTime.slice(0,10);
+  dateInput.min=times[0].slice(0,10);dateInput.max=times[times.length-1].slice(0,10);dateInput.value=selectedDate;
+  const fillHours=()=>{
+   const date=dateInput.value;hourSelect.innerHTML="";
+   const matches=[];times.forEach((t,i)=>{if(t.slice(0,10)===date)matches.push({t,i});});
+   if(!matches.length){hourSelect.add(new Option("Sem horários para esta data",""));return;}
+   matches.forEach(({t,i})=>hourSelect.add(new Option(t.slice(11,16),String(i))));
+   const chosen=matches.find(x=>x.i===defaultIndex)||matches[0];hourSelect.value=String(chosen.i);
+   renderProfessionalBulletin(h,chosen.i,{...location,time:chosen.t});
+  };
+  dateInput.onchange=fillHours;
+  hourSelect.onchange=()=>{const i=Number(hourSelect.value);if(Number.isInteger(i)&&times[i])renderProfessionalBulletin(h,i,{...location,time:times[i]});};
+  fillHours();
+ }
+ function renderProfessionalBulletin(h,index,location){
+  // As coordenadas podem chegar como texto (ex.: "-23.45").
+  // Normaliza antes de formatar para evitar location.lat.toFixed is not a function.
+  const locationLat=Number(location?.lat),locationLon=Number(location?.lon);
+  const coordinateLabel=Number.isFinite(locationLat)&&Number.isFinite(locationLon)
+   ? `${locationLat.toFixed(2)}°, ${locationLon.toFixed(2)}°`
+   : "coordenadas indisponíveis";
+  const coordinateStatus=Number.isFinite(locationLat)&&Number.isFinite(locationLon)
+   ? `${locationLat.toFixed(3)}, ${locationLon.toFixed(3)}`
+   : "N/D";
+  const val=k=>Number(h[k]?.[index]);
+  const cape=val("cape"),cin=val("convective_inhibition"),li=val("lifted_index");
+  const rh=val("relative_humidity_2m"),rh850=val("relative_humidity_850hPa"),rh700=val("relative_humidity_700hPa"),rh500=val("relative_humidity_500hPa"),cloud=val("cloud_cover"),rain=val("precipitation");
+  const showers=val("showers"),rainProb=val("precipitation_probability");
+  const temp=val("temperature_2m"),dew=val("dew_point_2m");
+  const fmtMetric=(v,suffix,d=0)=>Number.isFinite(v)?v.toLocaleString("pt-BR",{maximumFractionDigits:d})+suffix:"N/D";
+  const put=(id,value)=>{const el=document.getElementById(id);if(el)el.textContent=value;};
+  put("bulletinCape",fmtMetric(cape," J/kg"));
+  put("bulletinCin",fmtMetric(cin," J/kg"));
+  put("bulletinLi",fmtMetric(li," °C",1));
+  put("bulletinRh",fmtMetric(rh,"%"));
+  put("bulletinCloud",fmtMetric(cloud,"%"));
+  put("bulletinRain",fmtMetric(rain," mm/h",1));
+  put("bulletinRh700",fmtMetric(rh700,"%"));
+  put("bulletinRh500",fmtMetric(rh500,"%"));
+  const available=[cape,cin,li].filter(Number.isFinite).length;
+  const stability=Number.isFinite(li)?(li<=-6?"forte instabilidade indicada pelo LI":li<=-3?"instabilidade moderada indicada pelo LI":li<0?"instabilidade fraca a moderada":"LI positivo, sugerindo maior estabilidade"): "LI indisponível";
+  const energy=Number.isFinite(cape)?(cape<100?"energia convectiva muito limitada":cape<500?"energia baixa":cape<1000?"energia moderada":cape<2000?"energia elevada":"energia muito elevada"):"CAPE indisponível";
+  const inhibition=Number.isFinite(cin)?(cin<=-150?"CIN muito forte, dificultando a iniciação":cin<=-75?"inibição significativa":cin<=-25?"inibição fraca a moderada":"pouca inibição convectiva indicada"):"CIN indisponível";
+  put("bulletinDiagnosis",`Para ${coordinateLabel}, no horário ${new Date(location.time).toLocaleString("pt-BR")}, o GFS indica ${energy}; ${stability}; e ${inhibition}. ${Number.isFinite(temp)&&Number.isFinite(dew)?`Temperatura a 2 m de ${fmtMetric(temp," °C",1)} e ponto de orvalho de ${fmtMetric(dew," °C",1)}, com diferença de ${fmtMetric(temp-dew," °C",1)}.`:"Temperatura/ponto de orvalho não disponíveis."} Cisalhamento vetorial estimado entre 10 m e 500 hPa: ${Number.isFinite(location.shear)?fmtMetric(location.shear," km/h",1):"N/D"}.`);
+  let capeText;
+  if(!Number.isFinite(cape)) capeText="O CAPE não foi disponibilizado para este horário. Sem esse índice, não é possível quantificar a energia potencial das parcelas de ar ascendentes.";
+  else if(cape<100) capeText=`CAPE de ${fmtMetric(cape," J/kg")}: energia potencial muito pequena. Em geral, isso limita correntes ascendentes profundas; podem ocorrer nuvens baixas ou cúmulos rasos, mas tempestades dependem de outros mecanismos e de condições locais.`;
+  else if(cape<500) capeText=`CAPE de ${fmtMetric(cape," J/kg")}: energia baixa. Pode sustentar convecção fraca ou localizada se houver aquecimento, umidade e levantamento. O desenvolvimento de Cumulonimbus não é indicado apenas por esse valor.`;
+  else if(cape<1000) capeText=`CAPE de ${fmtMetric(cape," J/kg")}: energia moderada. Parcelas que consigam superar a inibição podem formar correntes ascendentes mais vigorosas, com possibilidade de Cumulus congestus e trovoadas isoladas.`;
+  else if(cape<2000) capeText=`CAPE de ${fmtMetric(cape," J/kg")}: energia elevada. Se houver umidade em profundidade e um mecanismo de disparo, podem crescer Cumulonimbus e ocorrer pancadas fortes ou trovoadas. A intensidade real também depende da CIN, do cisalhamento e do perfil vertical.`;
+  else capeText=`CAPE de ${fmtMetric(cape," J/kg")}: energia muito elevada. Caso a CIN seja superada, há suporte termodinâmico para correntes ascendentes intensas e Cumulonimbus profundos. Isso não confirma tempestade severa: é necessário avaliar perfil vertical, umidade, cisalhamento e gatilhos.`;
+  if(Number.isFinite(cin)&&cin<0) capeText+=` A CIN de ${fmtMetric(cin," J/kg")} representa energia que precisa ser vencida para a parcela alcançar a convecção livre.`;
+  put("bulletinCapeText",capeText);
+  let potential;
+  if(!Number.isFinite(cape)||!Number.isFinite(cin))potential="Dados incompletos: não é possível classificar o potencial convectivo com segurança.";
+  else if(cape<100||cin<=-200)potential="Potencial de convecção profunda limitado no horário analisado. A presença de umidade ou nuvens não significa, por si só, que haverá tempestades.";
+  else if(cape<500)potential="Convecção rasa ou isolada pode ocorrer caso haja convergência e levantamento suficientes. A organização de tempestades profundas parece limitada pelos parâmetros disponíveis.";
+  else if(cape<1000)potential="Há energia para desenvolvimento de células convectivas, especialmente onde houver aquecimento, convergência de umidade ou forçamento. A iniciação ainda depende da erosão da CIN.";
+  else if(cape<2000)potential="Ambiente com potencial para convecção profunda. Se a inibição for superada, podem ocorrer pancadas e trovoadas, com intensidade modulada pelo cisalhamento e pela organização local.";
+  else potential="CAPE elevado favorece correntes ascendentes intensas se a parcela alcançar o nível de livre convecção. Com gatilho e umidade suficientes, tempestades fortes são possíveis; CAPE isolado não confirma tempo severo.";
+  put("bulletinPotential",potential);
+  const midRh=[rh700,rh500].filter(Number.isFinite);
+  const midMoisture=midRh.length?midRh.reduce((a,b)=>a+b,0)/midRh.length:NaN;
+  let cloudText;
+  if(Number.isFinite(cape)&&cape>=500&&Number.isFinite(midMoisture)&&midMoisture>=60&&(!Number.isFinite(cin)||cin>-150)){
+   cloudText="CENÁRIO CONVECTIVO: o conjunto de energia, umidade em médios níveis e inibição disponível permite considerar crescimento de Cumulus mediocris para Cumulus congestus. Se houver convergência/levantamento e a parcela superar a CIN, podem se desenvolver Cumulonimbus (Cb), com pancadas, raios e rajadas. A organização em aglomerados ou linhas depende do perfil vertical e do cisalhamento; não é garantida.";
+  }else if(Number.isFinite(cape)&&cape>=100&&Number.isFinite(midMoisture)&&midMoisture>=45){
+   cloudText="CENÁRIO MAIS PROVÁVEL: Cumulus humilis ou mediocris, com torres de Cumulus congestus em pontos de maior aquecimento/convergência. A umidade em médios níveis é um fator importante; Cumulonimbus exige aprofundamento das correntes ascendentes e superação da CIN.";
+  }else{
+   cloudText="Os parâmetros deste horário não sustentam, isoladamente, convecção profunda. Podem ocorrer nuvens baixas/rasas, como Stratocumulus e Cumulus pouco desenvolvidos, ou nebulosidade média conforme a umidade vertical. Cumulus congestus/Cumulonimbus só ganham suporte se houver energia, umidade em profundidade e mecanismo de levantamento em horários ou áreas próximos.";
+  }
+  if(Number.isFinite(rh850)||Number.isFinite(rh700)||Number.isFinite(rh500))cloudText+=` Umidade relativa: 850 hPa ${fmtMetric(rh850,"%")}, 700 hPa ${fmtMetric(rh700,"%")}, 500 hPa ${fmtMetric(rh500,"%")}.`;
+  if(Number.isFinite(cloud)&&cloud>=85)cloudText+=" A cobertura total de nuvens prevista é extensa; esse campo não identifica a espécie de nuvem.";
+  else if(Number.isFinite(cloud)&&cloud<35)cloudText+=" A cobertura total prevista é relativamente pequena, podendo permitir maior aquecimento onde houver céu aberto.";
+  if(Number.isFinite(rain)&&rain>0)cloudText+=` Precipitação horária prevista no ponto: ${fmtMetric(rain," mm/h",1)}.`;
+  if(Number.isFinite(showers)&&showers>0)cloudText+=` Precipitação de pancadas (campo showers) prevista: ${fmtMetric(showers," mm/h",1)}.`;
+  put("bulletinCloudTypes",cloudText);
+  put("bulletinOutlook",`A evolução dependerá do aquecimento diurno, umidade em profundidade, convergência em baixos níveis, mecanismos de levantamento e cisalhamento. ${Number.isFinite(rainProb)?`Probabilidade de precipitação indicada pelo modelo: ${fmtMetric(rainProb,"%")}. `:""}${Number.isFinite(rain)&&rain>=5?"A precipitação horária modelada merece acompanhamento, mas não equivale a acumulado observado nem a alerta de impacto.":"A ausência de chuva prevista neste ponto não exclui pancadas em áreas próximas."} Compare com radar/nowcasting CPTEC, avisos INMET e previsão convectiva PREVOTS para a mesma região.`);
+  // Síntese de todo o dia escolhido, não apenas do horário selecionado.
+  const day=String(location.time).slice(0,10),times=h.time||[],dayIndices=[];
+  times.forEach((t,i)=>{if(String(t).slice(0,10)===day)dayIndices.push(i);});
+  const dayValues=key=>dayIndices.map(i=>Number(h[key]?.[i])).filter(Number.isFinite);
+  const maxOf=a=>a.length?Math.max(...a):NaN,minOf=a=>a.length?Math.min(...a):NaN,meanOf=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
+  const dayCape=dayValues("cape"),dayCin=dayValues("convective_inhibition"),dayRain=dayValues("precipitation"),dayShowers=dayValues("showers"),dayRh700=dayValues("relative_humidity_700hPa"),dayRh500=dayValues("relative_humidity_500hPa"),dayLi=dayValues("lifted_index");
+  const peakCape=Math.max(...dayCape),peakCapeIndex=dayIndices.find(i=>Number(h.cape?.[i])===peakCape),peakRain=Math.max(...dayRain),peakRainIndex=dayIndices.find(i=>Number(h.precipitation?.[i])===peakRain);
+  const peakCapeHour=peakCapeIndex!==undefined?String(times[peakCapeIndex]).slice(11,16):"N/D",peakRainHour=peakRainIndex!==undefined?String(times[peakRainIndex]).slice(11,16):"N/D";
+  const weakestCap=maxOf(dayCin),strongestCap=minOf(dayCin),mean700=meanOf(dayRh700),mean500=meanOf(dayRh500),dailyRainTotal=dayRain.reduce((a,b)=>a+b,0);
+  let dailyPotential="Os campos horários disponíveis não indicam, por si só, um sinal consistente de convecção profunda. A evolução deverá ser acompanhada pela observação e por fontes regionais.";
+  if(Number.isFinite(peakCape)&&peakCape>=1000&&Number.isFinite(weakestCap)&&weakestCap>-100&&Number.isFinite(mean700)&&mean700>=55)dailyPotential="Há uma janela termodinâmica favorável à convecção profunda em parte do dia: CAPE elevado, momentos de menor inibição e umidade média em 700 hPa. Se houver gatilho dinâmico/termal, podem crescer torres convectivas e Cumulonimbus.";
+  else if(Number.isFinite(peakCape)&&peakCape>=300&&Number.isFinite(weakestCap)&&weakestCap>-150)dailyPotential="Existe potencial para convecção rasa a moderada em horários específicos. O crescimento vertical dependerá da umidade em médios níveis e da remoção da inibição; pancadas isoladas são possíveis se houver levantamento.";
+  const dailyCloud=Number.isFinite(peakCape)&&peakCape>=700&&Number.isFinite(mean700)&&mean700>=55?"Cumulus mediocris/congestus e, se a convecção for profunda, Cumulonimbus são possibilidades condicionais.":Number.isFinite(peakCape)&&peakCape>=150?"Cumulus humilis/mediocris e torres isoladas podem ocorrer onde o aquecimento e a convergência forem maiores.":"O cenário favorece desenvolvimento convectivo limitado; nuvens rasas/estratiformes são mais plausíveis com os dados atuais.";
+  const dailyText=`Para ${coordinateLabel}, em ${new Date(day+"T12:00:00").toLocaleDateString("pt-BR")}, a análise diária do NOAA GFS mostra CAPE máximo de ${fmtMetric(peakCape," J/kg")} por volta de ${peakCapeHour}; CIN variando de ${fmtMetric(strongestCap," a ")} a ${fmtMetric(weakestCap," J/kg")}; Lifted Index mínimo de ${fmtMetric(minOf(dayLi)," °C",1)}. A umidade média prevista em 700/500 hPa é ${fmtMetric(mean700,"%",0)} / ${fmtMetric(mean500,"%",0)}. ${dailyPotential} ${dailyCloud} A precipitação horária máxima no ponto é ${fmtMetric(peakRain," mm/h",1)} por volta de ${peakRainHour}; soma das taxas horárias do dia (referência aproximada, não acumulado oficial): ${fmtMetric(dailyRainTotal," mm",1)}. A precipitação horária máxima no campo de pancadas (showers) é ${fmtMetric(maxOf(dayShowers)," mm/h",1)}. A janela de maior atenção indicada pelo GFS é próxima aos horários de pico acima; confirme o deslocamento e a iniciação das células com radar/nowcasting CPTEC, previsão convectiva PREVOTS e avisos oficiais INMET. Esta é uma previsão pontual para a coordenada selecionada, não para o Brasil inteiro.`;
+  put("bulletinDailyTechnical",dailyText);
+  const sourceNode=document.getElementById("bulletinSourceStatus");if(sourceNode)sourceNode.innerHTML=`<b>NOAA/GFS:</b> dados numéricos consultados automaticamente para ${coordinateStatus}.<br><b>BRASIL · CPTEC WRF 7 km / MONAN:</b> produtos oficiais disponíveis para comparação; os campos GRIB não estão ingeridos automaticamente nesta rotina.<br><b>CPTEC · radar/nowcasting:</b> use o radar regional disponível no aplicativo para confirmar células observadas; não é previsão numérica pontual.<br><b>INMET:</b> avisos oficiais devem ser conferidos para o município/região; não há feed de alertas integrado a este boletim.<br><b>PREVOTS:</b> previsão convectiva complementar para comparação regional; o mapa não é convertido em valores automáticos no ponto GPS.`;
+  put("bulletinStatus",`Boletim local gerado com NOAA GFS via Open-Meteo · ${new Date(location.time).toLocaleString("pt-BR")} · ${coordinateStatus} · ${available}/3 índices principais disponíveis. Data diária: ${day}.`);
+ }
  window.refreshInstabilityPanel=async function(){
   const button=document.getElementById("instabilityRefresh");
   if(typeof map==="undefined"||!map.getCenter){status.textContent="Mapa ainda não está pronto para consultar os dados.";return;}
@@ -4998,8 +5202,8 @@ clearRadiosonde=function(){
   Object.values(fields).forEach(id=>document.getElementById(id).textContent="…");
   document.getElementById("instShear").textContent="…";
   try{
-   const hourly=["cape","convective_inhibition","lifted_index","wind_speed_10m","wind_direction_10m","wind_speed_500hPa","wind_direction_500hPa","geopotential_height_500hPa"].join(",");
-   const url=`https://api.open-meteo.com/v1/gfs?latitude=${lat}&longitude=${lon}&hourly=${hourly}&forecast_days=2&timezone=auto&wind_speed_unit=kmh`;
+   const hourly=["cape","convective_inhibition","lifted_index","wind_speed_10m","wind_direction_10m","wind_speed_500hPa","wind_direction_500hPa","geopotential_height_500hPa","relative_humidity_2m","relative_humidity_850hPa","relative_humidity_700hPa","relative_humidity_500hPa","cloud_cover","cloud_cover_low","cloud_cover_mid","cloud_cover_high","precipitation","precipitation_probability","showers","temperature_2m","dew_point_2m"].join(",");
+   const url=`https://api.open-meteo.com/v1/gfs?latitude=${lat}&longitude=${lon}&hourly=${hourly}&forecast_days=7&timezone=auto&wind_speed_unit=kmh`;
    const data=await requestGFS(url,controller.signal),h=data.hourly||{},times=h.time||[];
    if(!times.length)throw new Error("O modelo não retornou horários.");
    let index=0,best=Infinity;times.forEach((t,i)=>{const delta=Math.abs(new Date(t).getTime()-Date.now());if(delta<best){best=delta;index=i;}});
@@ -5010,6 +5214,9 @@ clearRadiosonde=function(){
    document.getElementById("instShearDetail").textContent=`Diferença vetorial 10 m–500 hPa · nível superior ${Number.isFinite(height)?fmt(height,0)+" m":"aprox. 5,6 km"} · valor aproximado`;
    document.getElementById("instSRH").textContent="N/D";
    status.textContent=`Parâmetros carregados · ${new Date(times[index]).toLocaleString("pt-BR")} · centro ${lat}°, ${lon}° · NOAA GFS via Open-Meteo.`;
+   const bulletinLocation={lat:Number(center.lat),lon:Number(center.lng),time:times[index],shear};
+   setupBulletinDatePicker(h,bulletinLocation,index);
+   renderProfessionalBulletin(h,index,bulletinLocation);
    if(pressureEnabled)refreshPressureMap(false);
   }catch(error){
    if(error.name!=="AbortError"){
@@ -5023,9 +5230,9 @@ clearRadiosonde=function(){
  document.addEventListener("DOMContentLoaded",()=>{
   const start=document.getElementById("startupScreen");
   if(start&&!start.hidden){
-   const observer=new MutationObserver(()=>{if(start.hidden){observer.disconnect();setTimeout(()=>window.refreshInstabilityPanel(),1200);}});
+   const observer=new MutationObserver(()=>{if(start.hidden){observer.disconnect();setTimeout(()=>{if(typeof requestLocation==="function")requestLocation();else window.refreshInstabilityPanel();},900);}});
    observer.observe(start,{attributes:true,attributeFilter:["hidden"]});
-  }else setTimeout(()=>window.refreshInstabilityPanel(),1600);
+  }else setTimeout(()=>{if(typeof requestLocation==="function")requestLocation();else window.refreshInstabilityPanel();},1400);
  });
 })();
 </script>
@@ -5434,6 +5641,80 @@ window.addEventListener('load',()=>{
   <div id="cgChatStatus" class="cg-chat-status">Mensagens privadas entre as duas contas.</div>
  </section>
 </div>
+
+
+<script>
+// Exportação autônoma: desenha o relatório a partir dos dados/textos, sem capturar a tela
+// e sem depender de html2canvas ou de bibliotecas externas para JPEG/PDF.
+window.exportProfessionalBulletin = async function(format){
+ const status=document.getElementById('bulletinStatus');
+ const buttons=[document.getElementById('bulletinJpegBtn'),document.getElementById('bulletinPdfBtn')];
+ const ids=['bulletinCape','bulletinCin','bulletinLi','bulletinRh','bulletinCloud','bulletinRain','bulletinRh700','bulletinRh500','bulletinDiagnosis','bulletinCapeText','bulletinPotential','bulletinCloudTypes','bulletinOutlook','bulletinDailyTechnical'];
+ const labels=['CAPE','CIN','Lifted Index','Umidade a 2 m','Cobertura de nuvens','Precipitação horária','Umidade 700 hPa','Umidade 500 hPa','Diagnóstico sinótico e termodinâmico','Interpretação do CAPE','Potencial convectivo','Nuvens possíveis','Tendência e pontos de atenção','Assunto técnico · evolução prevista para o dia'];
+ const vals=ids.map(id=>document.getElementById(id)?.innerText?.trim()||'Aguardando dados.');
+ if(vals.some(v=>v==='Aguardando dados.'||v==='Aguardando dados do modelo.'||v==='Aguardando dados horários para elaborar a análise diária.')){
+  if(status)status.textContent='Gere primeiro a análise local e aguarde o preenchimento do assunto técnico diário.';return;
+ }
+ buttons.forEach(b=>{if(b){b.disabled=true;b.dataset.oldText=b.textContent;b.textContent='PREPARANDO RELATÓRIO…';}});
+ let canvas;
+ try{
+  const date=document.getElementById('bulletinDate')?.value||'';
+  const hour=document.getElementById('bulletinHour')?.selectedOptions?.[0]?.textContent||'';
+  const loc=(status?.innerText||'').match(/(?:centro do mapa|GPS)\s*\(([^)]+)\)/i)?.[1]||((status?.innerText||'').match(/·\s*(-?\d+\.\d+,\s*-?\d+\.\d+)/)||[])[1]||'Ponto local selecionado';
+  const sourceText=document.getElementById('bulletinSourceStatus')?.innerText||'NOAA/GFS consultado automaticamente; demais fontes complementares devem ser verificadas nos portais oficiais.';
+  const sections=[
+   ['1 · DIAGNÓSTICO SINÓTICO E TERMODINÂMICO',vals[8]],['2 · LEITURA DO CAPE',vals[9]],['3 · POTENCIAL DE DESENVOLVIMENTO CONVECTIVO',vals[10]],['4 · NUVENS QUE PODERÃO SE DESENVOLVER',vals[11]],['5 · TENDÊNCIA E PONTOS DE ATENÇÃO',vals[12]],['6 · ASSUNTO TÉCNICO · EVOLUÇÃO PREVISTA PARA O DIA',vals[13]],['FONTES E SITUAÇÃO DA CONSULTA',sourceText]
+  ];
+  const W=1200,margin=72,inner=W-margin*2,lineHeight=31;
+  const measure=document.createElement('canvas').getContext('2d');
+  const wrap=(text,max,font)=>{measure.font=font;const out=[];String(text).split(/\n/).forEach(par=>{let line='';for(const word of par.split(/\s+/)){const test=line?line+' '+word:word;if(measure.measureText(test).width>max&&line){out.push(line);line=word;}else line=test;}out.push(line);});return out;};
+  const font='24px Arial';let total=margin+210+70+170+45;
+  sections.forEach(([heading,body])=>{total+=58+wrap(body,inner-42,font).length*lineHeight+48;});
+  total+=120;
+  canvas=document.createElement('canvas');canvas.width=W;canvas.height=Math.ceil(total);
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,W,canvas.height);
+  let y=0;const round=(x,yy,w,h,r,color)=>{ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,yy,w,h,r);ctx.fill();};
+  const drawWrap=(text,x,yy,max,font,color,lh)=>{ctx.font=font;ctx.fillStyle=color;const lines=wrap(text,max,font);lines.forEach(line=>{ctx.fillText(line,x,yy);yy+=lh;});return yy;};
+  const dateLabel=date?new Date(date+'T12:00:00').toLocaleDateString('pt-BR'):'';
+  round(0,0,W,250,0,'#102d48');ctx.fillStyle='#b8d9ed';ctx.font='bold 19px Arial';ctx.fillText('CLOUDGOD · METEOROLOGIA',margin,58);
+  ctx.fillStyle='#ffffff';ctx.font='bold 39px Arial';ctx.fillText('BOLETIM DE ANÁLISE CONVECTIVA',margin,120);
+  ctx.font='23px Arial';ctx.fillStyle='#d7eafa';ctx.fillText('Diagnóstico atmosférico local · CAPE · potencial de nuvens e tempestades',margin,165);
+  ctx.font='19px Arial';ctx.fillText('DATA: '+dateLabel+'  |  HORÁRIO GFS: '+hour,margin,210);ctx.fillText('LOCALIZAÇÃO: '+loc,margin,238);
+  y=300;ctx.fillStyle='#174d73';ctx.font='bold 25px Arial';ctx.fillText('PARÂMETROS ATMOSFÉRICOS',margin,y);y+=28;
+  const metricVals=vals.slice(0,8),cols=4,gap=14,cardW=(inner-gap*(cols-1))/cols,cardH=112;
+  metricVals.forEach((v,i)=>{const row=Math.floor(i/cols),col=i%cols,x=margin+col*(cardW+gap),yy=y+row*(cardH+gap);round(x,yy,cardW,cardH,13,'#f1f6fa');ctx.strokeStyle='#dce7ef';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#60778b';ctx.font='bold 16px Arial';ctx.fillText(labels[i].toUpperCase(),x+16,yy+30);drawWrap(v,x+16,yy+70,cardW-32,'bold 23px Arial','#183d5a',27);});
+  y+=2*(cardH+gap)+18;
+  sections.forEach(([heading,body])=>{const lines=wrap(body,inner-42,font),boxH=58+lines.length*lineHeight+28;round(margin,y,inner,boxH,12,'#fbfdff');ctx.strokeStyle='#dce7ef';ctx.lineWidth=2;ctx.stroke();ctx.fillStyle='#174d73';ctx.font='bold 20px Arial';ctx.fillText(heading,margin+20,y+34);let yy=y+76;yy=drawWrap(body,margin+20,yy,inner-42,font,'#344b60',lineHeight);y+=boxH+18;});
+  round(margin,y,inner,82,10,'#fff6e5');ctx.fillStyle='#725b31';ctx.font='bold 17px Arial';ctx.fillText('NOTA TÉCNICA',margin+18,y+28);drawWrap('A análise numérica automática usa o NOAA GFS no ponto escolhido. CPTEC/WRF 7 km/MONAN, radar/nowcasting, INMET e PREVOTS são fontes complementares e devem ser comparadas nos produtos oficiais; não são apresentadas como feeds numéricos integrados quando não estão conectados. Nuvens e tempestades são possibilidades previstas, não confirmação observacional.',margin+18,y+55,inner-36,'16px Arial','#725b31',21);
+  const finalCanvas=document.createElement('canvas');finalCanvas.width=W;finalCanvas.height=Math.ceil(y+110);finalCanvas.getContext('2d').drawImage(canvas,0,0);canvas=finalCanvas;
+  const stamp=(date+'-'+hour).replace(/[^0-9-]/g,'').replace(/-+/g,'-')||'local';
+  if(format==='jpeg'){
+   const a=document.createElement('a');a.href=canvas.toDataURL('image/jpeg',0.96);a.download='CLOUDGOD-boletim-local-'+stamp+'.jpg';document.body.appendChild(a);a.click();a.remove();
+  }else if(format==='pdf'){
+   const pdfBlob=makePdfFromCanvas(canvas);const url=URL.createObjectURL(pdfBlob);const a=document.createElement('a');a.href=url;a.download='CLOUDGOD-boletim-local-'+stamp+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }
+  if(status)status.textContent='Relatório local gerado em '+format.toUpperCase()+'. O arquivo contém os índices e textos técnicos, sem fotografar a interface do aplicativo.';
+ }catch(error){if(status)status.textContent='Falha ao gerar relatório: '+(error?.message||'erro desconhecido');}
+ finally{buttons.forEach(b=>{if(b){b.disabled=false;b.textContent=b.dataset.oldText||(b.id==='bulletinJpegBtn'?'⬇ BAIXAR JPEG':'⬇ BAIXAR PDF');}});}
+};
+function makePdfFromCanvas(sourceCanvas){
+ const enc=new TextEncoder(),pageW=595.28,pageH=841.89,srcW=sourceCanvas.width,pagePixelH=Math.round(srcW*pageH/pageW),pages=Math.ceil(sourceCanvas.height/pagePixelH),objects=[],offsets=[];let pos=0;
+ const pushBytes=b=>{objects.push(b);pos+=b.length;},pushText=t=>pushBytes(enc.encode(t));
+ const addObj=(id,parts)=>{offsets[id]=pos;pushText(id+' 0 obj\n');parts.forEach(part=>typeof part==='string'?pushText(part):pushBytes(part));pushText('\nendobj\n');};
+ addObj(1,['<< /Type /Catalog /Pages 2 0 R >>']);
+ const kids=Array.from({length:pages},(_,i)=>`${3+i*3} 0 R`).join(' ');addObj(2,[`<< /Type /Pages /Kids [${kids}] /Count ${pages} >>`]);
+ for(let i=0;i<pages;i++){
+  const slice=document.createElement('canvas');slice.width=srcW;slice.height=pagePixelH;const c=slice.getContext('2d');c.fillStyle='#ffffff';c.fillRect(0,0,srcW,pagePixelH);c.drawImage(sourceCanvas,0,i*pagePixelH,srcW,Math.min(pagePixelH,sourceCanvas.height-i*pagePixelH),0,0,srcW,Math.min(pagePixelH,sourceCanvas.height-i*pagePixelH));
+  const raw=atob(slice.toDataURL('image/jpeg',0.94).split(',')[1]),jpg=new Uint8Array(raw.length);for(let j=0;j<raw.length;j++)jpg[j]=raw.charCodeAt(j);
+  const pageId=3+i*3,contentId=pageId+1,imageId=pageId+2,stream=`q ${pageW} 0 0 ${pageH} 0 0 cm /Im0 Do Q`;
+  addObj(pageId,[`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageW} ${pageH}] /Resources << /XObject << /Im0 ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`]);
+  addObj(contentId,[`<< /Length ${enc.encode(stream).length} >>\nstream\n${stream}\nendstream`]);
+  addObj(imageId,[`<< /Type /XObject /Subtype /Image /Width ${srcW} /Height ${pagePixelH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`,jpg,'\nendstream']);
+ }
+ const xref=pos;pushText(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);for(let i=1;i<offsets.length;i++)pushText(String(offsets[i]).padStart(10,'0')+' 00000 n \n');pushText(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
+ const total=objects.reduce((n,b)=>n+b.length,0),out=new Uint8Array(total);let offset=0;objects.forEach(b=>{out.set(b,offset);offset+=b.length;});return new Blob([out],{type:'application/pdf'});
+}
+</script>
 
 </body>
 </html>
