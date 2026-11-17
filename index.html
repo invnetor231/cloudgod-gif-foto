@@ -3594,23 +3594,61 @@ function toggleLightningLoop(){
 
 async function refreshLightning(){
  if(!lightningEnabled||lightningRequest)return;
+
  const status=document.getElementById("lightningStatus");
- lightningRequest=new AbortController();
- const timeout=setTimeout(()=>lightningRequest?.abort(),20000);
+ const controller=new AbortController();
+ let timedOut=false;
+ lightningRequest=controller;
+
+ const timeout=setTimeout(()=>{
+  timedOut=true;
+  controller.abort();
+ },25000);
+
  try{
-  const response=await fetch(LIGHTNING_API+"?satellite=19&minutes=10",{cache:"no-store",signal:lightningRequest.signal});
+  status.textContent="Consultando dados GOES-19 GLM...";
+  const response=await fetch(LIGHTNING_API+"?satellite=19&minutes=10&_="+Date.now(),{
+   cache:"no-store",
+   signal:controller.signal,
+   headers:{Accept:"application/geo+json, application/json"}
+  });
+
   if(!response.ok){
    let detail="HTTP "+response.status;
-   try{const body=await response.json();detail=body.detail||body.error||detail;}catch{}
+   try{
+    const body=await response.json();
+    detail=body.detail||body.error||detail;
+   }catch{}
    throw new Error(detail);
   }
+
+  const contentType=response.headers.get("content-type")||"";
+  if(!contentType.includes("json")){
+   const preview=(await response.text()).slice(0,160);
+   throw new Error("A API não retornou JSON. Resposta: "+preview);
+  }
+
   const data=await response.json();
-  if(lightningEnabled)renderLightning(data);
+  if(!lightningEnabled)return;
+
+  if(!Array.isArray(data)&&!Array.isArray(data?.features)&&!Array.isArray(data?.data)){
+   throw new Error("Resposta recebida, mas sem lista de descargas GLM válida.");
+  }
+
+  renderLightning(data);
  }catch(error){
-  if(error.name!=="AbortError")status.textContent="Falha ao consultar /api/lightning: "+error.message;
+  if(!lightningEnabled)return;
+
+  if(error.name==="AbortError"){
+   status.textContent=timedOut
+    ?"Tempo esgotado: a API GLM não respondeu em 25 segundos."
+    :"Consulta GLM cancelada.";
+  }else{
+   status.textContent="Falha ao consultar GLM: "+(error.message||"erro desconhecido");
+  }
  }finally{
   clearTimeout(timeout);
-  lightningRequest=null;
+  if(lightningRequest===controller)lightningRequest=null;
  }
 }
 
