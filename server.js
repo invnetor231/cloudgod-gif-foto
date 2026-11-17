@@ -14,7 +14,7 @@ const ALLOWED_ORIGIN = (process.env.CLOUDGOD_ORIGIN || 'https://cloudgod-gif-fot
 const NOAA_BUCKET = 'https://noaa-goes19.s3.amazonaws.com';
 const GLM_PRODUCT = 'GLM-L2-LCFA';
 const REQUEST_TIMEOUT_MS = 20000;
-const MAX_LIGHTNING_MINUTES = 10;
+const MAX_LIGHTNING_MINUTES = 60;
 let netcdfModulePromise;
 
 app.disable('x-powered-by');
