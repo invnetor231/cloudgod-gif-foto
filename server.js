@@ -453,15 +453,323 @@ async function decodeGlmFile(fileInfo) {
         await dataset.close();
       } catch (_error) {}
     }
+// ============================================================
+// CLOUDGOD - LEITOR NOAA GOES-19 GLM COM H5WASM
+// Substitui completamente o antigo netcdf4-wasm
+// ============================================================
 
-    if (tempPath) {
-      try {
-        await fs.unlink(tempPath);
-      } catch (_error) {}
-    }
-  }
+let h5wasmModulePromise;
+
+async function getH5Module() {
+if (!h5wasmModulePromise) {
+h5wasmModulePromise = (async () => {
+const imported = await import('h5wasm/node');
+await imported.ready;
+
+const h5 = imported.File  
+    ? imported  
+    : imported.default;  
+
+  if (!h5 || typeof h5.File !== 'function') {  
+    throw new Error('h5wasm.File não encontrado.');  
+  }  
+
+  return h5;  
+})().catch((error) => {  
+  h5wasmModulePromise = null;  
+  throw error;  
+});
+
 }
-async function mapWithConcurrency(items, concurrency, mapper) {
+
+return h5wasmModulePromise;
+}
+
+async function getNetcdfDataset(filePath) {
+const h5 = await getH5Module();
+return new h5.File(filePath, 'r');
+}
+
+function finiteNumber(value) {
+if (value === undefined || value === null) return null;
+
+const number = Number(value);
+return Number.isFinite(number) ? number : null;
+}
+
+function getH5Attribute(variable, name) {
+try {
+const attr = variable?.attrs?.[name];
+
+if (attr === undefined || attr === null) return null;  
+
+return attr.value !== undefined ? attr.value : attr;
+
+} catch (_error) {
+return null;
+}
+}
+
+function firstNumeric(value, fallback) {
+if (value === undefined || value === null) return fallback;
+
+if (ArrayBuffer.isView(value) || Array.isArray(value)) {
+return value.length
+? finiteNumber(value[0]) ?? fallback
+: fallback;
+}
+
+return finiteNumber(value) ?? fallback;
+}
+
+function unpackVariable(variable) {
+if (!variable) {
+throw new Error('Variável GLM ausente.');
+}
+
+const raw = variable.value;
+
+if (!raw || typeof raw.length !== 'number') {
+throw new Error('Dataset HDF5 sem valores legíveis.');
+}
+
+const scale = firstNumeric(
+getH5Attribute(variable, 'scale_factor'),
+1
+);
+
+const offset = firstNumeric(
+getH5Attribute(variable, 'add_offset'),
+0
+);
+
+const fillValues = [
+getH5Attribute(variable, '_FillValue'),
+getH5Attribute(variable, 'missing_value')
+].flatMap((value) => {
+if (value === null || value === undefined) return [];
+
+const values = ArrayBuffer.isView(value) || Array.isArray(value)  
+  ? Array.from(value)  
+  : [value];  
+
+return values.map(finiteNumber).filter((v) => v !== null);
+
+});
+
+const unsigned = String(
+getH5Attribute(variable, '_Unsigned') ?? ''
+).toLowerCase() === 'true';
+
+const dtype = String(variable.dtype || '').toLowerCase();
+const match = dtype.match(/iu$/);
+const bits = match ? Number(match[1]) * 8 : 0;
+
+const modulus = bits > 0 && bits <= 32
+? 2 ** bits
+: 0;
+
+const result = new Array(raw.length);
+
+for (let i = 0; i < raw.length; i++) {
+const packed = finiteNumber(raw[i]);
+
+if (packed === null || fillValues.includes(packed)) {  
+  result[i] = null;  
+  continue;  
+}  
+
+const unpacked = unsigned && modulus && packed < 0  
+  ? packed + modulus  
+  : packed;  
+
+result[i] = unpacked * scale + offset;
+
+}
+
+return result;
+}
+
+function getGlmVariable(file, name) {
+try {
+return file.get(name);
+} catch (_error) {
+return null;
+}
+}
+
+async function decodeGlmFile(fileInfo) {
+let tempPath;
+let dataset;
+
+try {
+const response = await fetchWithTimeout(
+fileInfo.url,
+{
+headers: {
+Accept: 'application/octet-stream'
+}
+},
+30000
+);
+
+if (!response.ok) {  
+  throw new Error(`NOAA HTTP ${response.status}`);  
+}  
+
+const bytes = Buffer.from(await response.arrayBuffer());  
+
+if (!bytes.length) {  
+  throw new Error('Arquivo NOAA vazio.');  
+}  
+
+tempPath = path.join(  
+  os.tmpdir(),  
+  `cloudgod-glm-${process.pid}-${Date.now()}-${Math.random()  
+    .toString(16).slice(2)}.nc`  
+);  
+
+await fs.writeFile(tempPath, bytes);  
+
+// Abre o arquivo HDF5/NetCDF4 com h5wasm  
+dataset = await getNetcdfDataset(tempPath);  
+
+const latVar = getGlmVariable(dataset, 'flash_lat');  
+const lonVar = getGlmVariable(dataset, 'flash_lon');  
+
+if (!latVar || !lonVar) {  
+  throw new Error(  
+    'Não foram encontradas as variáveis flash_lat e flash_lon.'  
+  );  
+}  
+
+const energyVar = getGlmVariable(dataset, 'flash_energy');  
+
+const timeVar = getGlmVariable(  
+  dataset,  
+  'flash_time_offset_of_first_event'  
+);  
+
+const latitudes = unpackVariable(latVar);  
+const longitudes = unpackVariable(lonVar);  
+
+const energies = energyVar  
+  ? unpackVariable(energyVar)  
+  : null;  
+
+const timeOffsets = timeVar  
+  ? unpackVariable(timeVar)  
+  : null;  
+
+const count = Math.min(  
+  latitudes.length,  
+  longitudes.length  
+);  
+
+const features = [];  
+let invalidCoordinates = 0;  
+
+for (let i = 0; i < count; i++) {  
+  const lat = finiteNumber(latitudes[i]);  
+  const lon = finiteNumber(longitudes[i]);  
+
+  if (  
+    lat === null ||  
+    lon === null ||  
+    lat < -90 ||  
+    lat > 90 ||  
+    lon < -180 ||  
+    lon > 180  
+  ) {  
+    invalidCoordinates++;  
+    continue;  
+  }  
+
+  const energy = energies && i < energies.length  
+    ? finiteNumber(energies[i])  
+    : null;  
+
+  const timeOffset = timeOffsets && i < timeOffsets.length  
+    ? finiteNumber(timeOffsets[i])  
+    : null;  
+
+  const flashDate = timeOffset === null  
+    ? fileInfo.time  
+    : new Date(  
+        fileInfo.time.getTime() + timeOffset * 1000  
+      );  
+
+  const time = flashDate.toISOString();  
+  const id = `${fileInfo.key}:${i}`;  
+
+  features.push({  
+    type: 'Feature',  
+    id,  
+
+    geometry: {  
+      type: 'Point',  
+      coordinates: [lon, lat]  
+    },  
+
+    properties: {  
+      id,  
+      flash_id: id,  
+      type: 'flash',  
+      source: 'NOAA GOES-19 GLM',  
+      satellite: 19,  
+      instrument: 'GLM',  
+      product: GLM_PRODUCT,  
+      time,  
+      timestamp: time,  
+      flash_time: time,  
+      time_utc: time,  
+
+      ...(energy === null  
+        ? {}  
+        : {  
+            energy_j: energy,  
+            energy  
+          })  
+    }  
+  });  
+}  
+
+return {  
+  features,  
+  records_read: count,  
+  invalid_coordinates: invalidCoordinates,  
+  error: null  
+};
+
+} catch (error) {
+console.error(
+'[CLOUDGOD GLM] Erro de decodificação:',
+fileInfo.key,
+error?.stack || error
+);
+
+return {  
+  features: [],  
+  records_read: 0,  
+  invalid_coordinates: 0,  
+  error: error?.message || 'Erro ao decodificar GLM.'  
+};
+
+} finally {
+if (dataset?.close) {
+try {
+dataset.close();
+} catch (_error) {}
+}
+
+if (tempPath) {  
+  try {  
+    await fs.unlink(tempPath);  
+  } catch (_error) {}  
+}
+
+}
+}
   const output = new Array(items.length);
   let next = 0;
 
