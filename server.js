@@ -272,6 +272,9 @@ async function unpackVariable(variable) {
 
   const fill = await getVariableAttribute(variable, '_FillValue');
   const missing = await getVariableAttribute(variable, 'missing_value');
+  const unsignedAttribute = await getVariableAttribute(variable, '_Unsigned');
+  const unsigned = String(unsignedAttribute ?? '').toLowerCase() === 'true'
+    || unsignedAttribute === 1;
 
   const fillValues = [fill, missing]
     .flatMap((value) =>
@@ -282,6 +285,19 @@ async function unpackVariable(variable) {
     .map((value) => finiteNumber(value))
     .filter((value) => value !== null);
 
+  // GLM pode armazenar coordenadas como inteiros assinados com _Unsigned=true.
+  // O valor de preenchimento deve ser verificado ANTES da conversão unsigned.
+  const typeName = String(variable.datatype || variable.type || '').toLowerCase();
+  const bitMatch = typeName.match(/(?:u?int|[iu])(8|16|32|64)$/);
+  const typeAliases = {
+    byte: 8, ubyte: 8, char: 8, short: 16, ushort: 16,
+    int: 32, uint: 32, long: 64, ulong: 64,
+    i1: 8, u1: 8, i2: 16, u2: 16, i4: 32, u4: 32,
+    i8: 64, u8: 64
+  };
+  const bits = bitMatch ? Number(bitMatch[1]) : (typeAliases[typeName] || 0);
+  const unsignedModulus = bits > 0 && bits <= 32 ? 2 ** bits : 0;
+
   const values = new Array(raw.length);
 
   for (let i = 0; i < raw.length; i++) {
@@ -289,9 +305,14 @@ async function unpackVariable(variable) {
 
     if (packed === null || fillValues.includes(packed)) {
       values[i] = null;
-    } else {
-      values[i] = packed * scale + offset;
+      continue;
     }
+
+    const unpacked = unsigned && unsignedModulus && packed < 0
+      ? packed + unsignedModulus
+      : packed;
+
+    values[i] = unpacked * scale + offset;
   }
 
   return values;
@@ -332,12 +353,16 @@ async function decodeGlmFile(fileInfo) {
     }
 
     const energyVar = dataset.variables?.flash_energy;
+    const flashTimeVar = dataset.variables?.flash_time_offset_of_first_event;
 
-    const [latitudes, longitudes, energies] = await Promise.all([
+    const [latitudes, longitudes, energies, flashTimeOffsets] = await Promise.all([
       unpackVariable(latVar),
       unpackVariable(lonVar),
       energyVar
         ? unpackVariable(energyVar).catch(() => null)
+        : Promise.resolve(null),
+      flashTimeVar
+        ? unpackVariable(flashTimeVar).catch(() => null)
         : Promise.resolve(null)
     ]);
 
@@ -365,7 +390,13 @@ async function decodeGlmFile(fileInfo) {
         ? finiteNumber(energies[i])
         : null;
 
-      const time = fileInfo.time.toISOString();
+      const timeOffset = flashTimeOffsets && i < flashTimeOffsets.length
+        ? finiteNumber(flashTimeOffsets[i])
+        : null;
+      const flashDate = timeOffset === null
+        ? fileInfo.time
+        : new Date(fileInfo.time.getTime() + timeOffset * 1000);
+      const time = flashDate.toISOString();
 
       features.push({
         type: 'Feature',
