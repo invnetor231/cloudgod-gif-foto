@@ -3489,7 +3489,16 @@ function renderLightning(data){
   const p=item.feature?.properties||{};
   return `${p.id??p.flash_id??p.time??p.timestamp??""}:${item.point.lat.toFixed(4)},${item.point.lon.toFixed(4)}:${item.energy??""}`;
  }).join("|");
- if(signature===lightningLastSignature)return;
+ if(signature===lightningLastSignature){
+  // Uma resposta vazia da NOAA também é uma resposta válida.
+  // Não deixe o status preso em "Conectando" quando não houver flashes.
+  if(valid.length===0){
+   document.getElementById("lightningLoopToggle").disabled=true;
+   document.getElementById("lightningStatus").textContent=
+    "Conectado à NOAA GOES-19 GLM. Nenhuma descarga retornada nos últimos 10 minutos.";
+  }
+  return;
+ }
  lightningLastSignature=signature;
 
  const resumeLoop=lightningLoopRunning;
