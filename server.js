@@ -54,12 +54,71 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
     .finally(() => clearTimeout(timer));
 }
 
+
+// Proxy de imagens de radar REDEMET: usado pelo index.html para raster/CORS
+// Endpoint: /api/radar-image?url=<URL da imagem oficial>
+app.get('/api/radar-image', async (req, res) => {
+  if (!applyCors(req, res)) return res.status(403).type('text/plain').send('Origem não autorizada.');
+
+  const rawUrl = typeof req.query.url === 'string' ? req.query.url : '';
+  let target;
+  try {
+    target = new URL(rawUrl, 'https://api-redemet.decea.mil.br');
+  } catch (_) {
+    return res.status(400).type('text/plain').send('URL de imagem inválida.');
+  }
+
+  // Restrição para impedir que o proxy seja usado para acessar outros serviços.
+  if (target.protocol !== 'https:' || target.hostname !== 'api-redemet.decea.mil.br') {
+    return res.status(400).type('text/plain').send('Host de imagem não permitido.');
+  }
+
+  try {
+    const upstream = await fetchWithTimeout(target.href, {
+      headers: {
+        Accept: 'image/*, application/octet-stream;q=0.9, */*;q=0.5',
+        'User-Agent': 'Mozilla/5.0 (compatible; CLOUDGOD-Radar-Proxy/1.0)',
+        Referer: 'https://api-redemet.decea.mil.br/'
+      },
+      cache: 'no-store'
+    }, 25000);
+
+    if (!upstream.ok) {
+      return res.status(502).type('text/plain').send(`REDEMET respondeu HTTP ${upstream.status}.`);
+    }
+
+    const contentType = (upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+    if (!contentType.startsWith('image/')) {
+      return res.status(502).type('text/plain').send('A REDEMET não retornou um arquivo de imagem.');
+    }
+
+    const bytes = Buffer.from(await upstream.arrayBuffer());
+    if (!bytes.length) return res.status(502).type('text/plain').send('Imagem REDEMET vazia.');
+    if (bytes.length > 12 * 1024 * 1024) {
+      return res.status(413).type('text/plain').send('Imagem excede o limite de 12 MB.');
+    }
+
+    res.set({
+      'Cache-Control': 'public, max-age=60',
+      'Content-Type': contentType,
+      'X-Content-Type-Options': 'nosniff'
+    });
+    return res.status(200).send(bytes);
+  } catch (error) {
+    const timeout = error?.name === 'AbortError';
+    console.error('[CLOUDGOD] Falha no proxy REDEMET:', error?.message || error);
+    return res.status(502).type('text/plain').send(timeout
+      ? 'Tempo limite ao buscar imagem REDEMET.'
+      : 'Não foi possível conectar à REDEMET.');
+  }
+});
+
 app.get('/health', (_req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM (h5wasm)', apis: ['/api/cptec', '/api/lightning'] });
 });
 
-app.options(['/api/cptec', '/api/lightning'], (req, res) => {
+app.options(['/api/cptec', '/api/lightning', '/api/radar-image'], (req, res) => {
   if (!applyCors(req, res)) return res.status(403).end();
   return res.status(204).end();
 });
