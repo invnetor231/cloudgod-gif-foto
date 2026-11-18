@@ -3489,7 +3489,16 @@ function renderLightning(data){
   const p=item.feature?.properties||{};
   return `${p.id??p.flash_id??p.time??p.timestamp??""}:${item.point.lat.toFixed(4)},${item.point.lon.toFixed(4)}:${item.energy??""}`;
  }).join("|");
- if(signature===lightningLastSignature)return;
+ if(signature===lightningLastSignature){
+  // Uma resposta vazia da NOAA também é uma resposta válida.
+  // Não deixe o status preso em "Conectando" quando não houver flashes.
+  if(valid.length===0){
+   document.getElementById("lightningLoopToggle").disabled=true;
+   document.getElementById("lightningStatus").textContent=
+    "Conectado à NOAA GOES-19 GLM. Nenhuma descarga retornada nos últimos 10 minutos.";
+  }
+  return;
+ }
  lightningLastSignature=signature;
 
  const resumeLoop=lightningLoopRunning;
@@ -3594,23 +3603,61 @@ function toggleLightningLoop(){
 
 async function refreshLightning(){
  if(!lightningEnabled||lightningRequest)return;
+
  const status=document.getElementById("lightningStatus");
- lightningRequest=new AbortController();
- const timeout=setTimeout(()=>lightningRequest?.abort(),20000);
+ const controller=new AbortController();
+ let timedOut=false;
+ lightningRequest=controller;
+
+ const timeout=setTimeout(()=>{
+  timedOut=true;
+  controller.abort();
+ },25000);
+
  try{
-  const response=await fetch(LIGHTNING_API+"?satellite=19&minutes=10",{cache:"no-store",signal:lightningRequest.signal});
+  status.textContent="Consultando dados GOES-19 GLM...";
+  const response=await fetch(LIGHTNING_API+"?satellite=19&minutes=10&_="+Date.now(),{
+   cache:"no-store",
+   signal:controller.signal,
+   headers:{Accept:"application/geo+json, application/json"}
+  });
+
   if(!response.ok){
    let detail="HTTP "+response.status;
-   try{const body=await response.json();detail=body.detail||body.error||detail;}catch{}
+   try{
+    const body=await response.json();
+    detail=body.detail||body.error||detail;
+   }catch{}
    throw new Error(detail);
   }
+
+  const contentType=response.headers.get("content-type")||"";
+  if(!contentType.includes("json")){
+   const preview=(await response.text()).slice(0,160);
+   throw new Error("A API não retornou JSON. Resposta: "+preview);
+  }
+
   const data=await response.json();
-  if(lightningEnabled)renderLightning(data);
+  if(!lightningEnabled)return;
+
+  if(!Array.isArray(data)&&!Array.isArray(data?.features)&&!Array.isArray(data?.data)){
+   throw new Error("Resposta recebida, mas sem lista de descargas GLM válida.");
+  }
+
+  renderLightning(data);
  }catch(error){
-  if(error.name!=="AbortError")status.textContent="Falha ao consultar /api/lightning: "+error.message;
+  if(!lightningEnabled)return;
+
+  if(error.name==="AbortError"){
+   status.textContent=timedOut
+    ?"Tempo esgotado: a API GLM não respondeu em 25 segundos."
+    :"Consulta GLM cancelada.";
+  }else{
+   status.textContent="Falha ao consultar GLM: "+(error.message||"erro desconhecido");
+  }
  }finally{
   clearTimeout(timeout);
-  lightningRequest=null;
+  if(lightningRequest===controller)lightningRequest=null;
  }
 }
 
@@ -4224,11 +4271,19 @@ function renderRadiosondeTable(rows){
 // os níveis são convertidos para unidades meteorológicas e podem ser exportados em CSV.
 let rsLoadedRows=[];
 let rsLoadedMeta=null;
-
+async function loadJSZipLibrary(){
+ if(window.JSZip)return window.JSZip;
+ await new Promise((resolve,reject)=>{
+  const script=document.createElement("script");
+  script.src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js";
+  script.onload=resolve;script.onerror=()=>reject(new Error("Não foi possível carregar o leitor ZIP."));
+  document.head.appendChild(script);
+ });
+ if(!window.JSZip)throw new Error("Biblioteca ZIP indisponível.");
+ return window.JSZip;
+}
 function rsValidNumber(raw,scale=1){
- const field=String(raw??"").trim();
- if(!field)return null;
- const n=Number(field);
+ const n=Number(String(raw||"").trim());
  return Number.isFinite(n)&&n!==-9999&&n!==-8888&&n>-9000?n/scale:null;
 }
 function parseIGRAStationFile(text,stationId){
@@ -4247,43 +4302,37 @@ function parseIGRAStationFile(text,stationId){
     rows:[]
    };
   }else if(current&&line.trim()){
-   // IGRA2 fixed-width records: level type + fields in 5-character blocks.
-   // Pressure is stored in hPa units of 0.1 (field 2-6); temperature is 0.1 C.
-   const p=rsValidNumber(line.slice(1,6),10);
-   const z=rsValidNumber(line.slice(7,12),1);
-   const temp=rsValidNumber(line.slice(13,18),10);
-   const dpdp=rsValidNumber(line.slice(19,24),10);
-   const rh=rsValidNumber(line.slice(25,30),10);
-   const dir=rsValidNumber(line.slice(31,36),1);
-   const speedMS=rsValidNumber(line.slice(37,42),10);
-   if(p!==null&&p>0&&p<=1100&&temp!==null&&temp>=-120&&temp<=65){
+   // IGRA2 fixed-width fields: pressure Pa, temperature/depression tenths °C,
+   // RH tenths %, wind speed tenths m/s.
+   const p=rsValidNumber(line.slice(9,15),100);
+   const z=rsValidNumber(line.slice(16,21),1);
+   const temp=rsValidNumber(line.slice(22,27),10);
+   const rh=rsValidNumber(line.slice(28,33),10);
+   const dpdp=rsValidNumber(line.slice(34,39),10);
+   const dir=rsValidNumber(line.slice(40,45),1);
+   const speedMS=rsValidNumber(line.slice(46,51),10);
+   if(p!==null&&p>0&&temp!==null){
     current.rows.push({
      p,z,temp,dew:dpdp===null?null:temp-dpdp,
-     rh:rh!==null&&rh>=0&&rh<=100?rh:null,
-     dir:dir!==null&&dir>=0&&dir<=360?dir:null,
-     speed:speedMS!==null&&speedMS>=0?speedMS*1.943844:null,
-     speedMS:speedMS!==null&&speedMS>=0?speedMS:null
+     rh,dir,speed:speedMS===null?null:speedMS*1.943844,
+     speedMS
     });
    }
   }
  }
  if(current&&current.rows.length)soundings.push(current);
- // Normaliza o perfil em ordem da superfície para o topo (pressão decrescente).
- return soundings.filter(s=>s.rows.length>=4).map(s=>{
-  const unique=new Map();
-  s.rows.forEach(r=>unique.set(r.p,r));
-  s.rows=[...unique.values()].sort((a,b)=>b.p-a.p);
-  return s;
- });
+ return soundings.filter(s=>s.rows.length>=4);
 }
 async function fetchIGRAStationYear(stationId,year){
- // IGRA data-y2d disponibiliza arquivos TXT, não ZIP, no endpoint anual.
- const url=`https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/access/data-y2d/${stationId}-data-beg${year}.txt`;
+ const url=`https://www.ncei.noaa.gov/data/integrated-global-radiosonde-archive/access/data-y2d/${stationId}-data-beg${year}.txt.zip`;
  const response=await fetch(url,{cache:"no-store"});
- if(!response.ok)throw new Error(`NOAA respondeu HTTP ${response.status} para ${year} (${url.split("/").pop()}).`);
- const text=await response.text();
- if(!text.trim())throw new Error(`Arquivo IGRA ${year} retornou vazio.`);
- return text;
+ if(!response.ok)throw new Error(`NOAA respondeu HTTP ${response.status} para ${year}.`);
+ const blob=await response.blob();
+ const JSZip=await loadJSZipLibrary();
+ const zip=await JSZip.loadAsync(blob);
+ const filename=Object.keys(zip.files).find(n=>n.toLowerCase().endsWith(".txt"));
+ if(!filename)throw new Error("O ZIP da NOAA não contém arquivo TXT.");
+ return await zip.files[filename].async("string");
 }
 function rsStationLabel(){
  const el=document.getElementById("rsStation");
@@ -4301,21 +4350,16 @@ async function fetchLatestRadiosonde(){
  status.className="rs-status";status.textContent="Baixando o arquivo da NOAA/IGRA e procurando a sondagem solicitada…";
  try{
   let soundings=[],usedYear=null,lastError=null;
-  // Se a data foi escolhida, consulta somente aquele ano. Sem data, recua
-  // ano a ano (arquivos do ano corrente podem ainda não existir na NOAA).
-  const years=chosenDate?[Number(chosenDate.slice(0,4))]:Array.from({length:12},(_,i)=>nowYear-i);
+  const years=chosenDate?[Number(chosenDate.slice(0,4))]:[nowYear,nowYear-1];
   for(const year of years){
    try{
     const txt=await fetchIGRAStationYear(stationId,year);
-    const parsed=parseIGRAStationFile(txt,stationId);
-    if(parsed.length){soundings=parsed;usedYear=year;break;}
-    lastError=new Error(`Arquivo NOAA/IGRA de ${year} existe, mas não contém sondagens válidas para ${stationId}.`);
+    soundings=parseIGRAStationFile(txt,stationId);
+    usedYear=year;
+    if(soundings.length)break;
    }catch(err){lastError=err;}
   }
-  if(!soundings.length){
-   if(chosenDate)throw new Error(`Não há arquivo/sondagem NOAA disponível para ${stationId} em ${chosenDate.slice(0,4)}. Apague a data para buscar a observação mais recente em anos anteriores.`);
-   throw new Error(`Não encontrei sondagens válidas para ${stationId} nos últimos 12 anos. Último retorno: ${lastError?.message||"arquivo indisponível"}`);
-  }
+  if(!soundings.length)throw lastError||new Error("Não há sondagens disponíveis para essa estação no arquivo recente da NOAA.");
   let matches=soundings;
   if(chosenDate){
    matches=matches.filter(s=>`${s.year}-${String(s.month).padStart(2,"0")}-${String(s.day).padStart(2,"0")}`===chosenDate);
