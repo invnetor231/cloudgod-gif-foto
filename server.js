@@ -14,7 +14,13 @@ const NOAA_BUCKET = 'https://noaa-goes19.s3.amazonaws.com';
 const GLM_PRODUCT = 'GLM-L2-LCFA';
 const REQUEST_TIMEOUT_MS = 20000;
 const MAX_LIGHTNING_MINUTES = 60;
-let h5wasmModulePromise;
+const ECMWF_SEASONAL_URL = 'https://seasonal-api.open-meteo.com/v1/seasonal';
+const ECMWF_CACHE_TTL = { weekly: 30 * 60 * 1000, seasonal: 6 * 60 * 60 * 1000 };
+const ECMWF_GRID = { latMin: -55, latMax: 12, lonMin: -82, lonMax: -34, step: 6 };
+const ECMWF_BATCH_SIZE = 18;
+const ecmwfCache = new Map();
+const ecmwfInflight = new Map();
+let netcdfModulePromise;
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
@@ -56,10 +62,10 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
 
 app.get('/health', (_req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM', apis: ['/api/cptec', '/api/lightning'] });
+  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM + ECMWF', apis: ['/api/cptec', '/api/lightning', '/api/ecmwf/anomaly'] });
 });
 
-app.options(['/api/cptec', '/api/lightning'], (req, res) => {
+app.options(['/api/cptec', '/api/lightning', '/api/ecmwf/anomaly'], (req, res) => {
   if (!applyCors(req, res)) return res.status(403).end();
   return res.status(204).end();
 });
@@ -183,11 +189,7 @@ async function listGlmFiles(startTime, endTime) {
         const mm = Number(stamp[1].slice(9, 11));
         const ss = Number(stamp[1].slice(11, 13));
 
-        // O campo DDD do nome NOAA é o dia do ano (001–366), não o dia do mês.
-        // Converter a partir de 1º de janeiro evita descartar todos os arquivos recentes.
-        const fileTime = new Date(
-          Date.UTC(year, 0, 1, hh, mm, ss) + (day - 1) * 86400000
-        );
+        const fileTime = new Date(Date.UTC(year, 0, day, hh, mm, ss));
 
         if (fileTime >= startTime && fileTime <= endTime) {
           found.push({
@@ -211,35 +213,21 @@ async function listGlmFiles(startTime, endTime) {
 }
 
 async function getNetcdfDataset(filePath) {
-  // NOAA GLM-L2-LCFA é NetCDF-4/HDF5. netcdf4-wasm usado anteriormente
-  // não abria corretamente esses arquivos no ambiente Node do serviço.
-  if (!h5wasmModulePromise) {
-    h5wasmModulePromise = import('h5wasm/node')
-      .then(async (module) => {
-        await module.ready;
-        return module;
-      })
-      .catch((error) => {
-        h5wasmModulePromise = null;
-        throw new Error(
-          `Não foi possível carregar h5wasm. Instale a dependência "h5wasm". Detalhe: ${error.message}`
-        );
-      });
+  if (!netcdfModulePromise) {
+    netcdfModulePromise = import('netcdf4-wasm').catch((error) => {
+      netcdfModulePromise = null;
+      throw error;
+    });
   }
 
-  const module = await h5wasmModulePromise;
-  const H5File = module.File || module.default?.File;
-  if (typeof H5File !== 'function') {
-    throw new Error('h5wasm não disponibilizou a classe File.');
+  const module = await netcdfModulePromise;
+  const Dataset = module.Dataset || module.NetCDF4?.Dataset;
+
+  if (typeof Dataset !== 'function') {
+    throw new Error('A versão instalada de netcdf4-wasm não disponibilizou a função Dataset.');
   }
 
-  const file = new H5File(filePath, 'r');
-  if (typeof file.get !== 'function') {
-    try { file.close?.(); } catch (_error) {}
-    throw new Error('O arquivo HDF5 foi aberto, mas a API de leitura não está disponível.');
-  }
-
-  return file;
+  return await Dataset(filePath, 'r');
 }
 
 function finiteNumber(value) {
@@ -247,33 +235,8 @@ function finiteNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
-function firstNumeric(value, fallback) {
-  const values = normalizeH5Value(value)
-    .map(finiteNumber)
-    .filter((number) => number !== null);
-  return values.length ? values[0] : fallback;
-}
-
 async function getVariableAttribute(variable, name) {
   if (!variable) return null;
-
-  // h5wasm expõe atributos HDF5 no objeto attrs. Mantemos alternativas
-  // para compatibilidade com diferentes versões da biblioteca.
-  try {
-    const attrs = variable.attrs;
-    if (attrs && Object.prototype.hasOwnProperty.call(attrs, name)) {
-      const value = attrs[name];
-      if (value !== undefined && value !== null) return value;
-    }
-  } catch (_error) {}
-
-  try {
-    const metadata = variable.metadata;
-    if (metadata?.attributes &&
-        Object.prototype.hasOwnProperty.call(metadata.attributes, name)) {
-      return metadata.attributes[name];
-    }
-  } catch (_error) {}
 
   try {
     if (typeof variable.getAttr === 'function') {
@@ -282,56 +245,83 @@ async function getVariableAttribute(variable, name) {
     }
   } catch (_error) {}
 
+  try {
+    const value = variable[name];
+    if (value !== undefined && value !== null) return value;
+  } catch (_error) {}
+
   return null;
 }
 
-function normalizeH5Value(value) {
-  if (value === undefined || value === null) return [];
-  if (ArrayBuffer.isView(value)) return Array.from(value);
-  if (Array.isArray(value)) return value.flat(Infinity);
-  return [value];
+function firstNumeric(value, fallback) {
+  if (value === undefined || value === null) return fallback;
+
+  if (ArrayBuffer.isView(value) || Array.isArray(value)) {
+    return value.length ? finiteNumber(value[0]) ?? fallback : fallback;
+  }
+
+  return finiteNumber(value) ?? fallback;
 }
 
 async function unpackVariable(variable) {
-  if (!variable) return [];
+  const raw = await variable.getValue();
 
-  // Em h5wasm, Dataset.value contém os valores lidos do dataset.
-  // Algumas versões/formatos também disponibilizam to_array().
-  let raw;
-  try {
-    raw = variable.value;
-    if (raw === undefined && typeof variable.to_array === 'function') {
-      raw = variable.to_array();
-    }
-    if (raw === undefined && typeof variable.getValue === 'function') {
-      raw = await variable.getValue();
-    }
-  } catch (error) {
-    throw new Error(`Falha ao ler dataset ${variable.path || ''}: ${error.message}`);
-  }
+  const scale = firstNumeric(
+    await getVariableAttribute(variable, 'scale_factor'),
+    1
+  );
 
-  const rawValues = normalizeH5Value(raw);
-  const scale = firstNumeric(await getVariableAttribute(variable, 'scale_factor'), 1);
-  const offset = firstNumeric(await getVariableAttribute(variable, 'add_offset'), 0);
+  const offset = firstNumeric(
+    await getVariableAttribute(variable, 'add_offset'),
+    0
+  );
+
   const fill = await getVariableAttribute(variable, '_FillValue');
   const missing = await getVariableAttribute(variable, 'missing_value');
+  const unsignedAttribute = await getVariableAttribute(variable, '_Unsigned');
+  const unsigned = String(unsignedAttribute ?? '').toLowerCase() === 'true'
+    || unsignedAttribute === 1;
 
   const fillValues = [fill, missing]
-    .flatMap(normalizeH5Value)
-    .map(finiteNumber)
+    .flatMap((value) =>
+      ArrayBuffer.isView(value) || Array.isArray(value)
+        ? Array.from(value)
+        : [value]
+    )
+    .map((value) => finiteNumber(value))
     .filter((value) => value !== null);
 
-  return rawValues.map((item) => {
-    const packed = finiteNumber(item);
-    if (packed === null || fillValues.includes(packed)) return null;
-    return packed * scale + offset;
-  });
-}
+  // GLM pode armazenar coordenadas como inteiros assinados com _Unsigned=true.
+  // O valor de preenchimento deve ser verificado ANTES da conversão unsigned.
+  const typeName = String(variable.datatype || variable.type || '').toLowerCase();
+  const bitMatch = typeName.match(/(?:u?int|[iu])(8|16|32|64)$/);
+  const typeAliases = {
+    byte: 8, ubyte: 8, char: 8, short: 16, ushort: 16,
+    int: 32, uint: 32, long: 64, ulong: 64,
+    i1: 8, u1: 8, i2: 16, u2: 16, i4: 32, u4: 32,
+    i8: 64, u8: 64
+  };
+  const bits = bitMatch ? Number(bitMatch[1]) : (typeAliases[typeName] || 0);
+  const unsignedModulus = bits > 0 && bits <= 32 ? 2 ** bits : 0;
 
-function getGlmVariable(dataset, name) {
-  // GLM-L2-LCFA normalmente armazena os datasets na raiz.
-  // O segundo caminho cobre arquivos que os agrupem em /.
-  return dataset.get(name) || dataset.get(`/${name}`) || null;
+  const values = new Array(raw.length);
+
+  for (let i = 0; i < raw.length; i++) {
+    const packed = finiteNumber(raw[i]);
+
+    if (packed === null || fillValues.includes(packed)) {
+      values[i] = null;
+      continue;
+    }
+
+    const unpacked = unsigned && unsignedModulus && packed < 0
+      ? packed + unsignedModulus
+      : packed;
+
+    values[i] = unpacked * scale + offset;
+  }
+
+  return values;
 }
 
 async function decodeGlmFile(fileInfo) {
@@ -361,15 +351,15 @@ async function decodeGlmFile(fileInfo) {
     await fs.writeFile(tempPath, bytes);
     dataset = await getNetcdfDataset(tempPath);
 
-    const latVar = getGlmVariable(dataset, 'flash_lat');
-    const lonVar = getGlmVariable(dataset, 'flash_lon');
+    const latVar = dataset.variables?.flash_lat;
+    const lonVar = dataset.variables?.flash_lon;
 
     if (!latVar || !lonVar) {
       throw new Error('O NetCDF não contém flash_lat e/ou flash_lon.');
     }
 
-    const energyVar = getGlmVariable(dataset, 'flash_energy');
-    const flashTimeVar = getGlmVariable(dataset, 'flash_time_offset_of_first_event');
+    const energyVar = dataset.variables?.flash_energy;
+    const flashTimeVar = dataset.variables?.flash_time_offset_of_first_event;
 
     const [latitudes, longitudes, energies, flashTimeOffsets] = await Promise.all([
       unpackVariable(latVar),
@@ -601,6 +591,163 @@ app.get('/api/lightning', async (req, res) => {
   }
 });
 
+
+// ============================================================
+// ECMWF PRECIPITATION ANOMALY — SOUTH AMERICA
+// weekly: ECMWF EC46 (weekly precipitation anomaly)
+// seasonal: ECMWF SEAS5 (monthly precipitation anomaly)
+// Source: Open-Meteo Seasonal Forecast API
+// Endpoint: /api/ecmwf/anomaly?product=weekly|seasonal
+// ============================================================
+function buildEcmwfSouthAmericaGrid() {
+  const points = [];
+  const { latMin, latMax, lonMin, lonMax, step } = ECMWF_GRID;
+  for (let lat = latMin; lat <= latMax; lat += step) {
+    for (let lon = lonMin; lon <= lonMax; lon += step) {
+      points.push({ latitude: Number(lat.toFixed(2)), longitude: Number(lon.toFixed(2)) });
+    }
+  }
+  return points;
+}
+
+function splitIntoBatches(items, size) {
+  const batches = [];
+  for (let i = 0; i < items.length; i += size) batches.push(items.slice(i, i + size));
+  return batches;
+}
+
+function asLocationList(payload, expectedCount) {
+  if (Array.isArray(payload)) return payload;
+  if (expectedCount === 1 && payload && typeof payload === 'object') return [payload];
+  throw new Error('Formato inesperado recebido da API sazonal do Open-Meteo.');
+}
+
+function makeEcmwfPeriods(data, product) {
+  const blockName = product === 'weekly' ? 'weekly' : 'monthly';
+  const block = data?.[blockName];
+  if (!block || !Array.isArray(block.time)) return [];
+
+  const meanValues = block.precipitation_mean || [];
+  const anomalyValues = block.precipitation_anomaly || [];
+  return block.time.map((period, index) => ({
+    period,
+    precipitation_mean_mm: meanValues[index] !== null && meanValues[index] !== undefined && Number.isFinite(Number(meanValues[index])) ? Number(meanValues[index]) : null,
+    precipitation_anomaly_mm: anomalyValues[index] !== null && anomalyValues[index] !== undefined && Number.isFinite(Number(anomalyValues[index])) ? Number(anomalyValues[index]) : null
+  })).filter((item) => item.precipitation_anomaly_mm !== null || item.precipitation_mean_mm !== null);
+}
+
+async function fetchEcmwfAnomaly(product) {
+  const grid = buildEcmwfSouthAmericaGrid();
+  const batches = splitIntoBatches(grid, ECMWF_BATCH_SIZE);
+  const model = product === 'weekly' ? 'ecmwf_ec46' : 'ecmwf_seas5';
+  const periodParam = product === 'weekly' ? 'weekly' : 'monthly';
+  const forecastDays = product === 'weekly' ? 46 : 217;
+  const periodVariables = 'precipitation_mean,precipitation_anomaly';
+
+  const batchResults = await mapWithConcurrency(batches, 3, async (batch) => {
+    const url = new URL(ECMWF_SEASONAL_URL);
+    url.searchParams.set('latitude', batch.map((point) => point.latitude).join(','));
+    url.searchParams.set('longitude', batch.map((point) => point.longitude).join(','));
+    url.searchParams.set(periodParam, periodVariables);
+    url.searchParams.set('models', model);
+    url.searchParams.set('forecast_days', String(forecastDays));
+    url.searchParams.set('timezone', 'GMT');
+    url.searchParams.set('precipitation_unit', 'mm');
+
+    const response = await fetchWithTimeout(url, {
+      headers: { Accept: 'application/json', 'User-Agent': 'CLOUDGOD-ECMWF/1.0' }
+    }, 30000);
+
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 300);
+      throw new Error(`Open-Meteo ECMWF respondeu HTTP ${response.status}: ${detail}`);
+    }
+
+    const payload = await response.json();
+    const locations = asLocationList(payload, batch.length);
+    if (locations.length !== batch.length) {
+      throw new Error('A API ECMWF retornou uma quantidade diferente de pontos solicitados.');
+    }
+
+    return locations.map((location, index) => {
+      const periods = makeEcmwfPeriods(location, product);
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [batch[index].longitude, batch[index].latitude] },
+        properties: {
+          source: 'ECMWF',
+          model,
+          product,
+          latitude: batch[index].latitude,
+          longitude: batch[index].longitude,
+          periods,
+          latest_anomaly_mm: periods[0]?.precipitation_anomaly_mm ?? null,
+          latest_mean_mm: periods[0]?.precipitation_mean_mm ?? null
+        }
+      };
+    });
+  });
+
+  const features = batchResults.flat();
+  const now = new Date().toISOString();
+  return {
+    type: 'FeatureCollection',
+    features,
+    metadata: {
+      source: 'Open-Meteo Seasonal Forecast API',
+      provider: 'ECMWF',
+      model,
+      product,
+      variable: 'precipitation_anomaly',
+      unit: 'mm',
+      period_type: product === 'weekly' ? 'weekly' : 'monthly',
+      region: 'South America',
+      grid_step_degrees: ECMWF_GRID.step,
+      points: features.length,
+      generated_at: now,
+      note: 'Anomalia positiva indica precipitação acima da referência climatológica; anomalia negativa indica abaixo. Previsões sazonais são tendências de área, não previsões determinísticas locais.'
+    }
+  };
+}
+
+app.get('/api/ecmwf/anomaly', async (req, res) => {
+  if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem não autorizada.' });
+  setApiHeaders(res);
+
+  const product = typeof req.query.product === 'string' ? req.query.product.toLowerCase() : 'weekly';
+  if (!['weekly', 'seasonal'].includes(product)) {
+    return res.status(400).json({ error: 'Produto inválido. Use product=weekly ou product=seasonal.' });
+  }
+
+  const cached = ecmwfCache.get(product);
+  if (cached && Date.now() - cached.timestamp < ECMWF_CACHE_TTL[product]) {
+    res.set('X-CLOUDGOD-Cache', 'HIT');
+    return res.status(200).json(cached.data);
+  }
+
+  try {
+    let pending = ecmwfInflight.get(product);
+    if (!pending) {
+      pending = fetchEcmwfAnomaly(product);
+      ecmwfInflight.set(product, pending);
+    }
+    const data = await pending;
+    ecmwfCache.set(product, { timestamp: Date.now(), data });
+    res.set('X-CLOUDGOD-Cache', 'MISS');
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('[CLOUDGOD] Erro na integração ECMWF:', error?.stack || error);
+    return res.status(502).json({
+      error: 'Não foi possível obter a anomalia de precipitação do ECMWF.',
+      product,
+      detail: error?.name === 'AbortError' ? 'open_meteo_timeout' : 'ecmwf_upstream_failed',
+      message: error?.message || 'Erro desconhecido'
+    });
+  } finally {
+    ecmwfInflight.delete(product);
+  }
+});
+
 // Rota não encontrada
 app.use((req, res) => {
   res.status(404).json({
@@ -611,6 +758,6 @@ app.use((req, res) => {
 // Inicialização
 app.listen(PORT, '0.0.0.0', () => {
   console.log(
-    `CLOUDGOD CPTEC + NOAA GLM ativo na porta ${PORT}`
+    `CLOUDGOD CPTEC + NOAA GLM + ECMWF ativo na porta ${PORT}`
   );
 });

@@ -795,6 +795,30 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cg-live-marker{cursor:pointer}
 @media(max-width:520px){.cg-public-chat-launcher{right:12px;bottom:18px}.cg-chat-window{height:min(590px,72dvh);width:calc(100vw - 24px);border-radius:16px}.cg-chat-header{padding:10px}.cg-chat-tabs{margin-left:0}.cg-chat-person b,.cg-chat-person small{max-width:145px}}
 </style>
+
+<style>
+/* CLOUDGOD · ECMWF precipitation anomaly */
+.ecmwf-panel{border:1px solid #c9d9e9!important;background:linear-gradient(180deg,#fff,#f8fbff)!important}
+.ecmwf-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ecmwf-head h3{margin:0 0 4px!important;color:#143b61}
+.ecmwf-head small{font-size:9px;font-weight:800;letter-spacing:.7px;color:#71869d}
+.ecmwf-provider{border-radius:8px;padding:7px 10px;background:#eaf3ff;color:#15558d;font-size:10px;font-weight:900}
+.ecmwf-controls{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:12px 0}
+.ecmwf-controls label{margin:0;font-size:9px}
+.ecmwf-controls select{margin-top:6px;min-height:40px}
+.ecmwf-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.ecmwf-actions button{min-height:40px;padding:9px 7px;font-size:9px}
+.ecmwf-legend{margin:12px 0;padding:10px;border:1px solid #e1eaf3;border-radius:10px;background:#fff}
+.ecmwf-legend-bar{height:13px;border-radius:5px;background:linear-gradient(90deg,#9b3d32 0%,#d58b55 22%,#f1e8cf 50%,#9bc9b0 76%,#176b91 100%)}
+.ecmwf-legend-labels,.ecmwf-legend-values{display:flex;justify-content:space-between;gap:5px;margin-top:6px;font-size:8px;color:#687d93}
+.ecmwf-legend-values{font-weight:800;color:#405c78}
+.ecmwf-summary{padding:10px;border-radius:9px;background:#edf5fc;color:#244b70;font-size:10px;line-height:1.5}
+.ecmwf-status{margin-top:8px;font-size:9px;line-height:1.5;color:#647a91;overflow-wrap:anywhere}
+.ecmwf-foot{margin-top:9px;font-size:8px;line-height:1.5;color:#8796a7}
+.ecmwf-cell{stroke:#ffffff;stroke-opacity:.28;stroke-width:.35}
+@media(max-width:480px){.ecmwf-controls{grid-template-columns:1fr}.ecmwf-actions{grid-template-columns:1fr}}
+</style>
+
 </head>
 <body>
 <div class="startup-screen" id="startupScreen">
@@ -1154,7 +1178,43 @@ Selecione uma estação para visualizar a reflectividade CAPPI 3 km, consultar o
 </div>
 <div class="info" id="tornadoRiskDetails" style="margin-top:9px">Campo contínuo interpolado a partir de pontos do modelo. Não representa ocorrência confirmada.</div>
 <button class="secondary" onclick="refreshTornadoRisk()" style="width:100%;margin-top:8px">ATUALIZAR ANÁLISE</button>
-</section></div><div class="cg-tab-content" data-tab-content="previsoes"><section class="panel cg-search-item" data-search-item="1" id="stormForecastPanel">
+</section></div><div class="cg-tab-content" data-tab-content="previsoes">
+<section class="panel cg-search-item ecmwf-panel" data-search-item="1" id="ecmwfAnomalyPanel">
+ <div class="ecmwf-head">
+  <div>
+   <h3>ECMWF · ANOMALIA DE PRECIPITAÇÃO</h3>
+   <small>AMÉRICA DO SUL · EC46 / SEAS5</small>
+  </div>
+  <span class="ecmwf-provider">ECMWF</span>
+ </div>
+ <p class="info">Anomalia em relação à climatologia de referência. Valores positivos indicam precipitação acima da referência; negativos indicam abaixo. São tendências de área, não previsão determinística para um município.</p>
+ <div class="ecmwf-controls">
+  <label for="ecmwfProduct">PRODUTO
+   <select id="ecmwfProduct">
+    <option value="weekly">SEMANAL · EC46</option>
+    <option value="seasonal">SAZONAL · SEAS5 (MENSAL)</option>
+   </select>
+  </label>
+  <label for="ecmwfPeriod">PERÍODO
+   <select id="ecmwfPeriod" disabled><option value="">Carregue os dados</option></select>
+  </label>
+ </div>
+ <div class="ecmwf-actions">
+  <button class="primary" id="ecmwfToggle" type="button">ATIVAR CAMADA ECMWF</button>
+  <button class="secondary" id="ecmwfRefresh" type="button">ATUALIZAR DADOS</button>
+ </div>
+ <label for="ecmwfOpacity">OPACIDADE DA CAMADA</label>
+ <input id="ecmwfOpacity" type="range" min="20" max="100" value="78"/>
+ <div class="ecmwf-legend">
+  <div class="ecmwf-legend-bar"></div>
+  <div class="ecmwf-legend-labels"><span>Mais seco</span><span>Próximo da média</span><span>Mais úmido</span></div>
+  <div class="ecmwf-legend-values"><span>≤ −50 mm</span><span>0 mm</span><span>≥ +50 mm</span></div>
+ </div>
+ <div class="ecmwf-summary" id="ecmwfSummary">Camada desligada. Selecione um produto e carregue os dados.</div>
+ <div class="ecmwf-status" id="ecmwfStatus" role="status" aria-live="polite">ECMWF pronto para consulta.</div>
+ <div class="ecmwf-foot">Fonte: Open-Meteo Seasonal Forecast API · modelos ECMWF EC46 e SEAS5. Resolução visual baseada na grade consultada; não representa resolução nativa do modelo.</div>
+</section>
+<section class="panel cg-search-item" data-search-item="1" id="stormForecastPanel">
 <h3>PREVISÃO DE TEMPESTADES</h3>
 <div class="info">Campo de potencial convectivo previsto pelo GFS, combinando CAPE, precipitação convectiva e códigos de tempo significativo. Não representa rastreamento de células observadas.</div>
 <button class="primary" id="stormForecastToggle" onclick="toggleForecastProduct('storms')" style="width:100%;margin-top:10px">ATIVAR PREVISÃO DE TEMPESTADES</button>
@@ -5761,6 +5821,148 @@ function makePdfFromCanvas(sourceCanvas){
  const xref=pos;pushText(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);for(let i=1;i<offsets.length;i++)pushText(String(offsets[i]).padStart(10,'0')+' 00000 n \n');pushText(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
  const total=objects.reduce((n,b)=>n+b.length,0),out=new Uint8Array(total);let offset=0;objects.forEach(b=>{out.set(b,offset);offset+=b.length;});return new Blob([out],{type:'application/pdf'});
 }
+</script>
+
+
+
+<script>
+/* CLOUDGOD · ECMWF weekly/seasonal precipitation anomaly layer */
+(function(){
+ "use strict";
+ const API="https://cloudgod-gif-foto.onrender.com/api/ecmwf/anomaly";
+ const grid=L.layerGroup();
+ let active=false, busy=false, currentData=null, selectedProduct="weekly";
+ const $=id=>document.getElementById(id);
+ const productEl=$("ecmwfProduct"), periodEl=$("ecmwfPeriod");
+ const toggleBtn=$("ecmwfToggle"), refreshBtn=$("ecmwfRefresh");
+ const statusEl=$("ecmwfStatus"), summaryEl=$("ecmwfSummary");
+ const opacityEl=$("ecmwfOpacity");
+ if(!productEl||!periodEl||!toggleBtn||!window.map)return;
+
+ function anomalyColor(value){
+  if(!Number.isFinite(value))return "#9aa8b7";
+  const stops=[
+   [-50,[155,61,50]],[-30,[196,105,66]],[-10,[224,177,132]],
+   [0,[241,232,207]],[10,[155,201,176]],[30,[70,145,151]],[50,[23,107,145]]
+  ];
+  const v=Math.max(-50,Math.min(50,value));
+  for(let i=1;i<stops.length;i++){
+   if(v<=stops[i][0]){
+    const [v0,c0]=stops[i-1],[v1,c1]=stops[i];
+    const t=(v-v0)/(v1-v0);
+    return "rgb("+c0.map((c,j)=>Math.round(c+(c1[j]-c)*t)).join(",")+")";
+   }
+  }
+  return "#176b91";
+ }
+ function getPeriodList(data){
+  const feature=data?.features?.find(f=>Array.isArray(f.properties?.periods)&&f.properties.periods.length);
+  return feature?.properties?.periods||[];
+ }
+ function formatPeriod(value){
+  if(!value)return "Período não informado";
+  const d=new Date(value+"T00:00:00Z");
+  return Number.isNaN(d.getTime())?String(value):d.toLocaleDateString("pt-BR",{timeZone:"UTC",day:"2-digit",month:"short",year:"numeric"});
+ }
+ function currentPeriod(){
+  const i=Number(periodEl.value||0);
+  return getPeriodList(currentData)[i]||null;
+ }
+ function render(){
+  if(!currentData?.features)return;
+  grid.clearLayers();
+  const period=currentPeriod();
+  if(!period){summaryEl.textContent="A API não retornou períodos com dados de anomalia.";return;}
+  const opacity=(Number(opacityEl.value)||78)/100;
+  let valid=0,sum=0,min=Infinity,max=-Infinity;
+  currentData.features.forEach(feature=>{
+   const coords=feature.geometry?.coordinates;
+   const props=feature.properties||{};
+   const lat=Number(coords?.[1]),lon=Number(coords?.[0]);
+   const p=(props.periods||[]).find(x=>x.period===period.period);
+   if(p?.precipitation_anomaly_mm===null||p?.precipitation_anomaly_mm===undefined)return;
+   const anomaly=Number(p.precipitation_anomaly_mm);
+   if(!Number.isFinite(lat)||!Number.isFinite(lon)||!Number.isFinite(anomaly))return;
+   valid++;sum+=anomaly;min=Math.min(min,anomaly);max=Math.max(max,anomaly);
+   const rect=L.rectangle([[lat-3,lon-3],[lat+3,lon+3]],{
+    color:"#fff",weight:.35,opacity:.28,fillColor:anomalyColor(anomaly),
+    fillOpacity:opacity,interactive:true,className:"ecmwf-cell"
+   });
+   rect.bindTooltip(
+    "<b>ECMWF "+(selectedProduct==="weekly"?"EC46 semanal":"SEAS5 mensal")+"</b><br>"+
+    "Período: "+formatPeriod(period.period)+"<br>"+
+    "Anomalia: "+(anomaly>0?"+":"")+anomaly.toFixed(1)+" mm<br>"+
+    "Precipitação média: "+(Number.isFinite(Number(p.precipitation_mean_mm))?Number(p.precipitation_mean_mm).toFixed(1)+" mm":"—"),
+    {sticky:true}
+   );
+   grid.addLayer(rect);
+  });
+  if(active&&!map.hasLayer(grid))grid.addTo(map);
+  if(valid){
+   const mean=sum/valid;
+   summaryEl.textContent="Período "+formatPeriod(period.period)+" · "+valid+" células válidas · média das anomalias: "+(mean>0?"+":"")+mean.toFixed(1)+" mm · mínimo "+min.toFixed(1)+" mm · máximo "+max.toFixed(1)+" mm.";
+  }else{
+   summaryEl.textContent="Não há valores numéricos de anomalia para este período.";
+  }
+ }
+ function populatePeriods(){
+  const periods=getPeriodList(currentData);
+  periodEl.innerHTML="";
+  periods.forEach((p,i)=>{
+   const option=document.createElement("option");
+   option.value=String(i);option.textContent=formatPeriod(p.period);
+   periodEl.appendChild(option);
+  });
+  periodEl.disabled=!periods.length;
+  if(!periods.length){
+   const option=document.createElement("option");option.textContent="Sem períodos disponíveis";periodEl.appendChild(option);
+  }
+ }
+ async function load(force){
+  if(busy)return;
+  busy=true;refreshBtn.disabled=true;
+  statusEl.textContent="Consultando ECMWF "+(selectedProduct==="weekly"?"EC46 semanal":"SEAS5 sazonal")+" para a América do Sul…";
+  try{
+   const response=await fetch(API+"?product="+encodeURIComponent(selectedProduct)+(force?"&refresh=1":""),{cache:"no-store"});
+   const data=await response.json();
+   if(!response.ok)throw new Error(data.message||data.error||("HTTP "+response.status));
+   if(data.type!=="FeatureCollection"||!Array.isArray(data.features))throw new Error("Formato GeoJSON inesperado.");
+   currentData=data;
+   populatePeriods();
+   render();
+   const model=data.metadata?.model||"ECMWF";
+   statusEl.textContent="Dados carregados · "+model+" · "+data.features.length+" pontos · "+(data.metadata?.period_type||"períodos")+" · gerado "+(data.metadata?.generated_at?new Date(data.metadata.generated_at).toLocaleString("pt-BR"):"horário não informado")+".";
+  }catch(error){
+   statusEl.textContent="Falha ao carregar ECMWF: "+error.message;
+  }finally{
+   busy=false;refreshBtn.disabled=false;
+  }
+ }
+ toggleBtn.addEventListener("click",async()=>{
+  if(active){
+   map.removeLayer(grid);active=false;toggleBtn.textContent="ATIVAR CAMADA ECMWF";
+   toggleBtn.classList.remove("danger");toggleBtn.classList.add("primary");
+   summaryEl.textContent="Camada ECMWF desligada.";
+   return;
+  }
+  if(!currentData)await load(false);
+  if(!currentData)return;
+  active=true;grid.addTo(map);toggleBtn.textContent="DESATIVAR CAMADA ECMWF";
+  toggleBtn.classList.remove("primary");toggleBtn.classList.add("danger");
+  map.fitBounds([[-55,-82],[12,-34]],{padding:[12,12]});
+  render();
+ });
+ refreshBtn.addEventListener("click",()=>load(true));
+ productEl.addEventListener("change",()=>{
+  selectedProduct=productEl.value;currentData=null;grid.clearLayers();
+  periodEl.innerHTML='<option value="">Carregue os dados</option>';periodEl.disabled=true;
+  summaryEl.textContent="Produto alterado. Atualize para carregar os novos dados.";
+  if(active)load(false);
+ });
+ periodEl.addEventListener("change",render);
+ opacityEl.addEventListener("input",render);
+ window.CLOUDGOD_ECMWF={load:()=>load(false),refresh:()=>load(true),toggle:()=>toggleBtn.click()};
+})();
 </script>
 
 </body>
