@@ -3101,16 +3101,18 @@ async function showFrame(index){
  // Não força CORS nas imagens REDEMET: alguns servidores entregam o raster
  // sem Access-Control-Allow-Origin. Com crossorigin=anonymous o navegador
  // bloqueia a própria imagem, deixando os retângulos e ícones de imagem quebrada.
- const originalSources=frame.images.map(image=>radarExportSafeUrl(image.url));
- const preparedSources=await Promise.all(originalSources.map(url=>prepareRadarRaster(url)));
+ const proxySources=frame.images.map(image=>radarExportSafeUrl(image.url));
+ const preparedSources=await Promise.all(proxySources.map(url=>prepareRadarRaster(url)));
  if(renderToken!==frameRenderToken)return;
  const qualityClass=({smooth:"radar-quality-smooth",ultra:"radar-quality-ultra",realgod:"radar-quality-realgod"})[currentRenderQuality]||"radar-quality-smooth";
  const nextLayers=frame.images.map((image,i)=>{
-  // Se o servidor bloquear CORS, aplica fallback visual CSS à imagem original.
-  const needsCssFallback=!preparedSources[i]||preparedSources[i]===originalSources[i];
-  const fallbackClass=needsCssFallback?" radar-quality-css-fallback":"";
+  // Se o proxy não conseguiu preparar o raster, tenta carregar a URL original
+  // diretamente para manter a refletividade visível no mapa (sem garantia de exportação CORS).
+  const proxyFailed=!preparedSources[i]||preparedSources[i]===proxySources[i];
+  const displaySource=proxyFailed?String(image.url||""):preparedSources[i];
+  const fallbackClass=proxyFailed?" radar-quality-css-fallback":"";
   return L.imageOverlay(
-   preparedSources[i]||originalSources[i],radarDisplayBounds(image.bounds),
+   displaySource,radarDisplayBounds(image.bounds),
    {opacity:0,interactive:false,crossOrigin:false,className:"leaflet-radar-raster "+qualityClass+fallbackClass}
   );
  });
@@ -3969,7 +3971,7 @@ async function renderMapCanvas(scale=3){
  if(typeof html2canvas!=="function")throw new Error("Biblioteca de captura não carregou. Verifique a conexão.");
  const node=document.getElementById("map");
  map.invalidateSize({pan:false,animate:false});
- return await html2canvas(node,{
+ const captured=await html2canvas(node,{
   backgroundColor:"#eaf2f8",scale,useCORS:true,allowTaint:false,
   imageTimeout:20000,logging:false,removeContainer:true,
   onclone:cloned=>{
@@ -3977,7 +3979,34 @@ async function renderMapCanvas(scale=3){
    if(clonedMap){clonedMap.style.transform="none";clonedMap.style.filter="none";}
   }
  });
+ // Composição explícita do raster de refletividade por cima do mapa-base.
+ // Isso evita depender da captura DOM de L.imageOverlay (que pode omitir
+ // imagens externas/GIFs em alguns navegadores móveis).
+ if(frames.length && frames[currentFrame] && frames[currentFrame].images){
+  const ctx=captured.getContext("2d");
+  const opacityControl=document.getElementById("opacity");
+  const radarOpacity=opacityControl?Math.max(0,Math.min(1,Number(opacityControl.value)/100)):0.75;
+  const mapRect=node.getBoundingClientRect();
+  const scaleX=captured.width/mapRect.width,scaleY=captured.height/mapRect.height;
+  for(const radarImage of frames[currentFrame].images){
+   try{
+    const safeUrl=radarExportSafeUrl(radarImage.url);
+    const src=await prepareRadarRaster(safeUrl);
+    const img=new Image();
+    if(!src.startsWith("data:"))img.crossOrigin="anonymous";
+    await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error("Raster não carregou"));img.src=src;});
+    const bounds=radarDisplayBounds(radarImage.bounds);
+    if(!Array.isArray(bounds)||!Array.isArray(bounds[0])||!Array.isArray(bounds[1]))continue;
+    const nw=map.latLngToContainerPoint([bounds[1][0],bounds[0][1]]);
+    const se=map.latLngToContainerPoint([bounds[0][0],bounds[1][1]]);
+    const x=nw.x*scaleX,y=nw.y*scaleY,w=(se.x-nw.x)*scaleX,h=(se.y-nw.y)*scaleY;
+    ctx.save();ctx.globalAlpha=radarOpacity;ctx.drawImage(img,x,y,w,h);ctx.restore();
+   }catch(err){console.warn("Não foi possível compor raster do radar na exportação:",err);}
+  }
+ }
+ return captured;
 }
+
 function canvasToBlob(canvas,type="image/png"){
  return new Promise((resolve,reject)=>{
   canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("O navegador não conseguiu codificar a imagem.")),type);
