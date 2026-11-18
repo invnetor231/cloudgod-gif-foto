@@ -18,6 +18,12 @@ const ECMWF_SEASONAL_URL = 'https://seasonal-api.open-meteo.com/v1/seasonal';
 const ECMWF_CACHE_TTL = { weekly: 30 * 60 * 1000, seasonal: 6 * 60 * 60 * 1000 };
 const ECMWF_GRID = { latMin: -55, latMax: 12, lonMin: -82, lonMax: -34, step: 6 };
 const ECMWF_BATCH_SIZE = 18;
+const ECMWF_LOOP_URL = 'https://api.open-meteo.com/v1/ecmwf';
+const ECMWF_LOOP_CACHE_TTL = 30 * 60 * 1000;
+const ECMWF_LOOP_GRID = { latMin: -55, latMax: 12, lonMin: -82, lonMax: -34, step: 1.5 };
+const ECMWF_LOOP_BATCH_SIZE = 50;
+const ecmwfLoopCache = { timestamp: 0, data: null };
+let ecmwfLoopInflight = null;
 const ecmwfCache = new Map();
 const ecmwfInflight = new Map();
 let netcdfModulePromise;
@@ -62,10 +68,10 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
 
 app.get('/health', (_req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM + ECMWF', apis: ['/api/cptec', '/api/lightning', '/api/ecmwf/anomaly'] });
+  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM + ECMWF', apis: ['/api/cptec', '/api/lightning', '/api/ecmwf/anomaly', '/api/ecmwf/loop'] });
 });
 
-app.options(['/api/cptec', '/api/lightning', '/api/ecmwf/anomaly'], (req, res) => {
+app.options(['/api/cptec', '/api/lightning', '/api/ecmwf/anomaly', '/api/ecmwf/loop'], (req, res) => {
   if (!applyCors(req, res)) return res.status(403).end();
   return res.status(204).end();
 });
@@ -747,6 +753,122 @@ app.get('/api/ecmwf/anomaly', async (req, res) => {
     ecmwfInflight.delete(product);
   }
 });
+
+
+
+// ============================================================
+// ECMWF IFS HRES — ANIMAÇÃO DE PREVISÃO (48 HORAS)
+// Fonte: Open-Meteo ECMWF API, IFS HRES nativo ~9 km.
+// O mapa usa amostragem regional de 1,5° para manter o serviço
+// Render Free leve; a suavização é apenas visual.
+// GET /api/ecmwf/loop
+// ============================================================
+function buildEcmwfLoopGrid() {
+  const points = [];
+  const { latMin, latMax, lonMin, lonMax, step } = ECMWF_LOOP_GRID;
+  for (let lat = latMin; lat <= latMax + 1e-8; lat += step) {
+    for (let lon = lonMin; lon <= lonMax + 1e-8; lon += step) {
+      points.push({ latitude: Number(lat.toFixed(2)), longitude: Number(lon.toFixed(2)) });
+    }
+  }
+  return points;
+}
+
+async function fetchEcmwfLoop() {
+  const grid = buildEcmwfLoopGrid();
+  const batches = splitIntoBatches(grid, ECMWF_LOOP_BATCH_SIZE);
+  const hourly = 'precipitation,cloud_cover,wind_speed_10m,temperature_2m';
+  const batchResults = await mapWithConcurrency(batches, 4, async (batch) => {
+    const url = new URL(ECMWF_LOOP_URL);
+    url.searchParams.set('latitude', batch.map(p => p.latitude).join(','));
+    url.searchParams.set('longitude', batch.map(p => p.longitude).join(','));
+    url.searchParams.set('hourly', hourly);
+    url.searchParams.set('forecast_hours', '48');
+    url.searchParams.set('timezone', 'GMT');
+    url.searchParams.set('timeformat', 'iso8601');
+    url.searchParams.set('precipitation_unit', 'mm');
+    url.searchParams.set('wind_speed_unit', 'kmh');
+    url.searchParams.set('cell_selection', 'nearest');
+
+    const response = await fetchWithTimeout(url, {
+      headers: { Accept: 'application/json', 'User-Agent': 'CLOUDGOD-ECMWF-LOOP/1.0' }
+    }, 45000);
+    if (!response.ok) {
+      const detail = (await response.text()).slice(0, 250);
+      throw new Error(`Open-Meteo ECMWF loop HTTP ${response.status}: ${detail}`);
+    }
+    const payload = await response.json();
+    const locations = Array.isArray(payload) ? payload : [payload];
+    if (locations.length !== batch.length) {
+      throw new Error(`ECMWF retornou ${locations.length} localizações; eram esperadas ${batch.length}.`);
+    }
+    return locations.map((location, index) => {
+      const h = location.hourly || {};
+      return {
+        latitude: batch[index].latitude,
+        longitude: batch[index].longitude,
+        precipitation: Array.isArray(h.precipitation) ? h.precipitation.slice(0, 48) : [],
+        cloud_cover: Array.isArray(h.cloud_cover) ? h.cloud_cover.slice(0, 48) : [],
+        wind_speed_10m: Array.isArray(h.wind_speed_10m) ? h.wind_speed_10m.slice(0, 48) : [],
+        temperature_2m: Array.isArray(h.temperature_2m) ? h.temperature_2m.slice(0, 48) : [],
+        times: Array.isArray(h.time) ? h.time.slice(0, 48) : []
+      };
+    });
+  });
+
+  const points = batchResults.flat();
+  const times = points.find(p => p.times.length)?.times || [];
+  if (!times.length) throw new Error('O ECMWF não retornou horários de previsão.');
+  points.forEach(p => { delete p.times; });
+  return {
+    provider: 'ECMWF / Open-Meteo',
+    model: 'IFS HRES 9 km',
+    region: 'South America',
+    times,
+    points,
+    variables: {
+      precipitation: 'mm/h',
+      cloud_cover: '%',
+      wind_speed_10m: 'km/h',
+      temperature_2m: '°C'
+    },
+    metadata: {
+      generated_at: new Date().toISOString(),
+      frame_count: times.length,
+      point_count: points.length,
+      sampling_step_degrees: ECMWF_LOOP_GRID.step,
+      native_model_resolution: 'approximately 9 km',
+      note: 'IFS HRES nativo ~9 km; amostragem da malha regional CLOUDGOD em 1,5° por limite de processamento. A interpolação do mapa é visual e não aumenta a resolução dos dados.'
+    }
+  };
+}
+
+app.get('/api/ecmwf/loop', async (req, res) => {
+  if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem não autorizada.' });
+  setApiHeaders(res);
+  if (ecmwfLoopCache.data && Date.now() - ecmwfLoopCache.timestamp < ECMWF_LOOP_CACHE_TTL && req.query.refresh !== '1') {
+    res.set('X-CLOUDGOD-Cache', 'HIT');
+    return res.status(200).json(ecmwfLoopCache.data);
+  }
+  try {
+    if (!ecmwfLoopInflight) ecmwfLoopInflight = fetchEcmwfLoop();
+    const data = await ecmwfLoopInflight;
+    ecmwfLoopCache.data = data;
+    ecmwfLoopCache.timestamp = Date.now();
+    res.set('X-CLOUDGOD-Cache', 'MISS');
+    return res.status(200).json(data);
+  } catch (error) {
+    console.error('[CLOUDGOD] ECMWF loop:', error?.stack || error);
+    return res.status(502).json({
+      error: 'Não foi possível carregar a animação ECMWF.',
+      detail: error?.name === 'AbortError' ? 'open_meteo_timeout' : 'ecmwf_loop_upstream_failed',
+      message: error?.message || 'Erro desconhecido'
+    });
+  } finally {
+    ecmwfLoopInflight = null;
+  }
+});
+
 
 // Rota não encontrada
 app.use((req, res) => {

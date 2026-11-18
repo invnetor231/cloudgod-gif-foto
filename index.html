@@ -1214,6 +1214,27 @@ Selecione uma estação para visualizar a reflectividade CAPPI 3 km, consultar o
  <div class="ecmwf-status" id="ecmwfStatus" role="status" aria-live="polite">ECMWF pronto para consulta.</div>
  <div class="ecmwf-foot">Fonte: Open-Meteo Seasonal Forecast API · modelos ECMWF EC46 e SEAS5. Resolução visual baseada na grade consultada; não representa resolução nativa do modelo.</div>
 </section>
+<section class="panel cg-search-item ecmwf-panel" data-search-item="1" id="ecmwfLoopPanel">
+ <div class="ecmwf-head"><div><h3>ECMWF · PREVISÃO ANIMADA</h3><small>IFS HRES · AMÉRICA DO SUL · LOOP DE 48 HORAS</small></div><span class="ecmwf-provider">9 KM MODEL</span></div>
+ <p class="info">Evolução horária da previsão ECMWF. A fonte é o IFS HRES de aproximadamente 9 km; a malha regional exibida é amostrada para reduzir o consumo do servidor.</p>
+ <div class="ecmwf-controls">
+  <label for="ecmwfLoopVariable">CAMADA
+   <select id="ecmwfLoopVariable"><option value="precipitation">PRECIPITAÇÃO · mm/h</option><option value="cloud_cover">NEBULOSIDADE · %</option><option value="wind_speed_10m">VENTO · km/h</option><option value="temperature_2m">TEMPERATURA · °C</option></select>
+  </label>
+  <label for="ecmwfLoopSpeed">VELOCIDADE
+   <select id="ecmwfLoopSpeed"><option value="1000">1× · Normal</option><option value="600">1,7× · Rápida</option><option value="350">2,9× · Muito rápida</option></select>
+  </label>
+ </div>
+ <div class="ecmwf-actions">
+  <button class="primary" id="ecmwfLoopPlay" type="button">▶ REPRODUZIR LOOP</button>
+  <button class="secondary" id="ecmwfLoopRefresh" type="button">↻ ATUALIZAR ECMWF</button>
+ </div>
+ <label for="ecmwfLoopFrame">LINHA DO TEMPO</label>
+ <input id="ecmwfLoopFrame" type="range" min="0" max="47" value="0" step="1" disabled>
+ <div class="ecmwf-summary" id="ecmwfLoopTime">Aguardando dados do ECMWF.</div>
+ <div class="ecmwf-status" id="ecmwfLoopStatus" role="status" aria-live="polite">Player pronto. Carregue a previsão para iniciar.</div>
+ <div class="ecmwf-foot">Fonte: Open-Meteo ECMWF Forecast API · IFS HRES · atualização a cada 6 horas. Dados horários até 90 h. A interpolação é visual; não cria detalhe meteorológico adicional.</div>
+</section>
 <section class="panel cg-search-item" data-search-item="1" id="stormForecastPanel">
 <h3>PREVISÃO DE TEMPESTADES</h3>
 <div class="info">Campo de potencial convectivo previsto pelo GFS, combinando CAPE, precipitação convectiva e códigos de tempo significativo. Não representa rastreamento de células observadas.</div>
@@ -5988,6 +6009,97 @@ function makePdfFromCanvas(sourceCanvas){
  periodEl.addEventListener("change",render);
  opacityEl.addEventListener("input",render);
  window.CLOUDGOD_ECMWF={load:()=>load(false),refresh:()=>load(true),toggle:()=>toggleBtn.click()};
+})();
+</script>
+
+
+<script>
+/* CLOUDGOD · ECMWF IFS HRES animated forecast loop */
+(function(){
+ 'use strict';
+ const panel=document.getElementById('ecmwfLoopPanel');
+ if(!panel || typeof L==='undefined' || typeof map==='undefined') return;
+ const API='https://cloudgod-gif-foto.onrender.com/api/ecmwf/loop';
+ const playBtn=document.getElementById('ecmwfLoopPlay');
+ const refreshBtn=document.getElementById('ecmwfLoopRefresh');
+ const variableEl=document.getElementById('ecmwfLoopVariable');
+ const speedEl=document.getElementById('ecmwfLoopSpeed');
+ const slider=document.getElementById('ecmwfLoopFrame');
+ const timeEl=document.getElementById('ecmwfLoopTime');
+ const statusEl=document.getElementById('ecmwfLoopStatus');
+ const bounds=[[-55,-82],[12,-34]];
+ const layer=L.layerGroup();
+ let data=null, frame=0, timer=null, busy=false, canvas=null, ctx=null, image=null, overlay=null;
+ const W=760,H=520,latMin=-55,latMax=12,lonMin=-82,lonMax=-34,gridStep=1.5;
+ let lookup=null;
+ function color(v,kind){
+  let stops;
+  if(kind==='precipitation') stops=[[0,[238,246,250]],[0.2,[170,220,244]],[1,[62,157,221]],[3,[32,111,192]],[8,[31,65,157]],[15,[100,45,155]]];
+  else if(kind==='cloud_cover') stops=[[0,[255,255,255]],[25,[213,230,240]],[50,[145,173,194]],[75,[85,112,139]],[100,[40,58,82]]];
+  else if(kind==='wind_speed_10m') stops=[[0,[235,248,231]],[10,[143,211,144]],[25,[245,220,92]],[40,[240,145,70]],[60,[208,65,72]],[90,[130,55,140]]];
+  else stops=[[-5,[120,80,180]],[0,[76,140,210]],[10,[90,190,190]],[20,[230,220,110]],[30,[240,145,70]],[40,[190,55,50]]];
+  if(!Number.isFinite(v))return [0,0,0,0];
+  if(v<=stops[0][0])return stops[0][1];
+  for(let i=1;i<stops.length;i++)if(v<=stops[i][0]){
+   const a=stops[i-1],b=stops[i],t=(v-a[0])/(b[0]-a[0]);
+   return a[1].map((c,j)=>Math.round(c+(b[1][j]-c)*t));
+  }
+  return stops[stops.length-1][1];
+ }
+ function makeLookup(){
+  const cols=Math.round((lonMax-lonMin)/gridStep)+1,rows=Math.floor((latMax-latMin)/gridStep)+1;
+  lookup=new Array(W*H);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+   const lon=lonMin+(x/(W-1))*(lonMax-lonMin),lat=latMax-(y/(H-1))*(latMax-latMin);
+   const gx=Math.max(0,Math.min(cols-1,(lon-lonMin)/gridStep)),gy=Math.max(0,Math.min(rows-1,(lat-latMin)/gridStep));
+   const x0=Math.floor(gx),y0=Math.floor(gy),x1=Math.min(cols-1,x0+1),y1=Math.min(rows-1,y0+1),fx=gx-x0,fy=gy-y0;
+   const ids=[y0*cols+x0,y0*cols+x1,y1*cols+x0,y1*cols+x1];
+   lookup[y*W+x]={ids,w:[(1-fx)*(1-fy),fx*(1-fy),(1-fx)*fy,fx*fy]};
+  }
+ }
+ function frameValues(index,variable){return data.points.map(p=>Number(p[variable]?.[index]));}
+ function render(){
+  if(!data || !data.points.length)return;
+  const variable=variableEl.value,values=frameValues(frame,variable),pixels=image.data;
+  for(let i=0;i<lookup.length;i++){
+   const q=lookup[i],ids=q.ids,w=q.w;let v=0,total=0;
+   for(let j=0;j<4;j++){const n=values[ids[j]];if(Number.isFinite(n)){v+=n*w[j];total+=w[j];}}
+   const c=color(total?v/total:NaN,variable),k=i*4;
+   pixels[k]=c[0];pixels[k+1]=c[1];pixels[k+2]=c[2];pixels[k+3]=total?205:0;
+  }
+  ctx.putImageData(image,0,0);
+  if(!overlay){overlay=L.imageOverlay(canvas.toDataURL('image/png'),bounds,{opacity:.78,interactive:false});overlay.addTo(map);}
+  else overlay.setUrl(canvas.toDataURL('image/png'));
+  const t=data.times[frame];
+  const d=new Date(t);
+  timeEl.textContent='ECMWF IFS HRES · '+(Number.isNaN(d.getTime())?t:d.toLocaleString('pt-BR',{timeZone:'UTC',dateStyle:'short',timeStyle:'short'})+' UTC')+' · quadro '+(frame+1)+'/'+data.times.length;
+  slider.value=String(frame);
+ }
+ function stop(){if(timer){clearInterval(timer);timer=null;}playBtn.textContent='▶ REPRODUZIR LOOP';}
+ function play(){if(!data)return;if(timer){stop();return;}playBtn.textContent='Ⅱ PAUSAR';timer=setInterval(()=>{frame=(frame+1)%data.times.length;render();},Number(speedEl.value)||1000);}
+ async function load(force){
+  if(busy)return;busy=true;stop();refreshBtn.disabled=true;playBtn.disabled=true;
+  statusEl.textContent='Baixando os quadros horários do ECMWF IFS HRES…';
+  try{
+   const response=await fetch(API+(force?'?refresh=1':''),{cache:'no-store'}),json=await response.json();
+   if(!response.ok)throw new Error(json.message||json.error||('HTTP '+response.status));
+   if(!Array.isArray(json.times)||!Array.isArray(json.points)||!json.times.length)throw new Error('Resposta ECMWF sem quadros válidos.');
+   data=json;frame=0;slider.max=String(data.times.length-1);slider.value='0';slider.disabled=false;
+   canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;ctx=canvas.getContext('2d',{alpha:true});image=ctx.createImageData(W,H);makeLookup();
+   if(overlay){map.removeLayer(overlay);overlay=null;}
+   render();
+   statusEl.textContent='Previsão carregada · '+json.model+' · '+json.points.length+' pontos · '+json.times.length+' horários · malha visual '+json.metadata.sampling_step_degrees+'°.';
+   playBtn.disabled=false;play();
+  }catch(err){statusEl.textContent='Falha no ECMWF: '+err.message;}
+  finally{busy=false;refreshBtn.disabled=false;}
+ }
+ playBtn.addEventListener('click',play);
+ refreshBtn.addEventListener('click',()=>load(true));
+ slider.addEventListener('input',()=>{stop();frame=Number(slider.value)||0;render();});
+ variableEl.addEventListener('change',render);
+ speedEl.addEventListener('change',()=>{if(timer){stop();play();}});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+ window.CLOUDGOD_ECMWF_LOOP={load:()=>load(false),refresh:()=>load(true),play,stop,render};
 })();
 </script>
 
