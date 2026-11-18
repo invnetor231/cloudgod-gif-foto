@@ -752,6 +752,34 @@ body.cg-live-gate-active #cgLiveSkip:hover{background:#1b3044}
 .cg-bulletin-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0 0 12px;padding:11px;border:1px solid #d8e4ef;border-radius:11px;background:#f5f9fd}.cg-bulletin-controls label{display:block;font-size:10px;font-weight:800;color:#38536d}.cg-bulletin-controls input,.cg-bulletin-controls select{display:block;width:100%;min-height:42px;margin-top:5px;padding:8px;border:1px solid #b8cadd;border-radius:8px;background:#fff;color:#173e63;font-size:14px}.cg-bulletin-export button{display:inline-flex!important;visibility:visible!important;opacity:1!important;min-height:44px;align-items:center;justify-content:center;flex:1 1 130px;font-weight:800;font-size:12px}@media(max-width:480px){.cg-bulletin-controls{grid-template-columns:1fr}}
 @media(max-width:480px){.cg-bulletin-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cg-bulletin-head{align-items:flex-start}}
 
+
+/* CLOUDGOD · INMET WIS2 */
+.cg-inmet{margin:0 0 14px;border:1px solid #d7e5f4;border-left:4px solid #1677ff;border-radius:15px;background:#fff;overflow:hidden;box-shadow:0 8px 26px #183b6010}
+.cg-inmet-head{padding:14px 16px;background:linear-gradient(115deg,#0b2947,#15517d);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cg-inmet-head h3{margin:0;font-size:13px;letter-spacing:.7px}
+.cg-inmet-head small{display:block;color:#c3d9eb;font-size:9px;margin-top:5px}
+.cg-inmet-body{padding:14px}
+.cg-inmet-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.cg-inmet-stat{padding:10px;border:1px solid #e1eaf4;border-radius:10px;background:#f7fbff;min-width:0}
+.cg-inmet-stat b{display:block;font-size:19px;color:#155b96}
+.cg-inmet-stat span{font-size:9px;color:#71839a}
+.cg-inmet-actions{display:flex;gap:8px;flex-wrap:wrap}
+.cg-inmet-actions button{flex:1;min-width:125px}
+.cg-inmet-status{font-size:10px;line-height:1.5;color:#60748b;padding:9px 10px;margin:10px 0;background:#f3f7fc;border-radius:9px;overflow-wrap:anywhere}
+.cg-inmet-status.good{color:#137849;background:#effaf3}
+.cg-inmet-status.bad{color:#a33a35;background:#fff3f2}
+.cg-inmet-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.cg-inmet-tabs button{background:#edf4ff;color:#315b85;padding:8px 10px;font-size:10px}
+.cg-inmet-tabs button.active{background:#1677ff;color:white}
+.cg-inmet-table-wrap{max-height:300px;overflow:auto;border:1px solid #e2eaf3;border-radius:9px}
+.cg-inmet-table{width:100%;border-collapse:collapse;font-size:9px}
+.cg-inmet-table th,.cg-inmet-table td{padding:8px 7px;border-bottom:1px solid #edf1f6;text-align:left;vertical-align:top}
+.cg-inmet-table th{position:sticky;top:0;background:#edf4fb;color:#34506d;z-index:1}
+.cg-inmet-table td{color:#435a72}
+.cg-inmet-empty{padding:16px;text-align:center;font-size:10px;color:#71839a}
+.cg-inmet-foot{font-size:9px;line-height:1.5;color:#8191a3;margin-top:10px}
+@media(max-width:480px){.cg-inmet-stats{grid-template-columns:repeat(3,minmax(0,1fr))}.cg-inmet-stat{padding:8px}.cg-inmet-stat b{font-size:16px}.cg-inmet-table{font-size:8px}}
+
 </style>
 
 <style>
@@ -1074,7 +1102,39 @@ Selecione uma estação para visualizar a reflectividade CAPPI 3 km, consultar o
 <div class="product" data-product="cptec_picocouto" onclick="selectProduct('cptec_picocouto')">
 <div><strong>CAPPI 3 KM · PICO DO COUTO</strong><small>Radar DECEA · Nowcasting/CPTEC · Rio de Janeiro</small></div><div class="dot"></div>
 </div>
-</section></div><div class="cg-tab-content" data-tab-content="atmosfera"><section class="panel instability-panel cg-search-item" data-search-item="1" id="instabilityPanel">
+</section></div><div class="cg-tab-content" data-tab-content="atmosfera">
+<section class="cg-inmet cg-search-item" data-search-item="1" id="cgInmetPanel">
+ <div class="cg-inmet-head">
+  <div><h3>INMET · OBSERVAÇÕES OFICIAIS DO BRASIL</h3><small>WIS2 / OGC API · acesso público sem chave</small></div>
+  <span style="font-size:9px;font-weight:800;color:#bde8ff">FONTE OFICIAL</span>
+ </div>
+ <div class="cg-inmet-body">
+  <div class="info">Consulta direta ao catálogo WIS2 do INMET: estações, observações SYNOP e dados climáticos diários. Os dados só serão exibidos quando a API responder; o navegador pode bloquear a consulta se a origem não permitir CORS.</div>
+  <div class="cg-inmet-stats">
+   <div class="cg-inmet-stat"><b id="cgInmetStationCount">—</b><span>ESTAÇÕES NO CATÁLOGO</span></div>
+   <div class="cg-inmet-stat"><b id="cgInmetSynopCount">—</b><span>REGISTROS SYNOP</span></div>
+   <div class="cg-inmet-stat"><b id="cgInmetDayCount">—</b><span>REGISTROS DIÁRIOS</span></div>
+  </div>
+  <div class="cg-inmet-actions">
+   <button class="primary" type="button" id="cgInmetRefresh" onclick="cgInmetRefresh()">CONSULTAR INMET</button>
+   <a class="secondary" href="https://wis2bra.inmet.gov.br/oapi/openapi?f=html" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;text-decoration:none;border-radius:11px;padding:12px 15px;font-size:12px;font-weight:bold">DOCUMENTAÇÃO OGC</a>
+  </div>
+  <div class="cg-inmet-status" id="cgInmetStatus" aria-live="polite">Aguardando consulta manual.</div>
+  <div class="cg-inmet-tabs">
+   <button type="button" class="active" data-inmet-view="synop" onclick="cgInmetShow('synop')">SYNOP</button>
+   <button type="button" data-inmet-view="stations" onclick="cgInmetShow('stations')">ESTAÇÕES</button>
+   <button type="button" data-inmet-view="daycli" onclick="cgInmetShow('daycli')">CLIMA DIÁRIO</button>
+  </div>
+  <div class="cg-inmet-table-wrap">
+   <table class="cg-inmet-table">
+    <thead id="cgInmetTableHead"><tr><th>ESTAÇÃO / IDENTIFICADOR</th><th>OBSERVAÇÃO</th><th>VALOR</th><th>HORÁRIO</th></tr></thead>
+    <tbody id="cgInmetTableBody"><tr><td colspan="4" class="cg-inmet-empty">Clique em CONSULTAR INMET para carregar os dados.</td></tr></tbody>
+   </table>
+  </div>
+  <div class="cg-inmet-foot">Fontes: INMET WIS2 · coleções stations, synop e daycli. A coleção SYNOP pode conter várias variáveis por estação e horário. Dados históricos e disponibilidade dependem da publicação do INMET. <a href="https://wis2bra.inmet.gov.br/" target="_blank" rel="noopener">Abrir portal WIS2 do INMET</a> · <a href="https://alertas2.inmet.gov.br/" target="_blank" rel="noopener">Avisos oficiais</a>.</div>
+ </div>
+</section>
+<section class="panel instability-panel cg-search-item" data-search-item="1" id="instabilityPanel">
 <div class="instability-head">
 <h3>INSTABILIDADE ATMOSFÉRICA</h3>
 <span style="font-size:9px;color:#8293a8">GFS · OPEN-METEO</span>
@@ -5761,6 +5821,122 @@ function makePdfFromCanvas(sourceCanvas){
  const xref=pos;pushText(`xref\n0 ${offsets.length}\n0000000000 65535 f \n`);for(let i=1;i<offsets.length;i++)pushText(String(offsets[i]).padStart(10,'0')+' 00000 n \n');pushText(`trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`);
  const total=objects.reduce((n,b)=>n+b.length,0),out=new Uint8Array(total);let offset=0;objects.forEach(b=>{out.set(b,offset);offset+=b.length;});return new Blob([out],{type:'application/pdf'});
 }
+
+
+/* CLOUDGOD · cliente INMET WIS2 (somente endpoints públicos) */
+(()=>{
+ "use strict";
+ const BASE="https://wis2bra.inmet.gov.br/oapi";
+ const COLLECTIONS={
+  stations:"stations",
+  synop:"urn:wmo:md:br-inmet:synop",
+  daycli:"urn:wmo:md:br-inmet:daycli"
+ };
+ const state={loaded:{},view:"synop",busy:false};
+ const $=id=>document.getElementById(id);
+ const esc=v=>String(v??"—");
+ function collectionUrl(id,limit=500){
+  return BASE+"/collections/"+encodeURIComponent(id)+"/items?f=json&limit="+limit;
+ }
+ async function getCollection(id,limit=500){
+  const response=await fetch(collectionUrl(id,limit),{
+   method:"GET",mode:"cors",cache:"no-store",
+   headers:{Accept:"application/geo+json, application/json"}
+  });
+  if(!response.ok)throw new Error("HTTP "+response.status+" ao consultar "+id);
+  const data=await response.json();
+  if(!data||!Array.isArray(data.features))throw new Error("Resposta sem lista GeoJSON de features ("+id+").");
+  return data.features;
+ }
+ function props(feature){return feature?.properties||{};}
+ function first(p,keys){
+  for(const k of keys){if(p[k]!==undefined&&p[k]!==null&&p[k]!=="")return p[k];}
+  return "—";
+ }
+ function safeCell(value){
+  const td=document.createElement("td");
+  td.textContent=esc(value);
+  return td;
+ }
+ function renderRows(kind){
+  const head=$("cgInmetTableHead"),body=$("cgInmetTableBody");
+  if(!head||!body)return;
+  head.replaceChildren();body.replaceChildren();
+  const columns=kind==="stations"
+   ?["ESTAÇÃO","CÓDIGO / WIGOS","ALTITUDE","STATUS"]
+   :kind==="daycli"
+    ?["ESTAÇÃO / ID","VARIÁVEL","VALOR","DATA"]
+    :["ESTAÇÃO / ID","OBSERVAÇÃO","VALOR","HORÁRIO"];
+  const tr=document.createElement("tr");
+  columns.forEach(c=>{const th=document.createElement("th");th.textContent=c;tr.appendChild(th);});
+  head.appendChild(tr);
+  const features=state.loaded[kind]||[];
+  if(!features.length){
+   const row=document.createElement("tr"),td=document.createElement("td");
+   td.colSpan=4;td.className="cg-inmet-empty";td.textContent="Nenhum registro retornado para esta coleção.";
+   row.appendChild(td);body.appendChild(row);return;
+  }
+  features.slice(0,150).forEach(f=>{
+   const p=props(f),row=document.createElement("tr");
+   let values;
+   if(kind==="stations"){
+    values=[
+     first(p,["name","station_name","stationName","description"]),
+     first(p,["wigos_station_identifier","wigos_id","id"]),
+     first(p,["elevation","height","altitude"]),
+     first(p,["status","status_name"])
+    ];
+   }else{
+    values=[
+     first(p,["station_name","stationName","name_station","wigos_station_identifier","station_id","id"]),
+     first(p,["name","variable","parameter","description"]),
+     first(p,["value","result","observed_value"]),
+     first(p,["phenomenonTime","reportTime","datetime","date","time"])
+    ];
+   }
+   values.forEach(v=>row.appendChild(safeCell(v)));
+   body.appendChild(row);
+  });
+ }
+ window.cgInmetShow=function(kind){
+  if(!COLLECTIONS[kind])return;
+  state.view=kind;
+  document.querySelectorAll("[data-inmet-view]").forEach(b=>b.classList.toggle("active",b.dataset.inmetView===kind));
+  renderRows(kind);
+ };
+ window.cgInmetRefresh=async function(){
+  if(state.busy)return;
+  state.busy=true;
+  const button=$("cgInmetRefresh"),status=$("cgInmetStatus");
+  if(button){button.disabled=true;button.textContent="CONSULTANDO…";}
+  if(status){status.className="cg-inmet-status";status.textContent="Consultando catálogo de estações, observações SYNOP e clima diário do INMET…";}
+  const jobs=Object.entries(COLLECTIONS).map(async([key,id])=>{
+   const rows=await getCollection(id,key==="stations"?1000:500);
+   state.loaded[key]=rows;
+   return [key,rows.length];
+  });
+  const results=await Promise.allSettled(jobs);
+  const failed=results.filter(r=>r.status==="rejected");
+  const counts={};
+  results.forEach(r=>{if(r.status==="fulfilled")counts[r.value[0]]=r.value[1];});
+  if($("cgInmetStationCount"))$("cgInmetStationCount").textContent=counts.stations??"—";
+  if($("cgInmetSynopCount"))$("cgInmetSynopCount").textContent=counts.synop??"—";
+  if($("cgInmetDayCount"))$("cgInmetDayCount").textContent=counts.daycli??"—";
+  cgInmetShow(state.view);
+  if(status){
+   if(failed.length){
+    status.className="cg-inmet-status bad";
+    status.textContent="Consulta parcial. "+failed.map(r=>r.reason?.message||"Falha de rede/CORS").join(" | ")+".";
+   }else{
+    status.className="cg-inmet-status good";
+    status.textContent="INMET consultado. Estações: "+counts.stations+" · SYNOP: "+counts.synop+" · clima diário: "+counts.daycli+". Resposta recebida diretamente do WIS2.";
+   }
+  }
+  state.busy=false;
+  if(button){button.disabled=false;button.textContent="ATUALIZAR INMET";}
+ };
+})();
+
 </script>
 
 </body>
