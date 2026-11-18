@@ -5874,36 +5874,62 @@ function makePdfFromCanvas(sourceCanvas){
   const period=currentPeriod();
   if(!period){summaryEl.textContent="A API não retornou períodos com dados de anomalia.";return;}
   const opacity=(Number(opacityEl.value)||78)/100;
-  let valid=0,sum=0,min=Infinity,max=-Infinity;
+  const points=[];let sum=0,min=Infinity,max=-Infinity;
   currentData.features.forEach(feature=>{
-   const coords=feature.geometry?.coordinates;
-   const props=feature.properties||{};
+   const coords=feature.geometry?.coordinates, props=feature.properties||{};
    const lat=Number(coords?.[1]),lon=Number(coords?.[0]);
    const p=(props.periods||[]).find(x=>x.period===period.period);
-   if(p?.precipitation_anomaly_mm===null||p?.precipitation_anomaly_mm===undefined)return;
-   const anomaly=Number(p.precipitation_anomaly_mm);
+   const anomaly=Number(p?.precipitation_anomaly_mm);
    if(!Number.isFinite(lat)||!Number.isFinite(lon)||!Number.isFinite(anomaly))return;
-   valid++;sum+=anomaly;min=Math.min(min,anomaly);max=Math.max(max,anomaly);
-   const rect=L.rectangle([[lat-3,lon-3],[lat+3,lon+3]],{
-    color:"#fff",weight:.35,opacity:.28,fillColor:anomalyColor(anomaly),
-    fillOpacity:opacity,interactive:true,className:"ecmwf-cell"
-   });
-   rect.bindTooltip(
+   points.push({lat,lon,anomaly,p});sum+=anomaly;min=Math.min(min,anomaly);max=Math.max(max,anomaly);
+  });
+  if(!points.length){summaryEl.textContent="Não há valores numéricos de anomalia para este período.";return;}
+
+  // Rasterização suave por ponderação dos pontos ECMWF próximos (IDW).
+  // A interpolação melhora a leitura visual, mas não cria resolução meteorológica nova.
+  const bounds=[[-55,-82],[12,-34]], W=900,H=600,step=3;
+  const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d',{willReadFrequently:true});
+  const image=ctx.createImageData(W,H), px=image.data;
+  const projected=points.map(p=>({
+   x:(p.lon+82)/48*W, y:(12-p.lat)/67*H, anomaly:p.anomaly
+  }));
+  const radius=58, radius2=radius*radius;
+  for(let y=0;y<H;y+=step){
+   for(let x=0;x<W;x+=step){
+    let nearest=[];
+    for(let k=0;k<projected.length;k++){
+     const q=projected[k],dx=x-q.x,dy=y-q.y,d2=dx*dx+dy*dy;
+     if(d2>radius2)continue;
+     if(nearest.length<6){nearest.push({d2,v:q.anomaly});nearest.sort((a,b)=>a.d2-b.d2);}
+     else if(d2<nearest[5].d2){nearest[5]={d2,v:q.anomaly};nearest.sort((a,b)=>a.d2-b.d2);}
+    }
+    if(!nearest.length)continue;
+    let weighted=0,weights=0;
+    for(const n of nearest){const w=1/Math.max(4,n.d2);weighted+=n.v*w;weights+=w;}
+    const color=anomalyColor(weighted/weights).match(/\d+/g).map(Number);
+    for(let yy=y;yy<Math.min(H,y+step);yy++)for(let xx=x;xx<Math.min(W,x+step);xx++){
+     const i=(yy*W+xx)*4;px[i]=color[0];px[i+1]=color[1];px[i+2]=color[2];px[i+3]=Math.round(255*opacity);
+    }
+   }
+  }
+  ctx.putImageData(image,0,0);
+  const overlay=L.imageOverlay(canvas.toDataURL('image/png'),bounds,{opacity:1,interactive:false}).addTo(grid);
+  // Pontos de consulta quase invisíveis: mantêm o valor original no tooltip.
+  points.forEach(p=>{
+   const marker=L.circleMarker([p.lat,p.lon],{radius:5,stroke:false,fillColor:'#fff',fillOpacity:0.001,interactive:true});
+   marker.bindTooltip(
     "<b>ECMWF "+(selectedProduct==="weekly"?"EC46 semanal":"SEAS5 mensal")+"</b><br>"+
     "Período: "+formatPeriod(period.period)+"<br>"+
-    "Anomalia: "+(anomaly>0?"+":"")+anomaly.toFixed(1)+" mm<br>"+
-    "Precipitação média: "+(Number.isFinite(Number(p.precipitation_mean_mm))?Number(p.precipitation_mean_mm).toFixed(1)+" mm":"—"),
+    "Anomalia: "+(p.anomaly>0?"+":"")+p.anomaly.toFixed(1)+" mm<br>"+
+    "Precipitação média: "+(Number.isFinite(Number(p.p.precipitation_mean_mm))?Number(p.p.precipitation_mean_mm).toFixed(1)+" mm":"—"),
     {sticky:true}
    );
-   grid.addLayer(rect);
+   grid.addLayer(marker);
   });
   if(active&&!map.hasLayer(grid))grid.addTo(map);
-  if(valid){
-   const mean=sum/valid;
-   summaryEl.textContent="Período "+formatPeriod(period.period)+" · "+valid+" células válidas · média das anomalias: "+(mean>0?"+":"")+mean.toFixed(1)+" mm · mínimo "+min.toFixed(1)+" mm · máximo "+max.toFixed(1)+" mm.";
-  }else{
-   summaryEl.textContent="Não há valores numéricos de anomalia para este período.";
-  }
+  const mean=sum/points.length;
+  summaryEl.textContent="Período "+formatPeriod(period.period)+" · "+points.length+" pontos ECMWF · interpolação visual suave · média "+(mean>0?"+":"")+mean.toFixed(1)+" mm · mínimo "+min.toFixed(1)+" mm · máximo "+max.toFixed(1)+" mm. A interpolação não aumenta a resolução real do modelo.";
  }
  function populatePeriods(){
   const periods=getPeriodList(currentData);
