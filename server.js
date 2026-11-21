@@ -47,6 +47,29 @@ function setApiHeaders(res) {
   });
 }
 
+// O raster é público e o destino do proxy é rigidamente limitado à REDEMET.
+// CORS aberto somente nesta rota de imagem evita falhas quando o dashboard
+// é acessado por domínio próprio, domínio Render ou subdomínio alternativo.
+function applyRadarImageCors(res) {
+  res.set({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+    'Access-Control-Allow-Headers': 'Accept',
+    'Cross-Origin-Resource-Policy': 'cross-origin'
+  });
+}
+
+function detectImageType(bytes) {
+  if (!Buffer.isBuffer(bytes) || bytes.length < 12) return '';
+  if (bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return 'image/png';
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes.subarray(0, 6).toString('ascii').startsWith('GIF8')) return 'image/gif';
+  if (bytes.subarray(0, 4).toString('ascii') === 'RIFF' && bytes.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
+  if ((bytes[0] === 0x49 && bytes[1] === 0x49 && bytes[2] === 0x2a && bytes[3] === 0x00) ||
+      (bytes[0] === 0x4d && bytes[1] === 0x4d && bytes[2] === 0x00 && bytes[3] === 0x2a)) return 'image/tiff';
+  return '';
+}
+
 function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -58,7 +81,7 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
 // Proxy de imagens de radar REDEMET: usado pelo index.html para raster/CORS
 // Endpoint: /api/radar-image?url=<URL da imagem oficial>
 app.get('/api/radar-image', async (req, res) => {
-  if (!applyCors(req, res)) return res.status(403).type('text/plain').send('Origem não autorizada.');
+  applyRadarImageCors(res);
 
   const rawUrl = typeof req.query.url === 'string' ? req.query.url : '';
   let target;
@@ -69,7 +92,13 @@ app.get('/api/radar-image', async (req, res) => {
   }
 
   // Restrição para impedir que o proxy seja usado para acessar outros serviços.
-  if (target.protocol !== 'https:' || target.hostname !== 'api-redemet.decea.mil.br') {
+  if (
+    target.protocol !== 'https:' ||
+    target.hostname !== 'api-redemet.decea.mil.br' ||
+    (target.port && target.port !== '443') ||
+    target.username ||
+    target.password
+  ) {
     return res.status(400).type('text/plain').send('Host de imagem não permitido.');
   }
 
@@ -87,21 +116,32 @@ app.get('/api/radar-image', async (req, res) => {
       return res.status(502).type('text/plain').send(`REDEMET respondeu HTTP ${upstream.status}.`);
     }
 
-    const contentType = (upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
-    if (!contentType.startsWith('image/')) {
-      return res.status(502).type('text/plain').send('A REDEMET não retornou um arquivo de imagem.');
-    }
-
+    const upstreamType = (upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
     const bytes = Buffer.from(await upstream.arrayBuffer());
     if (!bytes.length) return res.status(502).type('text/plain').send('Imagem REDEMET vazia.');
     if (bytes.length > 12 * 1024 * 1024) {
       return res.status(413).type('text/plain').send('Imagem excede o limite de 12 MB.');
     }
 
+    // Algumas respostas de imagem chegam como application/octet-stream.
+    // Confirma o formato pelos bytes, em vez de rejeitar um raster válido.
+    const detectedType = detectImageType(bytes);
+    const contentType = upstreamType.startsWith('image/') ? upstreamType : detectedType;
+    if (!contentType || !contentType.startsWith('image/')) {
+      console.error('[CLOUDGOD] REDEMET não entregou imagem:', {
+        contentType: upstreamType,
+        bytes: bytes.length,
+        url: target.pathname
+      });
+      return res.status(502).type('text/plain').send('A REDEMET não retornou um raster de imagem reconhecido.');
+    }
+
     res.set({
-      'Cache-Control': 'public, max-age=60',
+      'Cache-Control': 'public, max-age=30, stale-while-revalidate=15',
       'Content-Type': contentType,
-      'X-Content-Type-Options': 'nosniff'
+      'Content-Length': String(bytes.length),
+      'X-Content-Type-Options': 'nosniff',
+      'X-Radar-Proxy': 'REDEMET'
     });
     return res.status(200).send(bytes);
   } catch (error) {
@@ -115,10 +155,14 @@ app.get('/api/radar-image', async (req, res) => {
 
 app.get('/health', (_req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM (h5wasm)', apis: ['/api/cptec', '/api/lightning'] });
+  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM (h5wasm)', apis: ['/api/cptec', '/api/lightning', '/api/radar-image'] });
 });
 
 app.options(['/api/cptec', '/api/lightning', '/api/radar-image'], (req, res) => {
+  if (req.path === '/api/radar-image') {
+    applyRadarImageCors(res);
+    return res.status(204).end();
+  }
   if (!applyCors(req, res)) return res.status(403).end();
   return res.status(204).end();
 });
