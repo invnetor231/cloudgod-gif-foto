@@ -2115,31 +2115,19 @@ function cgCollectImageOverlays(layer,found,visited){
   if(existing)Object.assign(existing,item);else found.push(item);
  }
 }
-let cg3DSyncWaitingForStyle=false;
 function cgSync3DOverlays(){
  const map3d=cgMapLibre3D;
  const host=document.getElementById("map");
- if(!map3d||!host?.classList.contains("cg-map3d-active"))return;
-
- // A troca de estilo do MapLibre pode levar alguns instantes. Não descarta
- // a atualização: agenda uma nova sincronização assim que o estilo estiver pronto.
- if(!map3d.isStyleLoaded()){
-  if(!cg3DSyncWaitingForStyle){
-   cg3DSyncWaitingForStyle=true;
-   map3d.once("style.load",()=>{
-    cg3DSyncWaitingForStyle=false;
-    requestAnimationFrame(()=>cgSync3DOverlays());
-   });
-  }
-  return;
- }
+ if(!map3d||!map3d.isStyleLoaded()||!host?.classList.contains("cg-map3d-active"))return;
 
  const found=[],visited=new Set();
- // radarLayers contém exatamente as imagens de reflectividade do quadro ativo.
+ // A coleção radarLayers é a fonte de verdade do quadro de reflectividade
+ // atualmente selecionado. Espelha-a primeiro, sem depender do registro interno
+ // de camadas do Leaflet.
  if(Array.isArray(radarLayers)){
   radarLayers.forEach(layer=>cgCollectImageOverlays(layer,found,visited));
  }
- // Mantém os demais produtos raster que já estejam ativos no Leaflet.
+ // Inclui também outros produtos raster que estejam ativos no mapa 2D.
  Object.values(map._layers||{}).forEach(layer=>cgCollectImageOverlays(layer,found,visited));
 
  const active=new Set(found.map(item=>item.id));
@@ -2155,29 +2143,28 @@ function cgSync3DOverlays(){
 
  found.forEach(item=>{
   try{
-   if(!item.url||!Array.isArray(item.coordinates)||item.coordinates.length!==4)return;
    let source=map3d.getSource(item.id);
-
    if(!source){
     map3d.addSource(item.id,{
      type:"image",
      url:item.url,
      coordinates:item.coordinates
     });
+    source=map3d.getSource(item.id);
    }else if(typeof source.updateImage==="function"){
     source.updateImage({url:item.url,coordinates:item.coordinates});
    }else{
-    // Recria somente a fonte quando a versão do MapLibre não expõe updateImage.
+    // Se a implementação da fonte não oferecer updateImage, recria apenas
+    // a fonte para garantir que o novo quadro de radar seja aplicado.
     if(map3d.getLayer(item.id))map3d.removeLayer(item.id);
     map3d.removeSource(item.id);
-    map3d.addSource(item.id,{
-     type:"image",
-     url:item.url,
-     coordinates:item.coordinates
-    });
+    map3d.addSource(item.id,{type:"image",url:item.url,coordinates:item.coordinates});
+    source=map3d.getSource(item.id);
    }
 
-   // Garante a camada raster mesmo quando a fonte já existia antes da sincronização.
+   // Importante: uma fonte pode sobreviver em estados intermediários enquanto
+   // sua camada de renderização não existe (por exemplo, após setStyle).
+   // Sempre garante a existência da camada raster, mesmo se a fonte já existir.
    if(!map3d.getLayer(item.id)){
     map3d.addLayer({
      id:item.id,
@@ -2185,22 +2172,17 @@ function cgSync3DOverlays(){
      source:item.id,
      paint:{
       "raster-opacity":item.opacity,
-      "raster-fade-duration":0,
-      "raster-opacity-transition":{duration:0}
+      "raster-fade-duration":0
      }
     });
    }else{
     map3d.setPaintProperty(item.id,"raster-opacity",item.opacity);
-    map3d.setPaintProperty(item.id,"raster-opacity-transition",{duration:0});
    }
    cg3DOverlayIds.add(item.id);
   }catch(error){
    console.warn("Falha ao espelhar reflectividade/produto no mapa 3D:",item.id,error);
   }
  });
-
- // Solicita um novo quadro WebGL após adicionar/atualizar os rasters.
- if(typeof map3d.triggerRepaint==="function")map3d.triggerRepaint();
 }
 function setBaseMap(mode){
  mode=mode||"street";
@@ -3890,11 +3872,8 @@ async function showFrame(index){
  const nextLayers=frame.images.map((image,i)=>{
   // Se o proxy não conseguiu preparar o raster, tenta carregar a URL original
   // diretamente para manter a refletividade visível no mapa (sem garantia de exportação CORS).
-  // Nunca entrega a URL externa original ao MapLibre. O modo 3D precisa
-  // de uma origem same-origin/CORS; quando o processamento falha, mantém
-  // a URL do proxy REDEMET, em vez de trocar para o host externo.
   const proxyFailed=!preparedSources[i]||preparedSources[i]===proxySources[i];
-  const displaySource=preparedSources[i]||proxySources[i];
+  const displaySource=proxyFailed?String(image.url||""):preparedSources[i];
   const fallbackClass=proxyFailed?" radar-quality-css-fallback":"";
   return L.imageOverlay(
    displaySource,radarDisplayBounds(image.bounds),
@@ -3927,15 +3906,34 @@ async function showFrame(index){
  nextLayers.forEach(layer=>layer.addTo(radarGroup));
  let loadResults=await Promise.all(loadPromises);
 
- // Não troca para a URL externa original quando o proxy falha.
- // Essa troca até pode funcionar no Leaflet, mas impede o MapLibre/WebGL
- // de ler o raster por CORS. Mantemos o proxy como única origem do produto.
+ // Se o proxy estiver indisponível, tenta a URL oficial diretamente.
+ // A imagem continua visível no mapa; exportação pode exigir CORS do servidor.
  const failedIndexes=loadResults.map((ok,i)=>ok?-1:i).filter(i=>i>=0);
  if(failedIndexes.length){
-  console.warn("Imagens REDEMET não carregadas pelo proxy:",failedIndexes.map(i=>({
-   url:proxySources[i],
-   radar:frame.images[i]?.url
-  })));
+  const fallbackPromises=failedIndexes.map(i=>new Promise(resolve=>{
+   const layer=nextLayers[i];
+   let finished=false;
+   let timer;
+   const finish=ok=>{
+    if(finished)return;
+    finished=true;
+    clearTimeout(timer);
+    layer.off("load",onLoad);
+    layer.off("error",onError);
+    resolve(ok);
+   };
+   const onLoad=()=>finish(true);
+   const onError=()=>finish(false);
+   layer.once("load",onLoad);
+   layer.once("error",onError);
+   timer=setTimeout(()=>{
+    const element=layer.getElement();
+    finish(Boolean(element&&element.complete&&element.naturalWidth>0));
+   },12000);
+   layer.setUrl(frames[currentFrame].images[i].url);
+  }));
+  const fallbackResults=await Promise.all(fallbackPromises);
+  fallbackResults.forEach((ok,j)=>{loadResults[failedIndexes[j]]=ok;});
  }
 
  // Descarta carregamentos antigos quando o usuário avança rapidamente.
@@ -5540,24 +5538,18 @@ clearRadiosonde=function(){
  function loadRadarRaster(url){
   return new Promise((resolve,reject)=>{
    const img=new Image();img.crossOrigin='anonymous';
-   const safeUrl=radarExportSafeUrl(url);
-   if(!safeUrl){reject(new Error('URL do proxy de imagem REDEMET inválida'));return;}
-   const timeout=setTimeout(()=>{img.src='';reject(new Error('Tempo esgotado ao carregar raster REDEMET pelo proxy'));},20000);
    img.onload=()=>{
-    clearTimeout(timeout);
     try{
      const w=img.naturalWidth,h=img.naturalHeight;
      if(!w||!h)throw new Error('Imagem radar vazia');
      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
-     const ctx=cv.getContext('2d',{willReadFrequently:true});
-     if(!ctx)throw new Error('Canvas 2D indisponível');
-     ctx.drawImage(img,0,0);
+     const ctx=cv.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0);
      const data=ctx.getImageData(0,0,w,h).data;
      resolve({width:w,height:h,data});
-    }catch(e){reject(new Error('Não foi possível ler os pixels do raster (CORS/proxy): '+e.message));}
+    }catch(e){reject(new Error('A imagem radar não permite leitura dos pixels (CORS): '+e.message));}
    };
-   img.onerror=()=>{clearTimeout(timeout);reject(new Error('Falha ao carregar imagem radar pelo proxy Render'));};
-   img.src=safeUrl;
+   img.onerror=()=>reject(new Error('Falha ao carregar imagem radar'));
+   img.src=radarExportSafeUrl(url);
   });
  }
  function radarPixelToWorld(bounds,x,y,w,h){
@@ -5623,26 +5615,15 @@ clearRadiosonde=function(){
   scene.add(shell);scene.add(mesh);radarVolumeObjects.push(shell,mesh);
   return cells.length*3;
  }
- function sampleRadarImage(raster,bounds,detail=3){
-  // detail agora controla a densidade da grade. A versão anterior dividia
-  // a largura da imagem por 3 ou 4 e usava esse resultado como passo do loop;
-  // na prática, lia somente 3–4 pixels por eixo e quase sempre perdia os ecos.
+ function sampleRadarImage(raster,bounds,step=3){
   const cells=[],w=raster.width,h=raster.height,d=raster.data;
-  if(!w||!h||!d||!bounds)return cells;
-  const targetAcross=detail<=3?128:96;
-  const stride=Math.max(1,Math.ceil(Math.max(w,h)/targetAcross));
-  const columns=Math.max(1,Math.ceil((w-2)/stride));
-  const westX=mapPoint(bounds.north,bounds.west).x;
-  const eastX=mapPoint(bounds.north,bounds.east).x;
-  const cellSize=Math.max(3,Math.min(12,Math.abs(eastX-westX)/columns*.72));
-  for(let y=1;y<h-1;y+=stride){
-   for(let x=1;x<w-1;x+=stride){
-    const k=(y*w+x)*4;
-    const signal=radarColorSignal(d[k],d[k+1],d[k+2],d[k+3]);
+  const sx=Math.max(1,Math.ceil(w/step)),sy=Math.max(1,Math.ceil(h/step));
+  for(let y=1;y<h-1;y+=sy){
+   for(let x=1;x<w-1;x+=sx){
+    const k=(y*w+x)*4,signal=radarColorSignal(d[k],d[k+1],d[k+2],d[k+3]);
     if(!signal)continue;
     const geo=radarPixelToWorld(bounds,x,y,w,h);
-    // A reconstrução respeita o recorte selecionado no mapa 3D.
-    if(selectedBounds&&!selectedBounds.contains([geo.lat,geo.lon]))continue;
+    const cellSize=Math.max(3,Math.min(12,Math.abs(mapPoint(bounds.north,bounds.east).x-mapPoint(bounds.north,bounds.west).x)/sx));
     cells.push({x:geo.x,y:geo.y,lat:geo.lat,lon:geo.lon,signal,size:cellSize});
    }
   }
@@ -5666,7 +5647,9 @@ clearRadiosonde=function(){
   const btn=document.getElementById('cloud3dRadarVolumeBtn');
   const note=document.querySelector('.cloud3d-note');
   if(btn){btn.disabled=true;btn.textContent='RECONSTRUINDO REFLECTIVIDADE 3D…';}
-  if(note)note.textContent='Consultando os produtos REDEMET, lendo os pixels e posicionando os ecos no volume 3D…';
+  if(note)note.textContent='Lendo os pixels REDEMET e posicionando os ecos nos níveis verticais sobre o relevo…';
+  if(!terrainSamples.length)await load3DTerrain();
+  clearRadarVolume();
   // MAXCAPPI supplies the horizontal storm footprint; CAPPI 5.5 and 7.3 km
   // constrain the upper part of the echo column. Lower intermediate levels
   // are an explicitly estimated bridge, not direct radar elevation scans.
@@ -5677,12 +5660,6 @@ clearRadiosonde=function(){
   ];
   let total=0,loadedProducts=0,errors=[];
   try{
-   // Falha no serviço de terreno não pode impedir a reflectividade radar.
-   if(!terrainSamples.length){
-    try{await load3DTerrain();}
-    catch(terrainError){errors.push('relevo: '+terrainError.message);}
-   }
-   clearRadarVolume();
    for(const product of products){
     try{
      const images=await fetchRadarVolumeProduct(product.id);
@@ -5708,7 +5685,7 @@ clearRadiosonde=function(){
    if(note){
     note.textContent=total
      ?`Reconstrução 3D gerada com ${total.toLocaleString('pt-BR')} voxels em ${loadedProducts} produto(s) radar. A forma representa a distribuição espacial dos ecos: MAXCAPPI define a área/coluna estimada e CAPPI 5,5/7,3 km ancora os níveis superiores. Não é uma tomografia física completa nem uma medição direta do topo da nuvem; os níveis intermediários são estimados. As cores indicam classes visuais de eco, não dBZ calibrado. Arraste para orbitar e use roda/pinça para zoom.${errors.length?' Fontes sem leitura: '+errors.join(' | '):''}`
-     :'Não foi possível reconstruir o volume. '+(errors.join(' | ')||'Nenhum eco colorido foi encontrado dentro da área selecionada')+'. Verifique a disponibilidade dos produtos REDEMET e do proxy de imagens.';
+     :'Não foi possível reconstruir o volume. '+errors.join(' | ')+'. A leitura dos pixels depende de CORS permitido pela fonte REDEMET.';
    }
   }finally{
    radarVolumeBusy=false;
