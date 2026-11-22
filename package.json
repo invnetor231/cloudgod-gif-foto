@@ -2,17 +2,17 @@
   "name": "cloudgod-cptec-proxy",
   "version": "1.0.0",
   "private": true,
-  "description": "CLOUDGOD radar interface with CPTEC/INPE proxy and ECMWF HRES temperature raster",
+  "description": "CLOUDGOD radar interface with CPTEC/INPE proxy, NOAA GLM and ECMWF IFS HRES temperature raster",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "dependencies": {
     "express": "^4.21.2",
     "h5wasm": "0.10.3",
-    "@trkbt10/grib2-wasm": "latest"
+    "@azohra/meteo.grib": "0.1.5"
   }
 }

@@ -150,26 +150,71 @@ let ecmwfDecoderPromise = null;
 async function getEcmwfDecoder() {
   if (!ecmwfDecoderPromise) {
     ecmwfDecoderPromise = (async () => {
-      // O pacote fornece um módulo WASM; inicialize-o uma única vez no Node.
-      const decoder = await import('@trkbt10/grib2-wasm');
-      if (typeof decoder.init !== 'function') {
-        throw new Error('O pacote @trkbt10/grib2-wasm foi encontrado, mas não exporta init().');
+      // Decoder GRIB2 mantido em TypeScript puro; JPEG2000 é carregado pelo subpath Node.
+      const grib = await import('@azohra/meteo.grib');
+      const j2k = await import('@azohra/meteo.grib/j2k-node');
+      const required = ['splitMessages', 'parseFields', 'parseGrid', 'decodeFieldValues'];
+      const missing = required.filter((name) => typeof grib[name] !== 'function');
+      if (missing.length) throw new Error('Decoder GRIB2 sem exports necessários: ' + missing.join(', '));
+      if (typeof j2k.createNodeJ2kDecoder !== 'function') {
+        throw new Error('O decoder JPEG2000 do pacote GRIB2 não está disponível.');
       }
-      await decoder.init();
-      const required = ['parseGrib2', 'getRecordCount', 'getSection4', 'getSection3', 'getGridData', 'getLatitudes', 'getLongitudes'];
-      const missing = required.filter((name) => typeof decoder[name] !== 'function');
-      if (missing.length) {
-        throw new Error('Decoder GRIB2 carregado, mas faltam exports: ' + missing.join(', '));
-      }
-      console.log('[CLOUDGOD ECMWF] Decoder GRIB2 WASM inicializado.');
-      return decoder;
+      const decodeJ2k = await j2k.createNodeJ2kDecoder();
+      console.log('[CLOUDGOD ECMWF] Decoder GRIB2/JPEG2000 inicializado.');
+      return { ...grib, decodeJ2k };
     })().catch((error) => {
       ecmwfDecoderPromise = null;
-      throw new Error('Não foi possível inicializar @trkbt10/grib2-wasm: ' + (error?.message || error));
+      throw new Error('Não foi possível inicializar o decoder GRIB2: ' + (error?.message || error));
     });
   }
   return ecmwfDecoderPromise;
 }
+
+// Constrói as coordenadas na mesma ordem de varredura dos valores GRIB2.
+// O ECMWF IFS HRES 0.25° usa grade latitude/longitude regular (template 3.0).
+function ecmwfGridCoordinates(grid, valueCount) {
+  if (!grid || grid.kind !== 'latlon') {
+    throw new Error('ECMWF HRES retornou uma grade diferente de latitude/longitude regular.');
+  }
+  const ni = Number(grid.ni), nj = Number(grid.nj);
+  if (!Number.isInteger(ni) || !Number.isInteger(nj) || ni < 2 || nj < 2 || ni * nj !== valueCount) {
+    throw new Error(`Dimensões GRIB2 incompatíveis: ${ni}x${nj}, valores=${valueCount}.`);
+  }
+  const lats = new Float64Array(valueCount);
+  const lons = new Float64Array(valueCount);
+  const iSign = grid.iScansNegatively ? -1 : 1;
+  const jSign = grid.jScansPositively ? 1 : -1;
+  const firstLat = Number(grid.latitudeOfFirstGridPoint);
+  const firstLon = Number(grid.longitudeOfFirstGridPoint);
+  const di = Number(grid.iDirectionIncrement);
+  const dj = Number(grid.jDirectionIncrement);
+  if (![firstLat, firstLon, di, dj].every(Number.isFinite) || di <= 0 || dj <= 0) {
+    throw new Error('Metadados de coordenadas inválidos no GRIB2 ECMWF.');
+  }
+
+  for (let j = 0; j < nj; j++) {
+    for (let i = 0; i < ni; i++) {
+      let ii = i;
+      let jj = j;
+      if (grid.alternativeRowScanning && (grid.jPointsAreConsecutive ? i : j) % 2 === 1) {
+        if (grid.jPointsAreConsecutive) jj = nj - 1 - j;
+        else ii = ni - 1 - i;
+      }
+      const index = grid.jPointsAreConsecutive ? (ii * nj + jj) : (jj * ni + ii);
+      lats[index] = firstLat + jSign * jj * dj;
+      lons[index] = firstLon + iSign * ii * di;
+    }
+  }
+  return { lats, lons };
+}
+
+function isEcmwfTwoMetreTemperature(section4) {
+  if (!section4 || section4.length < 28 || section4[4] !== 4) return false;
+  const productTemplate = (section4[7] << 8) | section4[8];
+  // Product Definition Template 4.0: category 0, parameter 0, surface 103 (2 m).
+  return productTemplate === 0 && section4[9] === 0 && section4[10] === 0 && section4[22] === 103;
+}
+
 function ecmwfRunCandidates() {
   const now=new Date(Date.now()-4*60*60*1000); // allow for 0.25° dissemination delay
   now.setUTCMinutes(0,0,0);
@@ -189,7 +234,7 @@ function ecmwfRunCandidates() {
   return runs.slice(0,8);
 }
 async function fetchEcmwfTemperatureGrib() {
-  const pkg=await getEcmwfDecoder();
+  const decoder = await getEcmwfDecoder();
   const runs=ecmwfRunCandidates();
   const steps=[0,6];
   let chosen=null;
@@ -211,22 +256,26 @@ async function fetchEcmwfTemperatureGrib() {
       if(gribRes.status!==206)continue; // never accept a full-file response when range is ignored
       const bytes=new Uint8Array(await gribRes.arrayBuffer());
       if(!bytes.length)continue;
-      try{
-        const handle=pkg.parseGrib2(bytes);
-        const recordCount=pkg.getRecordCount(handle);
-        for(let rec=1;rec<=recordCount;rec++){
-          const sec4=pkg.getSection4(handle,rec),sec3=pkg.getSection3(handle,rec);
-          if(sec4?.parameterCategory===0&&sec4?.parameterNumber===0&&sec4?.typeOfFirstFixedSurface===103){
-            const vals=pkg.getGridData(handle,rec),lats=pkg.getLatitudes(handle,rec),lons=pkg.getLongitudes(handle,rec);
-            if(vals?.length&&lats?.length&&lons?.length){
-              const png=encodeTemperaturePng(vals,lats,lons);
-              const valid=new Date(Date.UTC(Number(run.ymd.slice(0,4)),Number(run.ymd.slice(4,6))-1,Number(run.ymd.slice(6,8)),Number(run.hh)+step)).toISOString();
-              chosen={...png,run:`${run.ymd} ${run.hh}Z`,step:`${step}h`,valid,bytes:bytes.length};
-              return chosen;
-            }
+      try {
+        const messages = decoder.splitMessages(bytes);
+        for (const message of messages) {
+          const fields = decoder.parseFields(message);
+          for (const field of fields) {
+            if (!isEcmwfTwoMetreTemperature(field.section4)) continue;
+            const grid = decoder.parseGrid(field.section3);
+            const decoded = decoder.decodeFieldValues(field, { decodeJ2k: decoder.decodeJ2k });
+            const vals = decoded?.values;
+            if (!vals?.length) continue;
+            const { lats, lons } = ecmwfGridCoordinates(grid, vals.length);
+            const png = encodeTemperaturePng(vals, lats, lons);
+            const valid = new Date(Date.UTC(Number(run.ymd.slice(0,4)), Number(run.ymd.slice(4,6))-1, Number(run.ymd.slice(6,8)), Number(run.hh)+step)).toISOString();
+            chosen = { ...png, run: `${run.ymd} ${run.hh}Z`, step: `${step}h`, valid, bytes: bytes.length };
+            return chosen;
           }
         }
-      }catch(err){console.warn('[CLOUDGOD ECMWF] GRIB2 decode failed:',err?.message||err);}
+      } catch (err) {
+        console.warn('[CLOUDGOD ECMWF] GRIB2 decode failed:', err?.stack || err?.message || err);
+      }
     }
   }
   throw new Error('ECMWF Open Data: não encontrei um campo 2t (2 m) disponível nos ciclos recentes.');
