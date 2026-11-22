@@ -13,6 +13,5 @@
   "dependencies": {
     "express": "^4.21.2",
     "h5wasm": "0.10.3",
-    "@trkbt10/grib2-wasm": "latest"
   }
 }
