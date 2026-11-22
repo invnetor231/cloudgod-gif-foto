@@ -146,9 +146,29 @@ function encodeTemperaturePng(values,lats,lons) {
   const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(width,0);ihdr.writeUInt32BE(height,4);ihdr[8]=8;ihdr[9]=6;ihdr[10]=0;ihdr[11]=0;ihdr[12]=0;
   return {png:Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',ihdr),pngChunk('IDAT',require('zlib').deflateSync(raw,{level:6})),pngChunk('IEND',Buffer.alloc(0))]),width,height};
 }
+let ecmwfDecoderPromise = null;
 async function getEcmwfDecoder() {
-  // Decoder GRIB2 ainda não integrado: não importar pacote npm inexistente.
-  throw new Error('Decoder GRIB2 ECMWF ainda não está instalado/configurado no servidor.');
+  if (!ecmwfDecoderPromise) {
+    ecmwfDecoderPromise = (async () => {
+      // O pacote fornece um módulo WASM; inicialize-o uma única vez no Node.
+      const decoder = await import('@trkbt10/grib2-wasm');
+      if (typeof decoder.init !== 'function') {
+        throw new Error('O pacote @trkbt10/grib2-wasm foi encontrado, mas não exporta init().');
+      }
+      await decoder.init();
+      const required = ['parseGrib2', 'getRecordCount', 'getSection4', 'getSection3', 'getGridData', 'getLatitudes', 'getLongitudes'];
+      const missing = required.filter((name) => typeof decoder[name] !== 'function');
+      if (missing.length) {
+        throw new Error('Decoder GRIB2 carregado, mas faltam exports: ' + missing.join(', '));
+      }
+      console.log('[CLOUDGOD ECMWF] Decoder GRIB2 WASM inicializado.');
+      return decoder;
+    })().catch((error) => {
+      ecmwfDecoderPromise = null;
+      throw new Error('Não foi possível inicializar @trkbt10/grib2-wasm: ' + (error?.message || error));
+    });
+  }
+  return ecmwfDecoderPromise;
 }
 function ecmwfRunCandidates() {
   const now=new Date(Date.now()-4*60*60*1000); // allow for 0.25° dissemination delay
