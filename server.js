@@ -82,7 +82,6 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
 
 // ECMWF IFS HRES 0.25° global 2 m temperature (2t), decoded from original GRIB2.
 const ECMWF_ROOT = 'https://data.ecmwf.int/forecasts';
-let ecmwfDecoderPromise;
 let ecmwfTemperatureCache = null;
 let ecmwfTemperatureCacheAt = 0;
 let ecmwfTemperatureRequestPromise = null;
@@ -148,12 +147,8 @@ function encodeTemperaturePng(values,lats,lons) {
   return {png:Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',ihdr),pngChunk('IDAT',require('zlib').deflateSync(raw,{level:6})),pngChunk('IEND',Buffer.alloc(0))]),width,height};
 }
 async function getEcmwfDecoder() {
-  if(!ecmwfDecoderPromise) ecmwfDecoderPromise=(async()=>{
-    const pkg=await import('@trkbt10/grib2-wasm');
-    await pkg.init();
-    return pkg;
-  })();
-  return ecmwfDecoderPromise;
+  // Decoder GRIB2 ainda não integrado: não importar pacote npm inexistente.
+  throw new Error('Decoder GRIB2 ECMWF ainda não está instalado/configurado no servidor.');
 }
 function ecmwfRunCandidates() {
   const now=new Date(Date.now()-4*60*60*1000); // allow for 0.25° dissemination delay
