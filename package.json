@@ -2,7 +2,7 @@
   "name": "cloudgod-cptec-proxy",
   "version": "1.0.0",
   "private": true,
-  "description": "CLOUDGOD radar interface with a server-side CPTEC/INPE JSON proxy",
+  "description": "CLOUDGOD radar interface with CPTEC/INPE proxy and ECMWF HRES temperature raster",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "express": "^4.21.2",
-    "h5wasm": "0.10.3"
+    "h5wasm": "0.10.3",
+    "@trkbt10/grib2-wasm": "latest"
   }
 }

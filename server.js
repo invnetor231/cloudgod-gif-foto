@@ -80,6 +80,162 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
 }
 
 
+// ECMWF IFS HRES 0.25° global 2 m temperature (2t), decoded from original GRIB2.
+const ECMWF_ROOT = 'https://data.ecmwf.int/forecasts';
+let ecmwfDecoderPromise;
+let ecmwfTemperatureCache = null;
+let ecmwfTemperatureCacheAt = 0;
+let ecmwfTemperatureRequestPromise = null;
+const ECMWF_TEMP_CACHE_MS = 20 * 60 * 1000;
+const ECMWF_TEMP_TIMEOUT_MS = 12000;
+
+
+function ecmwfTempColor(tempC) {
+  const stops = [[-40,[84,39,143]],[-25,[44,127,184]],[-10,[65,182,196]],[0,[161,218,180]],[10,[255,255,178]],[20,[254,153,41]],[30,[204,76,2]],[40,[127,0,0]]];
+  if (tempC <= stops[0][0]) return stops[0][1];
+  if (tempC >= stops[stops.length-1][0]) return stops[stops.length-1][1];
+  for (let i=0;i<stops.length-1;i++) {
+    const [a,ca]=stops[i], [b,cb]=stops[i+1];
+    if (tempC>=a && tempC<=b) { const t=(tempC-a)/(b-a); return ca.map((v,k)=>Math.round(v+(cb[k]-v)*t)); }
+  }
+  return [255,255,255];
+}
+function crc32(buf) {
+  let crc=0xffffffff;
+  for (const byte of buf) {
+    crc ^= byte;
+    for(let k=0;k<8;k++) crc=(crc&1)?(crc>>>1)^0xedb88320:(crc>>>1);
+  }
+  return (crc^0xffffffff)>>>0;
+}
+function pngChunk(type,data) {
+  const typeBytes=Buffer.from(type,'ascii');
+  const length=Buffer.alloc(4); length.writeUInt32BE(data.length,0);
+  const crcInput=Buffer.concat([typeBytes,data]);
+  const crc=Buffer.alloc(4); crc.writeUInt32BE(crc32(crcInput),0);
+  return Buffer.concat([length,typeBytes,data,crc]);
+}
+function encodeTemperaturePng(values,lats,lons) {
+  if(!values || !lats || !lons || values.length!==lats.length || values.length!==lons.length) throw new Error('Decoder ECMWF retornou grade/coords incompatíveis.');
+  const latSet=new Set(), lonSet=new Set();
+  for(let i=0;i<values.length;i++){
+    if(!Number.isFinite(lats[i])||!Number.isFinite(lons[i]))continue;
+    latSet.add(Number(lats[i].toFixed(4)));
+    let lon=((lons[i]+180)%360+360)%360-180;
+    lonSet.add(Number(lon.toFixed(4)));
+  }
+  const latArray=[...latSet].sort((a,b)=>b-a), lonArray=[...lonSet].sort((a,b)=>a-b);
+  if(latArray.length<2||lonArray.length<2)throw new Error('ECMWF grade não é global lat/lon esperada.');
+  const width=lonArray.length,height=latArray.length;
+  const latIndex=new Map(latArray.map((v,i)=>[v,i])), lonIndex=new Map(lonArray.map((v,i)=>[v,i]));
+  const grid=new Float32Array(width*height); grid.fill(NaN);
+  for(let i=0;i<values.length;i++){
+    if(!Number.isFinite(values[i])||!Number.isFinite(lats[i])||!Number.isFinite(lons[i]))continue;
+    const lat=Number(lats[i].toFixed(4)); let lon=((lons[i]+180)%360+360)%360-180; lon=Number(lon.toFixed(4));
+    const row=latIndex.get(lat),col=lonIndex.get(lon);
+    if(row!==undefined&&col!==undefined)grid[row*width+col]=values[i]-273.15;
+  }
+  const raw=Buffer.alloc((width*4+1)*height);
+  for(let y=0;y<height;y++){
+    const rowOffset=y*(width*4+1); raw[rowOffset]=0;
+    for(let x=0;x<width;x++){
+      const value=grid[y*width+x], pixel=rowOffset+1+x*4;
+      if(!Number.isFinite(value)){raw[pixel+3]=0;continue;}
+      const rgb=ecmwfTempColor(value);raw[pixel]=rgb[0];raw[pixel+1]=rgb[1];raw[pixel+2]=rgb[2];raw[pixel+3]=205;
+    }
+  }
+  const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(width,0);ihdr.writeUInt32BE(height,4);ihdr[8]=8;ihdr[9]=6;ihdr[10]=0;ihdr[11]=0;ihdr[12]=0;
+  return {png:Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',ihdr),pngChunk('IDAT',require('zlib').deflateSync(raw,{level:6})),pngChunk('IEND',Buffer.alloc(0))]),width,height};
+}
+async function getEcmwfDecoder() {
+  if(!ecmwfDecoderPromise) ecmwfDecoderPromise=(async()=>{
+    const pkg=await import('@trkbt10/grib2-wasm');
+    await pkg.init();
+    return pkg;
+  })();
+  return ecmwfDecoderPromise;
+}
+function ecmwfRunCandidates() {
+  const now=new Date(Date.now()-4*60*60*1000); // allow for 0.25° dissemination delay
+  now.setUTCMinutes(0,0,0);
+  const runs=[];
+  for(let d=0;d<3;d++){
+    const date=new Date(now);date.setUTCDate(date.getUTCDate()-d);
+    const ymd=date.toISOString().slice(0,10).replace(/-/g,''), datePath=date.toISOString().slice(0,10).replace(/-/g,'/');
+    for(const hour of [18,12,6,0]){
+      if(d===0&&hour>now.getUTCHours())continue;
+      const cycleDate=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate(),hour));
+      if(cycleDate>now)continue;
+      const hh=String(hour).padStart(2,'0');
+      runs.push({ymd,hh,datePath,stamp:`${ymd}${hh}0000`});
+    }
+  }
+  runs.sort((a,b)=>b.stamp.localeCompare(a.stamp));
+  return runs.slice(0,8);
+}
+async function fetchEcmwfTemperatureGrib() {
+  const pkg=await getEcmwfDecoder();
+  const runs=ecmwfRunCandidates();
+  const steps=[0,6];
+  let chosen=null;
+  for(const run of runs){
+    for(const step of steps){
+      const stepText=`${step}h`;
+      const base=`${ECMWF_ROOT}/${run.datePath}/${run.hh}z/ifs/0p25/oper/${run.stamp}-${stepText}-oper-fc`;
+      let indexRes;
+      try{ indexRes=await fetchWithTimeout(base+'.index',{headers:{'User-Agent':'CLOUDGOD ECMWF OpenData temperature proxy/1.0','Accept':'text/plain'},cache:'no-store'},ECMWF_TEMP_TIMEOUT_MS); }
+      catch(_){continue;}
+      if(!indexRes.ok)continue;
+      const indexText=await indexRes.text();
+      const record=indexText.split(/\r?\n/).map(line=>{try{return JSON.parse(line);}catch(_){return null;}}).find(r=>r&&r.param==='2t'&&r.levtype==='sfc'&&Number(r.step)===step&&Number.isFinite(r._offset)&&Number.isFinite(r._length));
+      if(!record)continue;
+      const start=record._offset,end=start+record._length-1;
+      let gribRes;
+      try{gribRes=await fetchWithTimeout(base+'.grib2',{headers:{'User-Agent':'CLOUDGOD ECMWF OpenData temperature proxy/1.0','Range':`bytes=${start}-${end}`,'Accept':'application/octet-stream'},cache:'no-store'},ECMWF_TEMP_TIMEOUT_MS);}
+      catch(_){continue;}
+      if(gribRes.status!==206)continue; // never accept a full-file response when range is ignored
+      const bytes=new Uint8Array(await gribRes.arrayBuffer());
+      if(!bytes.length)continue;
+      try{
+        const handle=pkg.parseGrib2(bytes);
+        const recordCount=pkg.getRecordCount(handle);
+        for(let rec=1;rec<=recordCount;rec++){
+          const sec4=pkg.getSection4(handle,rec),sec3=pkg.getSection3(handle,rec);
+          if(sec4?.parameterCategory===0&&sec4?.parameterNumber===0&&sec4?.typeOfFirstFixedSurface===103){
+            const vals=pkg.getGridData(handle,rec),lats=pkg.getLatitudes(handle,rec),lons=pkg.getLongitudes(handle,rec);
+            if(vals?.length&&lats?.length&&lons?.length){
+              const png=encodeTemperaturePng(vals,lats,lons);
+              const valid=new Date(Date.UTC(Number(run.ymd.slice(0,4)),Number(run.ymd.slice(4,6))-1,Number(run.ymd.slice(6,8)),Number(run.hh)+step)).toISOString();
+              chosen={...png,run:`${run.ymd} ${run.hh}Z`,step:`${step}h`,valid,bytes:bytes.length};
+              return chosen;
+            }
+          }
+        }
+      }catch(err){console.warn('[CLOUDGOD ECMWF] GRIB2 decode failed:',err?.message||err);}
+    }
+  }
+  throw new Error('ECMWF Open Data: não encontrei um campo 2t (2 m) disponível nos ciclos recentes.');
+}
+app.get('/api/ecmwf-temperature', async (_req,res)=>{
+  res.set('Cache-Control','public, max-age=300, stale-while-revalidate=600');
+  res.set('X-Content-Type-Options','nosniff');
+  try{
+    let data;
+    if(ecmwfTemperatureCache&&Date.now()-ecmwfTemperatureCacheAt<ECMWF_TEMP_CACHE_MS)data=ecmwfTemperatureCache;
+    else{
+      if(!ecmwfTemperatureRequestPromise)ecmwfTemperatureRequestPromise=fetchEcmwfTemperatureGrib().finally(()=>{ecmwfTemperatureRequestPromise=null;});
+      data=await ecmwfTemperatureRequestPromise;
+      ecmwfTemperatureCache=data;ecmwfTemperatureCacheAt=Date.now();
+    }
+    res.set({'Content-Type':'image/png','Content-Length':String(data.png.length),'X-ECMWF-Model':'IFS HRES','X-ECMWF-Grid':'0.25 degree','X-ECMWF-Run':data.run,'X-ECMWF-Step':data.step,'X-ECMWF-Valid':data.valid,'X-ECMWF-Image-Size':`${data.width}x${data.height}`});
+    return res.status(200).send(data.png);
+  }catch(err){
+    console.error('[CLOUDGOD ECMWF temperature]',err?.message||err);
+    return res.status(502).type('text/plain').send(err?.message||'Falha ao buscar/decodificar ECMWF IFS HRES.');
+  }
+});
+
+
 // Proxy de imagens de radar REDEMET: usado pelo index.html para raster/CORS
 // Endpoint: /api/radar-image?url=<URL da imagem oficial>
 app.route('/api/radar-image').get(async (req, res) => {
@@ -163,10 +319,10 @@ app.route('/api/radar-image').get(async (req, res) => {
 
 app.get('/health', (_req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM (h5wasm)', apis: ['/api/cptec', '/api/lightning', '/api/radar-image'] });
+  res.json({ ok: true, service: 'CLOUDGOD CPTEC + NOAA GLM + ECMWF HRES Temperature', apis: ['/api/cptec', '/api/lightning', '/api/radar-image', '/api/ecmwf-temperature'] });
 });
 
-app.options(['/api/cptec', '/api/lightning', '/api/radar-image'], (req, res) => {
+app.options(['/api/cptec', '/api/lightning', '/api/radar-image', '/api/ecmwf-temperature'], (req, res) => {
   if (req.path === '/api/radar-image') {
     applyRadarImageCors(res);
     return res.status(204).end();
@@ -719,6 +875,6 @@ app.use((req, res) => {
 // Inicialização
 app.listen(PORT, '0.0.0.0', () => {
   console.log(
-    `CLOUDGOD CPTEC + NOAA GLM (h5wasm) ativo na porta ${PORT}`
+    `CLOUDGOD CPTEC + NOAA GLM + ECMWF HRES Temperature ativo na porta ${PORT}`
   );
 });
