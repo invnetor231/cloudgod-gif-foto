@@ -2058,13 +2058,21 @@ function cgEnsure3DMap(mode){
    if(cgMapLibre3D.getSource("cg-terrain-dem")){
     cgMapLibre3D.setTerrain({source:"cg-terrain-dem",exaggeration:1.45});
    }
+   cgSchedule3DOverlaySync();
+  });
+  cgMapLibre3D.on("error",event=>{
+   const message=event?.error?.message||event?.error||"erro de renderização";
+   console.warn("[CLOUDGOD 3D] MapLibre:",message,event?.sourceId||"");
   });
  }else if(cgMapLibreMode!==mode){
   cgMapLibre3D.setStyle(cg3DStyle(mode));
   cgMapLibre3D.once("style.load",()=>{
+   cg3DOverlayIds.clear();
+   cg3DOverlaySignatures.clear();
    if(cgMapLibre3D.getSource("cg-terrain-dem")){
     cgMapLibre3D.setTerrain({source:"cg-terrain-dem",exaggeration:1.45});
    }
+   cgSchedule3DOverlaySync();
   });
  }
  cgMapLibreMode=mode;
@@ -2072,99 +2080,126 @@ function cgEnsure3DMap(mode){
  container.style.display="block";
  setTimeout(()=>cgMapLibre3D&&cgMapLibre3D.resize(),80);
 }
-// Espelha as imagens meteorológicas do Leaflet no MapLibre 3D.
-// Assim, radar REDEMET, GOES e rasters de previsão continuam visíveis nos modos 3D.
+// Espelha os rasters meteorológicos no MapLibre 3D.
+// Para radar REDEMET, usa SEMPRE a URL original guardada + proxy CORS,
+// nunca o data URL do canvas nem o fallback externo usado pelo Leaflet.
 const cg3DOverlayIds=new Set();
+const cg3DOverlaySignatures=new Map();
 const cg3DGroupHooks=new WeakSet();
 const cg3DImageHooks=new WeakSet();
+
+function cg3DProxyUrl(sourceUrl){
+ const source=String(sourceUrl||"").trim();
+ if(!source)return "";
+ if(/^data:image\//i.test(source)||/^blob:/i.test(source))return source;
+ try{
+  // radarImageProxyUrl restringe o destino ao host oficial REDEMET.
+  return typeof radarImageProxyUrl==="function"
+   ?radarImageProxyUrl(source)
+   :source;
+ }catch(error){
+  console.warn("[CLOUDGOD 3D] Não foi possível montar URL do proxy:",error);
+  return "";
+ }
+}
+
 function cgCollectImageOverlays(layer,found,visited){
  if(!layer||visited.has(layer))return;
  visited.add(layer);
 
- // Percorre grupos Leaflet (incluindo radarGroup) sem depender de map._layers
- // conter diretamente cada imagem.
  if(typeof layer.getLayers==="function"){
   if(!cg3DGroupHooks.has(layer)){
    cg3DGroupHooks.add(layer);
-   layer.on("layeradd layerremove",()=>setTimeout(cgSync3DOverlays,100));
+   layer.on("layeradd layerremove",()=>cgSchedule3DOverlaySync());
   }
   layer.getLayers().forEach(child=>cgCollectImageOverlays(child,found,visited));
   return;
  }
 
  if(typeof L!=="undefined"&&layer instanceof L.ImageOverlay){
-  const el=layer.getElement&&layer.getElement();
   const bounds=layer.getBounds&&layer.getBounds();
-  // _url mantém a URL mesmo quando o elemento HTML ainda não terminou
-  // de carregar; isso evita perder o produto durante a troca de quadro.
-  const url=(el&&(el.currentSrc||el.src))||layer._url;
-  if(!url||!bounds)return;
+  const el=layer.getElement&&layer.getElement();
+  if(!bounds)return;
 
-  if(el&&!el.complete&&!layer._url){
-   if(!cg3DImageHooks.has(layer)){
-    cg3DImageHooks.add(layer);
-    layer.once("load",()=>setTimeout(cgSync3DOverlays,120));
-   }
-   return;
-  }
+  const originalRadarUrl=layer._cgOriginalRadarUrl;
+  const rawUrl=originalRadarUrl
+   ?cg3DProxyUrl(originalRadarUrl)
+   :((el&&(el.currentSrc||el.src))||layer._url||"");
+  if(!rawUrl)return;
 
-  const nw=bounds.getNorthWest(),ne=bounds.getNorthEast(),se=bounds.getSouthEast(),sw=bounds.getSouthWest();
-  const id="cg3d-img-"+(layer._leaflet_id||Math.random().toString(36).slice(2));
-  const item={id,url,coordinates:[[nw.lng,nw.lat],[ne.lng,ne.lat],[se.lng,se.lat],[sw.lng,sw.lat]],opacity:typeof layer.options.opacity==="number"?layer.options.opacity:1};
+  const nw=bounds.getNorthWest();
+  const ne=bounds.getNorthEast();
+  const se=bounds.getSouthEast();
+  const sw=bounds.getSouthWest();
+  const id="cg3d-img-"+(layer._leaflet_id||("layer-"+found.length));
+  const item={
+   id,
+   url:rawUrl,
+   coordinates:[[nw.lng,nw.lat],[ne.lng,ne.lat],[se.lng,se.lat],[sw.lng,sw.lat]],
+   opacity:typeof layer.options.opacity==="number"?layer.options.opacity:1
+  };
   const existing=found.find(x=>x.id===id);
-  if(existing)Object.assign(existing,item);else found.push(item);
+  if(existing)Object.assign(existing,item);
+  else found.push(item);
+
+  if(el&&!el.complete&&!cg3DImageHooks.has(layer)){
+   cg3DImageHooks.add(layer);
+   layer.once("load",()=>cgSchedule3DOverlaySync());
+  }
  }
 }
+
+function cgRemove3DOverlay(map3d,id){
+ try{
+  if(map3d.getLayer(id))map3d.removeLayer(id);
+  if(map3d.getSource(id))map3d.removeSource(id);
+ }catch(error){
+  console.warn("[CLOUDGOD 3D] Falha ao remover camada raster:",id,error);
+ }
+ cg3DOverlayIds.delete(id);
+ cg3DOverlaySignatures.delete(id);
+}
+
 function cgSync3DOverlays(){
  const map3d=cgMapLibre3D;
  const host=document.getElementById("map");
- if(!map3d||!map3d.isStyleLoaded()||!host?.classList.contains("cg-map3d-active"))return;
+ if(!map3d||!host?.classList.contains("cg-map3d-active"))return;
+ if(!map3d.isStyleLoaded())return;
 
- const found=[],visited=new Set();
- // A coleção radarLayers é a fonte de verdade do quadro de reflectividade
- // atualmente selecionado. Espelha-a primeiro, sem depender do registro interno
- // de camadas do Leaflet.
+ const found=[];
+ const visited=new Set();
+
+ // Radar selecionado no momento.
  if(Array.isArray(radarLayers)){
   radarLayers.forEach(layer=>cgCollectImageOverlays(layer,found,visited));
  }
- // Inclui também outros produtos raster que estejam ativos no mapa 2D.
+ // Outros produtos raster ativos continuam compatíveis.
  Object.values(map._layers||{}).forEach(layer=>cgCollectImageOverlays(layer,found,visited));
 
  const active=new Set(found.map(item=>item.id));
  for(const id of [...cg3DOverlayIds]){
-  if(!active.has(id)){
-   try{
-    if(map3d.getLayer(id))map3d.removeLayer(id);
-    if(map3d.getSource(id))map3d.removeSource(id);
-   }catch(error){console.warn("Falha ao remover raster antigo do 3D:",id,error);}
-   cg3DOverlayIds.delete(id);
-  }
+  if(!active.has(id))cgRemove3DOverlay(map3d,id);
  }
 
  found.forEach(item=>{
   try{
+   const signature=JSON.stringify([item.url,item.coordinates,item.opacity]);
    let source=map3d.getSource(item.id);
-   if(!source){
+   const changed=cg3DOverlaySignatures.get(item.id)!==signature;
+
+   if(!source||changed){
+    if(map3d.getLayer(item.id))map3d.removeLayer(item.id);
+    if(source)map3d.removeSource(item.id);
+
     map3d.addSource(item.id,{
      type:"image",
      url:item.url,
      coordinates:item.coordinates
     });
     source=map3d.getSource(item.id);
-   }else if(typeof source.updateImage==="function"){
-    source.updateImage({url:item.url,coordinates:item.coordinates});
-   }else{
-    // Se a implementação da fonte não oferecer updateImage, recria apenas
-    // a fonte para garantir que o novo quadro de radar seja aplicado.
-    if(map3d.getLayer(item.id))map3d.removeLayer(item.id);
-    map3d.removeSource(item.id);
-    map3d.addSource(item.id,{type:"image",url:item.url,coordinates:item.coordinates});
-    source=map3d.getSource(item.id);
+    cg3DOverlaySignatures.set(item.id,signature);
    }
 
-   // Importante: uma fonte pode sobreviver em estados intermediários enquanto
-   // sua camada de renderização não existe (por exemplo, após setStyle).
-   // Sempre garante a existência da camada raster, mesmo se a fonte já existir.
    if(!map3d.getLayer(item.id)){
     map3d.addLayer({
      id:item.id,
@@ -2172,18 +2207,36 @@ function cgSync3DOverlays(){
      source:item.id,
      paint:{
       "raster-opacity":item.opacity,
-      "raster-fade-duration":0
+      "raster-fade-duration":0,
+      "raster-resampling":"linear"
      }
     });
-   }else{
+   }else if(!changed){
     map3d.setPaintProperty(item.id,"raster-opacity",item.opacity);
    }
+
    cg3DOverlayIds.add(item.id);
   }catch(error){
-   console.warn("Falha ao espelhar reflectividade/produto no mapa 3D:",item.id,error);
+   console.error("[CLOUDGOD 3D] Erro ao carregar raster meteorológico:",{
+    id:item.id,
+    url:item.url,
+    error:error?.message||error
+   });
   }
  });
 }
+
+let cg3DSyncTimer=null;
+function cgSchedule3DOverlaySync(){
+ if(cg3DSyncTimer)clearTimeout(cg3DSyncTimer);
+ [0,180,550,1100].forEach(delay=>{
+  setTimeout(()=>{
+   try{cgSync3DOverlays();}
+   catch(error){console.warn("[CLOUDGOD 3D] Sincronização falhou:",error);}
+  },delay);
+ });
+}
+
 function setBaseMap(mode){
  mode=mode||"street";
  const host=document.getElementById("map");
@@ -2200,14 +2253,7 @@ function setBaseMap(mode){
   const msg=document.getElementById("message");
   if(msg)msg.textContent="Mapa 3D ativo · produtos meteorológicos sincronizados sobre o relevo.";
   if(cgMapLibre3D){
-   const sync=()=>{cgSync3DOverlays();};
-   if(cgMapLibre3D.isStyleLoaded())setTimeout(sync,120);
-   else cgMapLibre3D.once("load",()=>setTimeout(sync,120));
-   cgMapLibre3D.once("style.load",()=>{
-    cg3DOverlayIds.clear();
-    setTimeout(sync,180);
-    setTimeout(sync,650);
-   });
+   cgSchedule3DOverlaySync();
   }
   return;
  }
@@ -3875,10 +3921,14 @@ async function showFrame(index){
   const proxyFailed=!preparedSources[i]||preparedSources[i]===proxySources[i];
   const displaySource=proxyFailed?String(image.url||""):preparedSources[i];
   const fallbackClass=proxyFailed?" radar-quality-css-fallback":"";
-  return L.imageOverlay(
+  const overlay=L.imageOverlay(
    displaySource,radarDisplayBounds(image.bounds),
    {opacity:0,interactive:false,crossOrigin:false,className:"leaflet-radar-raster "+qualityClass+fallbackClass}
   );
+  // Guarda a URL original separadamente: o raster processado pode virar data:
+  // e o fallback 2D pode usar o host REDEMET. O MapLibre sempre usa o proxy CORS.
+  overlay._cgOriginalRadarUrl=String(image.url||"");
+  return overlay;
  });
 
  // Registrar os eventos ANTES de adicionar as imagens evita perder o evento
@@ -3959,7 +4009,7 @@ async function showFrame(index){
   nextLayers.filter((layer,i)=>!loadResults[i]).forEach(layer=>radarGroup.removeLayer(layer));
   radarLayers=successfulLayers;
   if(cgMapLibre3D&&document.getElementById("map")?.classList.contains("cg-map3d-active")){
-   [0,250,800].forEach(delay=>setTimeout(cgSync3DOverlays,delay));
+   cgSchedule3DOverlaySync();
   }
   lastRenderedFrame=currentFrame;
   if(failedCount){

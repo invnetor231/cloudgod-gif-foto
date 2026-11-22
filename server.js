@@ -55,7 +55,9 @@ function applyRadarImageCors(res) {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
     'Access-Control-Allow-Headers': 'Accept',
-    'Cross-Origin-Resource-Policy': 'cross-origin'
+    'Access-Control-Max-Age': '86400',
+    'Cross-Origin-Resource-Policy': 'cross-origin',
+    'Timing-Allow-Origin': '*'
   });
 }
 
@@ -80,7 +82,7 @@ function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
 
 // Proxy de imagens de radar REDEMET: usado pelo index.html para raster/CORS
 // Endpoint: /api/radar-image?url=<URL da imagem oficial>
-app.get('/api/radar-image', async (req, res) => {
+app.route('/api/radar-image').get(async (req, res) => {
   applyRadarImageCors(res);
 
   const rawUrl = typeof req.query.url === 'string' ? req.query.url : '';
@@ -126,8 +128,11 @@ app.get('/api/radar-image', async (req, res) => {
     // Algumas respostas de imagem chegam como application/octet-stream.
     // Confirma o formato pelos bytes, em vez de rejeitar um raster válido.
     const detectedType = detectImageType(bytes);
-    const contentType = upstreamType.startsWith('image/') ? upstreamType : detectedType;
-    if (!contentType || !contentType.startsWith('image/')) {
+    // Alguns gateways devolvem HTML de erro com Content-Type image/*.
+    // A assinatura binária é a validação definitiva para o MapLibre.
+    const supportedTypes = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
+    const contentType = detectedType;
+    if (!contentType || !supportedTypes.has(contentType)) {
       console.error('[CLOUDGOD] REDEMET não entregou imagem:', {
         contentType: upstreamType,
         bytes: bytes.length,
@@ -140,8 +145,11 @@ app.get('/api/radar-image', async (req, res) => {
       'Cache-Control': 'public, max-age=30, stale-while-revalidate=15',
       'Content-Type': contentType,
       'Content-Length': String(bytes.length),
+      'Content-Disposition': 'inline',
       'X-Content-Type-Options': 'nosniff',
-      'X-Radar-Proxy': 'REDEMET'
+      'X-Radar-Proxy': 'REDEMET',
+      'X-Radar-Image-Format': contentType,
+      'Access-Control-Expose-Headers': 'X-Radar-Proxy, X-Radar-Image-Format'
     });
     return res.status(200).send(bytes);
   } catch (error) {
