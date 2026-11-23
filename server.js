@@ -221,7 +221,7 @@ function ecmwfRunCandidates() {
   const runs=[];
   for(let d=0;d<3;d++){
     const date=new Date(now);date.setUTCDate(date.getUTCDate()-d);
-    const ymd=date.toISOString().slice(0,10).replace(/-/g,''), datePath=date.toISOString().slice(0,10).replace(/-/g,'/');
+    const ymd=date.toISOString().slice(0,10).replace(/-/g,''), datePath=ymd; // ECMWF URL uses YYYYMMDD, not YYYY/MM/DD
     for(const hour of [18,12,6,0]){
       if(d===0&&hour>now.getUTCHours())continue;
       const cycleDate=new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate(),hour));
