@@ -1240,6 +1240,17 @@ button{letter-spacing:.2px}
 <small>MONITORAMENTO METEOROLÓGICO</small>
 </div>
 </div>
+<div class="cg-place-search" id="cgPlaceSearch">
+  <div class="cg-place-search-row">
+    <span class="cg-place-search-icon" aria-hidden="true">⌖</span>
+    <input id="cgPlaceSearchInput" type="search" autocomplete="off"
+      placeholder="Buscar bairro, rua, cidade ou estado…"
+      aria-label="Buscar bairro, rua, cidade ou estado"/>
+    <button type="button" id="cgPlaceSearchButton" aria-label="Buscar local">BUSCAR</button>
+  </div>
+  <div id="cgPlaceSearchResults" class="cg-place-results" role="listbox" aria-label="Resultados de locais" hidden></div>
+  <div id="cgPlaceSearchStatus" class="cg-place-search-status" aria-live="polite"></div>
+</div>
 <div class="status" id="status">● INICIALIZANDO</div>
 </header>
 <main>
@@ -3205,7 +3216,7 @@ function cptecRenderFrame(){
  const pretty=time.slice(6,8)+"/"+time.slice(4,6)+"/"+time.slice(0,4)+" · "+time.slice(8,10)+":"+time.slice(10,12)+" UTC";
  const previous=cptecRadarOverlay;
  const overlay=L.imageOverlay(cptecFrameUrl(station,time),cptecRadarBounds(station),{
-  opacity:0,interactive:false,crossOrigin:false,zIndex:651
+  opacity:0,interactive:false,crossOrigin:false,zIndex:651,className:"leaflet-radar-raster"
  });
  if(slider){slider.max=String(cptecRadarFrames.length-1);slider.value=String(cptecRadarIndex);}
  if(label)label.textContent=(cptecRadarIndex+1)+" / "+cptecRadarFrames.length+" · "+pretty;
@@ -3215,7 +3226,19 @@ function cptecRenderFrame(){
   const finish=(ok)=>{
    if(done)return;done=true;clearTimeout(timeout);
    if(token!==cptecFrameRenderToken){if(map.hasLayer(overlay))map.removeLayer(overlay);resolve(false);return;}
-   if(ok){overlay.setOpacity(.86);if(previous&&map.hasLayer(previous))map.removeLayer(previous);cptecRadarOverlay=overlay;cptecSetStatus("CAPPI 3 km ativo · "+station.label+" · "+pretty+" · CPTEC/INPE.");cptecPreloadFrame((cptecRadarIndex+1)%cptecRadarFrames.length);}
+   if(ok){
+    // Mantém o quadro anterior por baixo enquanto o novo entra suavemente.
+    overlay.setOpacity(.86);
+    setTimeout(()=>{
+     if(token!==cptecFrameRenderToken){if(map.hasLayer(overlay))map.removeLayer(overlay);resolve(false);return;}
+     if(previous&&map.hasLayer(previous))map.removeLayer(previous);
+     cptecRadarOverlay=overlay;
+     cptecSetStatus("CAPPI 3 km ativo · "+station.label+" · "+pretty+" · CPTEC/INPE.");
+     cptecPreloadFrame((cptecRadarIndex+1)%cptecRadarFrames.length);
+     resolve(true);
+    },190);
+    return;
+   }
    else{if(map.hasLayer(overlay))map.removeLayer(overlay);cptecSetStatus("Falha ao carregar este frame. O último quadro válido foi mantido; tente outro horário ou atualizar.");}
    resolve(ok);
   };
@@ -3941,11 +3964,10 @@ async function showFrame(index){
  const failedCount=nextLayers.length-successfulLayers.length;
  if(successfulLayers.length){
   // Exibe todos os radares que carregaram, mesmo se uma estação falhar.
+  // Crossfade: o quadro anterior permanece visível por baixo até o novo
+  // terminar a transição. Isso evita o flash de mapa vazio entre os frames.
   successfulLayers.forEach(layer=>layer.setOpacity(opacity));
-  radarLayers.forEach(layer=>layer.setOpacity(0));
-  // No modo muito rápido, reduz a pausa de troca visual para um único ciclo
-  // de renderização, em vez de segurar cada quadro por 60 ms.
-  if(!loopFastRendering)await new Promise(resolve=>setTimeout(resolve,60));
+  await new Promise(resolve=>setTimeout(resolve,190));
   if(renderToken!==frameRenderToken){
    nextLayers.forEach(layer=>radarGroup.removeLayer(layer));
    return;
@@ -6736,6 +6758,25 @@ function makePdfFromCanvas(sourceCanvas){
 .cg-product-fade-indicators span.active{background:#69d4ff;transform:scale(1.35);box-shadow:0 0 9px #69d4ff88}
 @media(max-width:520px){.cg-product-gallery{padding:11px}.cg-product-grid{height:250px}.cg-product-gallery-head{align-items:flex-start;flex-direction:column;gap:4px}}
 @media(prefers-reduced-motion:reduce){.cg-product-tile,.cg-product-image,.cg-product-fade-indicators span{transition:none!important}}
+
+/* Pesquisa geográfica: bairros, ruas, cidades e estados */
+.cg-place-search{position:relative;flex:1 1 330px;max-width:570px;min-width:230px;z-index:1500}
+.cg-place-search-row{display:flex;align-items:center;gap:7px;min-height:44px;padding:4px 5px 4px 12px;border:1px solid #2c4967;border-radius:13px;background:#081523;box-shadow:0 5px 18px #0003}
+.cg-place-search-icon{font-size:20px;color:#73cfff}
+.cg-place-search-row input{flex:1;min-width:0;border:0!important;outline:0!important;box-shadow:none!important;background:transparent!important;color:#f2f8ff!important;font:12px Arial,sans-serif;padding:9px 2px}
+.cg-place-search-row input::placeholder{color:#8198b2}
+.cg-place-search-row button{padding:9px 12px;border-radius:9px;background:linear-gradient(110deg,#b52242,#f04460);color:#fff;font-size:10px;font-weight:900}
+.cg-place-results{position:absolute;top:calc(100% + 7px);left:0;right:0;max-height:min(55vh,360px);overflow:auto;border:1px solid #35516e;border-radius:12px;background:#0b1929;box-shadow:0 16px 38px #0009;z-index:5000}
+.cg-place-results[hidden]{display:none}
+.cg-place-result{display:block;width:100%;padding:11px 13px;border:0;border-bottom:1px solid #233a53;border-radius:0;background:transparent;color:#e8f3ff;text-align:left;font-size:11px;line-height:1.45;cursor:pointer}
+.cg-place-result:last-child{border-bottom:0}
+.cg-place-result:hover,.cg-place-result:focus{background:#17314b;outline:0}
+.cg-place-result small{display:block;margin-top:3px;color:#8fa9c2;font-size:9px}
+.cg-place-search-status{min-height:0;margin:4px 3px 0;color:#8fa9c2;font-size:9px}
+.cg-place-search-status:empty{display:none}
+@media(max-width:850px){.cg-place-search{order:4;flex:1 0 100%;max-width:none;min-width:0}}
+@media(max-width:620px){.cg-place-search-row{min-height:41px}.cg-place-search-row input{font-size:11px}}
+
 </style>
 <script id="cg-central-product-fade-rotation">
 (function(){
@@ -6819,5 +6860,73 @@ function makePdfFromCanvas(sourceCanvas){
 
 <script>
 </script>
+
+<script>
+/* Busca de endereços e localidades com Nominatim/OpenStreetMap */
+(function(){
+ const input=document.getElementById('cgPlaceSearchInput');
+ const button=document.getElementById('cgPlaceSearchButton');
+ const results=document.getElementById('cgPlaceSearchResults');
+ const status=document.getElementById('cgPlaceSearchStatus');
+ if(!input||!button||!results||!status)return;
+ let timer=null, controller=null, lastQuery='';
+ function closeResults(){results.hidden=true;results.innerHTML='';}
+ function setStatus(message){status.textContent=message||'';}
+ function choosePlace(place){
+   const lat=Number(place.lat), lon=Number(place.lon);
+   if(!Number.isFinite(lat)||!Number.isFinite(lon))return;
+   if(window.map && typeof window.map.setView==='function'){
+     window.map.setView([lat,lon], Math.max(window.map.getZoom()||4, 13), {animate:true});
+     if(window.L){
+       if(window.cgPlaceSearchMarker)window.map.removeLayer(window.cgPlaceSearchMarker);
+       const safeName=String(place.display_name||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+       window.cgPlaceSearchMarker=window.L.marker([lat,lon]).addTo(window.map)
+         .bindPopup('<strong>Local encontrado</strong><br>'+safeName).openPopup();
+     }
+     closeResults();
+     setStatus('Mapa centralizado em: '+(place.display_name||'local selecionado'));
+   }else setStatus('O mapa ainda está carregando. Tente novamente em alguns segundos.');
+ }
+ function render(items){
+   results.innerHTML='';
+   if(!items.length){
+     const empty=document.createElement('div');empty.className='cg-place-result';
+     empty.textContent='Nenhum local encontrado. Tente informar também a cidade ou o estado.';
+     results.appendChild(empty);results.hidden=false;return;
+   }
+   items.forEach(place=>{
+     const b=document.createElement('button');b.type='button';b.className='cg-place-result';b.setAttribute('role','option');
+     const full=place.display_name||'Local sem nome';
+     const title=full.split(',').slice(0,3).join(',');
+     const detail=full.split(',').slice(3).join(',').trim();
+     const strong=document.createElement('strong');strong.textContent=title;b.appendChild(strong);
+     if(detail){const small=document.createElement('small');small.textContent=detail;b.appendChild(small);}
+     b.addEventListener('click',()=>choosePlace(place));results.appendChild(b);
+   });
+   results.hidden=false;
+ }
+ async function search(){
+   const q=input.value.trim();
+   if(q.length<2){closeResults();setStatus('Digite pelo menos 2 caracteres.');return;}
+   if(q===lastQuery && !results.hidden)return;
+   lastQuery=q;if(controller)controller.abort();controller=new AbortController();
+   setStatus('Procurando bairros, ruas, cidades e estados…');button.disabled=true;
+   try{
+     const url='https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=7&countrycodes=br&q='+encodeURIComponent(q);
+     const response=await fetch(url,{signal:controller.signal,headers:{'Accept':'application/json'}});
+     if(!response.ok)throw new Error('HTTP '+response.status);
+     const data=await response.json();render(data);
+     setStatus(data.length?data.length+' resultado(s) encontrado(s). Toque em um para mover o mapa.':'');
+   }catch(error){
+     if(error.name!=='AbortError'){closeResults();setStatus('Não foi possível pesquisar agora. Verifique sua conexão e tente novamente.');}
+   }finally{button.disabled=false;}
+ }
+ input.addEventListener('input',()=>{clearTimeout(timer);lastQuery='';timer=setTimeout(search,650);});
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();clearTimeout(timer);search();}if(e.key==='Escape')closeResults();});
+ button.addEventListener('click',()=>{clearTimeout(timer);search();});
+ document.addEventListener('click',e=>{if(!e.target.closest('#cgPlaceSearch'))closeResults();});
+})();
+</script>
+
 </body>
 </html>
