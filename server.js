@@ -252,22 +252,25 @@ async function fetchEcmwfTemperatureGrib() {
       // Índices ECMWF podem variar a representação de step/levtype entre ciclos.
       // Identifica 2t por param/paramId/shortName e valida os intervalos de bytes.
       const indexRecords = indexText.split(/\r?\n/).map(line=>{try{return JSON.parse(line);}catch(_){return null;}}).filter(Boolean);
+      // O arquivo solicitado na URL já é específico do step (0h ou 6h).
+      // Não filtre o índice por r.step: alguns índices não incluem esse campo,
+      // ou o representam de formas diferentes entre versões.
       const is2mTemperatureRecord = (r) => {
         const param = String(r.param ?? r.shortName ?? r.parameter ?? '').trim().toLowerCase();
         const paramId = Number(r.paramId ?? r.param_id);
         const levtype = String(r.levtype ?? r.levelType ?? '').trim().toLowerCase();
-        const stepValue = String(r.step ?? r.forecastStep ?? '').trim().toLowerCase();
-        const stepMatch = stepValue.match(/^(-?\d+(?:\.\d+)?)(?:h)?$/);
-        const recordStep = stepMatch ? Number(stepMatch[1]) : NaN;
-        return (param === '2t' || paramId === 167) &&
+        const offset = Number(r._offset ?? r.offset);
+        const length = Number(r._length ?? r.length);
+        return (param === '2t' || param === 't2m' || paramId === 167) &&
           (!levtype || levtype === 'sfc' || levtype === 'surface') &&
-          recordStep === step &&
-          Number.isFinite(r._offset) && Number.isFinite(r._length) &&
-          r._offset >= 0 && r._length > 0;
+          Number.isFinite(offset) && Number.isFinite(length) &&
+          offset >= 0 && length > 0;
       };
       const record = indexRecords.find(is2mTemperatureRecord);
       if(!record)continue;
-      const start=record._offset,end=start+record._length-1;
+      const start=Number(record._offset ?? record.offset),
+            recordLength=Number(record._length ?? record.length),
+            end=start+recordLength-1;
       let gribRes;
       try{gribRes=await fetchWithTimeout(base+'.grib2',{headers:{'User-Agent':'CLOUDGOD ECMWF OpenData temperature proxy/1.0','Range':`bytes=${start}-${end}`,'Accept':'application/octet-stream'},cache:'no-store'},ECMWF_TEMP_TIMEOUT_MS);}
       catch(_){continue;}
