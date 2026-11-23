@@ -1914,7 +1914,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
  <div class="cg-nowcasting-card cg-cptec-nowcast-card">
   <div class="cg-chuvas-hero">
    <div class="cg-chuvas-kicker"><span class="cg-live-dot"></span> RADAR METEOROLÓGICO · CPTEC/INPE</div>
-   <div class="cg-chuvas-title-row"><div><h2>CLOUDGOD <em>CHUVAS</em></h2><p>Nowcasting local com refletividade CAPPI 3 km</p></div><div class="cg-chuvas-cloudmark">🌧️</div></div>
+   <div class="cg-chuvas-title-row"><div><h2>CLOUDGOD <em>CHUVAS</em></h2><p>Nowcasting local com refletividade CAPPI 3 km</p></div><div class="cg-chuvas-cloudmark" id="cgCptecHeroIcon" aria-label="Aguardando leitura meteorológica">📡</div></div>
    <div class="cg-chuvas-actions"><button class="primary" id="cgCptecLocateBtn" type="button" onclick="cgCptecRequestLocation()">⌖ PERMITIR LOCALIZAÇÃO</button><button class="secondary" type="button" onclick="cgCptecOpenOfficial()">ABRIR CPTEC ↗</button></div>
   </div>
   <div class="cg-chuvas-main-grid">
@@ -1939,10 +1939,35 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
   </div>
   <div class="cg-cptec-product-info"><b>PRODUTO UTILIZADO · RADAR CAPPI 3 KM</b><span>Fontes oficiais: Araranguá (SDCSC), Gama (DECEA), Morro da Igreja (DECEA) e Pico do Couto (DECEA). A estação mais próxima dentro do alcance configurado será selecionada pela localização. Este módulo é independente do cálculo interno de CAPE/CIN do CLOUDGOD.</span></div>
   <div class="cg-cptec-local-box" id="cgCptecRadarResult" aria-live="polite"><strong>AGUARDANDO LOCALIZAÇÃO</strong><p>Autorize a localização para selecionar o radar e carregar os horários e quadros CAPPI 3 km.</p><small>Refletividade em dBZ · altitude CAPPI: 3 km</small></div>
+  <div class="cg-chuvas-readings" aria-live="polite">
+   <div class="cg-chuvas-readings-head"><div><b>QUADRO DE LEITURAS</b><small>Dados do radar selecionado · atualização com cada quadro</small></div><span class="cg-readings-live">RADAR</span></div>
+   <div class="cg-chuvas-readings-grid">
+    <div class="cg-reading-cell"><small>ESTAÇÃO</small><strong id="cgReadingStation">Aguardando radar</strong></div>
+    <div class="cg-reading-cell"><small>HORÁRIO DO QUADRO</small><strong id="cgReadingTime">—</strong></div>
+    <div class="cg-reading-cell"><small>PRODUTO</small><strong>CAPPI 3 km</strong></div>
+    <div class="cg-reading-cell"><small>QUADROS DISPONÍVEIS</small><strong id="cgReadingFrames">—</strong></div>
+    <div class="cg-reading-cell"><small>REFLETIVIDADE</small><strong>dBZ · escala na legenda</strong></div>
+    <div class="cg-reading-cell"><small>ESTADO DA CONSULTA</small><strong id="cgReadingStatus">Aguardando dados</strong></div>
+   </div>
+   <p class="cg-readings-note">O radar mostra ecos de precipitação. O valor dBZ de um ponto específico não é calculado automaticamente neste quadro; consulte a legenda e a imagem de refletividade. Sem dados disponíveis, a condição fica indeterminada.</p>
+  </div>
   <div class="cg-cptec-radar-links"><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/sdcsc~ararangua~cappi~cappi3km/times" target="_blank" rel="noopener">Araranguá · horários ↗</a><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/decea~gama~cappi~cappi3km/times" target="_blank" rel="noopener">Gama · horários ↗</a><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/decea~morroigreja~cappi~cappi3km/times" target="_blank" rel="noopener">Morro da Igreja · horários ↗</a><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/decea~picocouto~cappi~cappi3km/times" target="_blank" rel="noopener">Pico do Couto · horários ↗</a></div>
   <div class="cg-nowcasting-foot"><span>Fonte: Nowcasting CPTEC/INPE · CAPPI 3 km</span><span>Não há garantia de 98,9%: essa taxa só pode ser afirmada após validação estatística com muitos casos observados. Ausência de eco não garante ausência futura de chuva.</span></div>
  </div>
 </section>
+<style>
+#cgCptecNowcastModule .cg-chuvas-readings{margin:14px 0;padding:14px;border:1px solid #294b63;border-radius:14px;background:linear-gradient(145deg,#081a29,#102b40);color:#eaf5ff}
+#cgCptecNowcastModule .cg-chuvas-readings-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+#cgCptecNowcastModule .cg-chuvas-readings-head b{display:block;font-size:13px;letter-spacing:.8px}
+#cgCptecNowcastModule .cg-chuvas-readings-head small{display:block;color:#9bb8ca;font-size:10px;margin-top:4px}
+#cgCptecNowcastModule .cg-readings-live{padding:4px 8px;border:1px solid #287d73;border-radius:20px;color:#7ce3c2;font-size:9px;font-weight:800;letter-spacing:.8px}
+#cgCptecNowcastModule .cg-chuvas-readings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#cgCptecNowcastModule .cg-reading-cell{min-width:0;padding:10px;border:1px solid #25465d;border-radius:9px;background:#0b2030}
+#cgCptecNowcastModule .cg-reading-cell small{display:block;color:#85a9bf;font-size:9px;letter-spacing:.6px;margin-bottom:5px}
+#cgCptecNowcastModule .cg-reading-cell strong{display:block;color:#f2f8ff;font-size:12px;line-height:1.35;overflow-wrap:anywhere}
+#cgCptecNowcastModule .cg-readings-note{margin:11px 0 0;color:#9ab2c3;font-size:10px;line-height:1.5}
+@media(max-width:420px){#cgCptecNowcastModule .cg-chuvas-readings-grid{grid-template-columns:1fr 1fr}}
+</style>
 <style>
 #cgCptecNowcastModule .cg-chuvas-hero{padding:20px;background:radial-gradient(circle at 90% 5%,#164c71 0,transparent 35%),linear-gradient(130deg,#071827,#102c45 65%,#10243a);color:#f3f8ff}
 #cgCptecNowcastModule .cg-chuvas-kicker{display:flex;align-items:center;gap:8px;color:#91c9ed;font-size:9px;font-weight:800;letter-spacing:1.2px}
@@ -3277,7 +3302,18 @@ function cptecExtractTimes(payload){
 function cptecSetStatus(message){
  const el=document.getElementById("cptecRadarStatus");
  if(el)el.textContent=message;
+ const statusBox=document.getElementById("cgReadingStatus");
+ if(statusBox)statusBox.textContent=message;
+ const station=cptecRadarActiveKey&&CPTEC_RADAR_CONFIG[cptecRadarActiveKey];
+ const stationBox=document.getElementById("cgReadingStation");
+ if(stationBox)stationBox.textContent=station?station.label:"Aguardando radar";
+ const framesBox=document.getElementById("cgReadingFrames");
+ if(framesBox)framesBox.textContent=cptecRadarFrames.length?String(cptecRadarFrames.length):"—";
+ const timeBox=document.getElementById("cgReadingTime");
+ const time=cptecRadarFrames[cptecRadarIndex];
+ if(timeBox)timeBox.textContent=time?time.slice(6,8)+"/"+time.slice(4,6)+"/"+time.slice(0,4)+" · "+time.slice(8,10)+":"+time.slice(10,12)+" UTC":"—";
 }
+cptecSetStatus("Aguardando seleção e carregamento do radar.");
 function cptecRadarBounds(station){
  const lat=station.center[0], lon=station.center[1], dLat=station.rangeKm/111.32;
  const dLon=station.rangeKm/(111.32*Math.cos(lat*Math.PI/180));
@@ -3418,6 +3454,9 @@ async function cptecLoadLegend(key,request){
  }
 }
 
+
+// Leituras do quadro CAPPI 3 km — sem estimativa de horário de chuva.
+
 function cptecStopLivePolling(){
  if(cptecRadarLiveTimer)clearInterval(cptecRadarLiveTimer);
  cptecRadarLiveTimer=null;
@@ -3467,6 +3506,7 @@ async function cptecLoadStation(key){
  const request=++cptecRadarRequest;
  cptecStopLoop();
  cptecRadarActiveKey=key;
+ cptecClearStormRoute();
  const station=CPTEC_RADAR_CONFIG[key];
  const label=document.getElementById("cptecRadarFrameLabel");
  const slider=document.getElementById("cptecRadarTimeline");
@@ -3533,6 +3573,7 @@ function cptecSelectProduct(product){
  cptecLoadStation(key);
 }
 function cptecDeactivate(){
+ cptecClearStormRoute();
  cptecStopLivePolling();
  cptecStopLoop();
  cptecRemoveOverlay();
@@ -7106,6 +7147,7 @@ function cgCptecRequestLocation(){
   title.textContent='LOCALIZAÇÃO AUTORIZADA';
   const dataState=document.getElementById('cgCptecDataState');if(dataState)dataState.textContent='LOCALIZAÇÃO OK';
   const weatherIcon=document.getElementById('cgCptecWeatherIcon');if(weatherIcon)weatherIcon.textContent='📡';
+  const heroIcon=document.getElementById('cgCptecHeroIcon');if(heroIcon){heroIcon.textContent='📡';heroIcon.setAttribute('aria-label','Dados de radar sendo consultados');}
   coords.textContent=`Coordenadas locais: ${lat.toFixed(4)}, ${lon.toFixed(4)} · precisão aproximada ${Math.round(pos.coords.accuracy)} m`;
   try{if(window.map&&typeof window.map.setView==='function')window.map.setView(here,8,{animate:true});
    if(window.L&&window.map){if(cgCptecUserMarker&&map.hasLayer(cgCptecUserMarker))map.removeLayer(cgCptecUserMarker);cgCptecUserMarker=L.circleMarker(here,{radius:7,color:'#fff',weight:2,fillColor:'#16a6ff',fillOpacity:1}).addTo(map).bindPopup('Sua localização · análise CAPPI 3 km');}
@@ -7128,6 +7170,7 @@ function cgCptecRequestLocation(){
   title.textContent='NÃO FOI POSSÍVEL OBTER A LOCALIZAÇÃO';
   const dataState=document.getElementById('cgCptecDataState');if(dataState)dataState.textContent='SEM LOCALIZAÇÃO';
   const weatherIcon=document.getElementById('cgCptecWeatherIcon');if(weatherIcon)weatherIcon.textContent='📍';
+  const heroIcon=document.getElementById('cgCptecHeroIcon');if(heroIcon){heroIcon.textContent='📡';heroIcon.setAttribute('aria-label','Aguardando localização');}
   const messages={1:'Permissão negada. Ative a localização para este site nas configurações do navegador e tente novamente.',2:'O aparelho não conseguiu determinar sua posição. Verifique o GPS e tente novamente.',3:'A solicitação demorou demais. Tente novamente.'};
   status.textContent=messages[err.code]||'Falha ao obter a localização. Verifique as permissões do navegador.';
   coords.textContent='Coordenadas: indisponíveis';button.disabled=false;button.textContent='TENTAR NOVAMENTE';
