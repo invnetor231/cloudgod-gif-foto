@@ -209,11 +209,12 @@ function ecmwfGridCoordinates(grid, valueCount) {
 }
 
 function isEcmwfTwoMetreTemperature(section4) {
-  // GRIB2 Section 4, PDT 4.0: octet 23 is typeOfFirstFixedSurface (103 = 2 m).
-  // The byte-array index is zero-based, so octet 23 is section4[22].
+  // GRIB2 Section 4, PDT 4.0 (zero-based byte indexes):
+  // 7-8 template, 9 category, 10 parameter number, 22 first-surface type.
+  // ECMWF 2t is parameter number 167 (not 0); fixed-surface type 103 = 2 m.
   if (!section4 || section4.length < 29 || section4[4] !== 4) return false;
   const productTemplate = (section4[7] << 8) | section4[8];
-  return productTemplate === 0 && section4[9] === 0 && section4[10] === 0 && section4[22] === 103;
+  return productTemplate === 0 && section4[9] === 0 && section4[10] === 167 && section4[22] === 103;
 }
 
 function ecmwfRunCandidates() {
