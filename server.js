@@ -209,12 +209,12 @@ function ecmwfGridCoordinates(grid, valueCount) {
 }
 
 function isEcmwfTwoMetreTemperature(section4) {
-  // GRIB2 Section 4, PDT 4.0 (zero-based byte indexes):
-  // 7-8 template, 9 category, 10 parameter number, 22 first-surface type.
-  // ECMWF 2t is parameter number 167 (not 0); fixed-surface type 103 = 2 m.
+  // GRIB2 Section 4, Product Definition Template 4.0.
+  // Fixed-surface type 1 (first surface) is byte 17; byte 22 belongs
+  // to the scaled value and is NOT the surface-type identifier.
   if (!section4 || section4.length < 29 || section4[4] !== 4) return false;
   const productTemplate = (section4[7] << 8) | section4[8];
-  return productTemplate === 0 && section4[9] === 0 && section4[10] === 167 && section4[22] === 103;
+  return productTemplate === 0 && section4[9] === 0 && section4[10] === 0 && section4[17] === 103;
 }
 
 function ecmwfRunCandidates() {
@@ -249,7 +249,23 @@ async function fetchEcmwfTemperatureGrib() {
       catch(_){continue;}
       if(!indexRes.ok)continue;
       const indexText=await indexRes.text();
-      const record=indexText.split(/\r?\n/).map(line=>{try{return JSON.parse(line);}catch(_){return null;}}).find(r=>r&&r.param==='2t'&&r.levtype==='sfc'&&Number(r.step)===step&&Number.isFinite(r._offset)&&Number.isFinite(r._length));
+      // Índices ECMWF podem variar a representação de step/levtype entre ciclos.
+      // Identifica 2t por param/paramId/shortName e valida os intervalos de bytes.
+      const indexRecords = indexText.split(/\r?\n/).map(line=>{try{return JSON.parse(line);}catch(_){return null;}}).filter(Boolean);
+      const is2mTemperatureRecord = (r) => {
+        const param = String(r.param ?? r.shortName ?? r.parameter ?? '').trim().toLowerCase();
+        const paramId = Number(r.paramId ?? r.param_id);
+        const levtype = String(r.levtype ?? r.levelType ?? '').trim().toLowerCase();
+        const stepValue = String(r.step ?? r.forecastStep ?? '').trim().toLowerCase();
+        const stepMatch = stepValue.match(/^(-?\d+(?:\.\d+)?)(?:h)?$/);
+        const recordStep = stepMatch ? Number(stepMatch[1]) : NaN;
+        return (param === '2t' || paramId === 167) &&
+          (!levtype || levtype === 'sfc' || levtype === 'surface') &&
+          recordStep === step &&
+          Number.isFinite(r._offset) && Number.isFinite(r._length) &&
+          r._offset >= 0 && r._length > 0;
+      };
+      const record = indexRecords.find(is2mTemperatureRecord);
       if(!record)continue;
       const start=record._offset,end=start+record._length-1;
       let gribRes;
