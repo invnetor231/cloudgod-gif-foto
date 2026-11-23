@@ -1186,6 +1186,26 @@ button{letter-spacing:.2px}
 .cg-central-account-actions button{padding:10px 9px;font-size:9px;letter-spacing:.5px}
 @media(max-width:620px){.cg-overview{grid-template-columns:1fr}.cg-overview-right{align-items:stretch;text-align:left;min-width:0}.cg-overview-clock{text-align:left}.cg-central-actions{width:100%}}
 </style>
+
+<style>
+.cg-raincalc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.cg-raincalc-grid label{display:flex;flex-direction:column;gap:6px;color:#9eafc2;font-size:10px;font-weight:800;letter-spacing:.06em}
+.cg-raincalc-grid input{box-sizing:border-box;width:100%;min-width:0;padding:12px;border:1px solid #34475c;border-radius:9px;background:#0b1420;color:#f3f7fb;font-size:16px;outline:none}
+.cg-raincalc-grid input:focus{border-color:#e04a4a;box-shadow:0 0 0 2px #e04a4a22}
+.cg-raincalc-wide{grid-column:1/-1}
+#cgRainCalcButton{width:100%;margin:4px 0 14px}
+.cg-raincalc-result{padding:14px;border:1px solid #34475c;border-radius:12px;background:linear-gradient(135deg,#101d2c,#111723)}
+.cg-raincalc-result>div:first-child{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cg-raincalc-result small{color:#9eafc2;font-size:10px;font-weight:800}
+.cg-raincalc-result strong{font-size:32px;color:#fff}
+.cg-raincalc-result strong em{font-size:13px;font-style:normal;color:#9eafc2;margin-left:4px}
+.cg-raincalc-meter{height:9px;margin:12px 0;background:#263548;border-radius:99px;overflow:hidden}
+.cg-raincalc-meter span{display:block;width:0;height:100%;background:linear-gradient(90deg,#3d9e83,#e4c64b,#e05252);border-radius:99px;transition:width .35s ease}
+#cgRainCalcLevel{display:block;color:#f1f5f9;font-size:13px;margin:7px 0}
+#cgNowcastStatus{display:block;color:#9eafc2;font-size:11px;line-height:1.5}
+@media(max-width:520px){.cg-raincalc-grid{grid-template-columns:1fr}.cg-raincalc-wide{grid-column:auto}}
+</style>
+
 </head>
 <body>
 <div class="startup-screen" id="startupScreen">
@@ -1851,27 +1871,76 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 </div>
 </main>
 
-<section class="cg-nowcasting cg-search-item" data-search-item="1" id="cgNowcastingModule" aria-label="Indicadores meteorológicos de curtíssimo prazo">
+<section class="cg-nowcasting cg-search-item" data-search-item="1" id="cgNowcastingModule" aria-label="Cálculo interno experimental de potencial de chuva">
  <div class="cg-nowcasting-card">
   <div class="cg-nowcasting-head">
    <div>
-    <h2>NOWCASTING · CONDIÇÕES METEOROLÓGICAS</h2>
-    <p>Temperatura atual e probabilidade de chuva estimada para o centro do mapa.</p>
-   </div>
-   <div class="cg-nowcasting-actions">
-    <button class="secondary" type="button" onclick="refreshCGNowcasting()">ATUALIZAR</button>
+    <h2>CÁLCULO INTERNO · POTENCIAL DE CHUVA</h2>
+    <p>O CLOUDGOD calcula o índice matematicamente no próprio HTML/JavaScript. Os parâmetros são preenchidos pelo painel Atmosfera já existente; o cálculo percentual não faz uma consulta meteorológica própria.</p>
    </div>
   </div>
-  <div class="cg-nowcasting-values">
-   <div class="cg-nowcast-value"><small>TEMPERATURA</small><div class="cg-nowcast-number" id="cgNowcastTemp">??<em>Graus</em></div></div>
-   <div class="cg-nowcast-value"><small>CHANCE DE CHUVA</small><div class="cg-nowcast-number" id="cgNowcastRain">??<em>% chuva</em></div></div>
+  <div class="cg-raincalc-grid">
+   <label>PRESSÃO ATMOSFÉRICA (hPa)
+    <input id="cgRainPressure" type="number" inputmode="decimal" min="850" max="1100" step="0.1" placeholder="Aguardando Atmosfera" readonly>
+   </label>
+   <label>VARIAÇÃO DA PRESSÃO EM 3H (hPa)
+    <input id="cgRainPressureTrend" type="number" inputmode="decimal" min="-15" max="15" step="0.1" placeholder="Aguardando Atmosfera" readonly>
+   </label>
+   <label>CAPE (J/kg)
+    <input id="cgRainCape" type="number" inputmode="decimal" min="0" max="10000" step="1" placeholder="Aguardando Atmosfera" readonly>
+   </label>
+   <label>CIN (J/kg)
+    <input id="cgRainCin" type="number" inputmode="decimal" min="-1000" max="0" step="1" placeholder="Aguardando Atmosfera" readonly>
+   </label>
+   <label class="cg-raincalc-wide">WIND SHEAR 0–6 km (m/s)
+    <input id="cgRainShear" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="Aguardando Atmosfera" readonly>
+   </label>
+  </div>
+  <button class="primary" id="cgRainCalcButton" type="button" onclick="calculateCGRainPotential()">CALCULAR POTENCIAL DE CHUVA</button>
+  <div class="cg-raincalc-result" aria-live="polite">
+   <div><small>ÍNDICE INTERNO DE POTENCIAL</small><strong id="cgNowcastRain">—<em>%</em></strong></div>
+   <div class="cg-raincalc-meter"><span id="cgRainCalcMeter"></span></div>
+   <b id="cgRainCalcLevel">Aguardando parâmetros</b>
+   <p id="cgNowcastStatus" role="status">Aguardando os parâmetros automáticos do painel Atmosfera.</p>
   </div>
   <div class="cg-nowcasting-foot">
-   <span id="cgNowcastStatus" role="status">Aguardando consulta meteorológica…</span>
-   <span>Estimativa de modelo meteorológico · independente dos radares Macaé e Araranguá.</span>
+   <span>Fórmula executada localmente no HTML · sem API exclusiva para calcular a porcentagem.</span>
+   <span>Índice experimental, não é probabilidade observacional nem previsão calibrada.</span>
   </div>
  </div>
 </section>
+
+<section id="cgCptecNowcastModule" class="cg-nowcasting cg-search-item" data-search-item="1" aria-label="Nowcasting oficial CPTEC INPE">
+ <div class="cg-nowcasting-card cg-cptec-nowcast-card">
+  <div class="cg-nowcasting-head">
+   <div><h2>NOWCASTING CPTEC/INPE · CHUVA NO SEU LOCAL</h2>
+    <p>Consulta baseada no produto oficial de previsão imediata do CPTEC/INPE. A localização serve para identificar e centralizar sua região; não usa o cálculo interno de CAPE/CIN do CLOUDGOD.</p></div>
+   <div class="cg-nowcasting-actions"><button class="primary" id="cgCptecLocateBtn" type="button" onclick="cgCptecRequestLocation()">PERMITIR LOCALIZAÇÃO</button><button class="secondary" type="button" onclick="cgCptecOpenOfficial()">ABRIR CPTEC</button></div>
+  </div>
+  <div class="cg-cptec-local-box" aria-live="polite">
+   <strong id="cgCptecLocalTitle">LOCALIZAÇÃO NECESSÁRIA</strong>
+   <p id="cgCptecLocalStatus">Permita o acesso à localização para identificar sua posição e centralizar o mapa do CLOUDGOD na sua região. A posição não será publicada nem compartilhada.</p>
+   <small id="cgCptecCoordinates">Coordenadas: aguardando autorização do aparelho</small>
+  </div>
+  <div class="cg-cptec-product-info"><b>PRODUTO UTILIZADO · RADAR CAPPI 3 KM</b><span>Este módulo consulta os horários e quadros de refletividade CAPPI 3 km dos quatro radares Nowcasting/CPTEC informados: Araranguá, Gama, Morro da Igreja e Pico do Couto. A estação mais próxima dentro do alcance configurado será selecionada após autorizar a localização. Não utiliza SOS Chuva nem o cálculo convectivo do CLOUDGOD.</span></div>
+  <div class="cg-cptec-local-box" id="cgCptecRadarResult" aria-live="polite"><strong>AGUARDANDO LOCALIZAÇÃO</strong><p>Autorize a localização para selecionar o radar CPTEC mais próximo e carregar os quadros CAPPI 3 km no mapa do CLOUDGOD.</p><small>Produto: refletividade em dBZ · altitude CAPPI: 3 km</small></div>
+  <div class="cg-cptec-radar-links"><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/sdcsc~ararangua~cappi~cappi3km/times" target="_blank" rel="noopener">Araranguá · horários</a><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/decea~gama~cappi~cappi3km/times" target="_blank" rel="noopener">Gama · horários</a><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/decea~morroigreja~cappi~cappi3km/times" target="_blank" rel="noopener">Morro da Igreja · horários</a><a href="https://nowcasting.cptec.inpe.br/paths/radar/layers/decea~picocouto~cappi~cappi3km/times" target="_blank" rel="noopener">Pico do Couto · horários</a></div>
+  <div class="cg-nowcasting-foot"><span>Fonte: Nowcasting CPTEC/INPE · CAPPI 3 km</span><span>O radar mostra ecos de precipitação no instante observado. A ausência de eco não garante que não choverá depois; alcance, relevo e atualização afetam a análise.</span></div>
+ </div>
+</section>
+<style>
+#cgCptecNowcastModule .cg-cptec-local-box{margin:14px 16px;padding:14px;border:1px solid #2d5c80;border-radius:12px;background:linear-gradient(135deg,#102b43,#152238);color:#eaf5ff}
+#cgCptecNowcastModule .cg-cptec-local-box strong{font-size:12px;letter-spacing:.7px}
+#cgCptecNowcastModule .cg-cptec-local-box p{font-size:11px;line-height:1.55;margin:7px 0;color:#c5d8e9}
+#cgCptecNowcastModule .cg-cptec-local-box small{font-size:10px;color:#8fc9f4;overflow-wrap:anywhere}
+#cgCptecNowcastModule .cg-cptec-product-info{display:flex;flex-direction:column;gap:5px;margin:0 16px 12px;padding:12px;border-left:3px solid #24a3ff;background:#10243a;color:#dcecff}
+#cgCptecNowcastModule .cg-cptec-product-info b{font-size:10px;letter-spacing:.6px}
+#cgCptecNowcastModule .cg-cptec-product-info span{font-size:10px;line-height:1.5;color:#b9cde0}
+#cgCptecNowcastModule .cg-cptec-radar-links{display:flex;flex-wrap:wrap;gap:8px;margin:0 16px 14px}
+#cgCptecNowcastModule .cg-cptec-radar-links a{color:#9bd5ff;border:1px solid #315777;border-radius:8px;padding:8px 10px;font-size:10px;text-decoration:none;background:#10243a}
+#cgCptecNowcastModule .cg-cptec-radar-links a:active{background:#1a3b5a}
+@media(max-width:600px){#cgCptecNowcastModule .cg-nowcasting-head{align-items:stretch}#cgCptecNowcastModule .cg-nowcasting-actions{width:100%}#cgCptecNowcastModule .cg-nowcasting-actions button{flex:1}#cgCptecNowcastModule .cg-cptec-frame-wrap{margin:0 10px 12px;min-height:440px;height:68vh}}
+</style>
 
 <!-- CARTÃO TRANSPARENTE -->
 <div class="distance-card" id="distanceCard" onclick="expandDistanceCard()">
@@ -3097,22 +3166,22 @@ const CPTEC_RADAR_CONFIG = {
  gama: {
   label:"DECEA · Gama (DF)",
   path:"decea~gama~cappi~cappi3km",
-  center:[-16.02,-48.06],
-  rangeKm:150,
+  center:[-15.97643,-48.016142],
+  rangeKm:250,
   times:[]
  },
  morroigreja: {
   label:"DECEA · Morro da Igreja (SC)",
   path:"decea~morroigreja~cappi~cappi3km",
   center:[-28.12,-49.48],
-  rangeKm:150,
+  rangeKm:250,
   times:[]
  },
  picocouto: {
   label:"DECEA · Pico do Couto (RJ)",
   path:"decea~picocouto~cappi~cappi3km",
   center:[-22.46,-43.29],
-  rangeKm:150,
+  rangeKm:250,
   times:[]
  }
 };
@@ -6220,7 +6289,7 @@ clearRadiosonde=function(){
   Object.values(fields).forEach(id=>document.getElementById(id).textContent="…");
   document.getElementById("instShear").textContent="…";
   try{
-   const hourly=["cape","convective_inhibition","lifted_index","wind_speed_10m","wind_direction_10m","wind_speed_500hPa","wind_direction_500hPa","geopotential_height_500hPa","relative_humidity_2m","relative_humidity_850hPa","relative_humidity_700hPa","relative_humidity_500hPa","cloud_cover","cloud_cover_low","cloud_cover_mid","cloud_cover_high","precipitation","precipitation_probability","showers","temperature_2m","dew_point_2m"].join(",");
+   const hourly=["pressure_msl","cape","convective_inhibition","lifted_index","wind_speed_10m","wind_direction_10m","wind_speed_500hPa","wind_direction_500hPa","geopotential_height_500hPa","relative_humidity_2m","relative_humidity_850hPa","relative_humidity_700hPa","relative_humidity_500hPa","cloud_cover","cloud_cover_low","cloud_cover_mid","cloud_cover_high","precipitation","precipitation_probability","showers","temperature_2m","dew_point_2m"].join(",");
    const url=`https://api.open-meteo.com/v1/gfs?latitude=${lat}&longitude=${lon}&hourly=${hourly}&forecast_days=7&timezone=auto&wind_speed_unit=kmh`;
    const data=await requestGFS(url,controller.signal),h=data.hourly||{},times=h.time||[];
    if(!times.length)throw new Error("O modelo não retornou horários.");
@@ -6230,6 +6299,25 @@ clearRadiosonde=function(){
    document.getElementById("instShear").textContent=shear===null?"N/D":fmt(shear,1)+" km/h";
    const height=Number(h.geopotential_height_500hPa?.[index]);
    document.getElementById("instShearDetail").textContent=`Diferença vetorial 10 m–500 hPa · nível superior ${Number.isFinite(height)?fmt(height,0)+" m":"aprox. 5,6 km"} · valor aproximado`;
+   // Alimenta o índice local com os mesmos campos já recebidos pelo painel Atmosfera.
+   const pressureNow=Number(h.pressure_msl?.[index]);
+   const pressurePast=Number(h.pressure_msl?.[Math.max(0,index-3)]);
+   const capeNow=Number(h.cape?.[index]);
+   const cinNow=Number(h.convective_inhibition?.[index]);
+   const pressureTrend=Number.isFinite(pressureNow)&&Number.isFinite(pressurePast)?pressureNow-pressurePast:NaN;
+   const shearMs=Number.isFinite(shear)?shear/3.6:NaN; // painel apresenta km/h; fórmula usa m/s
+   const autoValues={cgRainPressure:pressureNow,cgRainPressureTrend:pressureTrend,cgRainCape:capeNow,cgRainCin:cinNow,cgRainShear:shearMs};
+   let autoComplete=true;
+   for(const [id,value] of Object.entries(autoValues)){
+    const field=document.getElementById(id);
+    if(field)field.value=Number.isFinite(value)?(id==="cgRainCape"||id==="cgRainCin"?String(Math.round(value)):value.toFixed(1)):"";
+    if(!Number.isFinite(value))autoComplete=false;
+   }
+   if(autoComplete)calculateCGRainPotential();
+   else{
+    const out=document.getElementById("cgNowcastStatus");
+    if(out)out.textContent="Atmosfera atualizada, mas faltam um ou mais campos para calcular o índice.";
+   }
    document.getElementById("instSRH").textContent="N/D";
    status.textContent=`Parâmetros carregados · ${new Date(times[index]).toLocaleString("pt-BR")} · centro ${lat}°, ${lon}° · NOAA GFS via Open-Meteo.`;
    const bulletinLocation={lat:Number(center.lat),lon:Number(center.lng),time:times[index],shear};
@@ -6605,45 +6693,62 @@ if(cgSupabase){cgSupabase.auth.getSession().then(async({data})=>{cgCurrentUser=d
  }
 })();
 </script><script>
-async function refreshCGNowcasting(){
- const tempEl=document.getElementById("cgNowcastTemp");
- const rainEl=document.getElementById("cgNowcastRain");
- const statusEl=document.getElementById("cgNowcastStatus");
- if(!tempEl||!rainEl||!statusEl)return;
- tempEl.innerHTML='??<em>Graus</em>';
- rainEl.innerHTML='??<em>% chuva</em>';
- statusEl.textContent='Consultando previsão para o centro do mapa…';
- try{
-  const center=(typeof map!=='undefined'&&map&&map.getCenter)?map.getCenter():{lat:-14.235,lng:-51.9253};
-  const params=new URLSearchParams({latitude:center.lat.toFixed(4),longitude:center.lng.toFixed(4),current:'temperature_2m',hourly:'precipitation_probability',forecast_days:'1',timezone:'auto'});
-  const response=await fetch('https://api.open-meteo.com/v1/forecast?'+params.toString(),{cache:'no-store'});
-  if(!response.ok)throw new Error('HTTP '+response.status);
-  const data=await response.json();
-  const temperature=data.current?.temperature_2m;
-  const times=data.hourly?.time||[];
-  const probabilities=data.hourly?.precipitation_probability||[];
-  if(typeof temperature!=='number')throw new Error('Temperatura indisponível');
-  const now=Date.now();
-  let idx=times.findIndex(t=>new Date(t).getTime()>=now);
-  if(idx<0)idx=times.length-1;
-  const probability=probabilities[idx];
-  tempEl.innerHTML=String(Math.round(temperature))+'<em>Graus</em>';
-  rainEl.innerHTML=(typeof probability==='number'?Math.round(probability):'??')+'<em>% chuva</em>';
-  const updated=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-  statusEl.textContent='Centro do mapa · atualizado às '+updated+' · fonte: Open-Meteo';
- }catch(error){
-  statusEl.textContent='Não foi possível obter os dados agora. Tente atualizar novamente.';
+/* CLOUDGOD — cálculo local experimental de potencial de chuva.
+   A função matemática abaixo não consulta APIs. Ela recebe os valores já carregados pelo painel Atmosfera. */
+function calculateCGRainPotential(){
+ const read=id=>{
+  const el=document.getElementById(id);
+  if(!el||el.value.trim()==="")return null;
+  const n=Number(el.value);
+  return Number.isFinite(n)?n:null;
+ };
+ const pressure=read("cgRainPressure");
+ const pressureTrend=read("cgRainPressureTrend");
+ const cape=read("cgRainCape");
+ const cin=read("cgRainCin");
+ const shear=read("cgRainShear");
+ const status=document.getElementById("cgNowcastStatus");
+ const output=document.getElementById("cgNowcastRain");
+ const level=document.getElementById("cgRainCalcLevel");
+ const meter=document.getElementById("cgRainCalcMeter");
+ const vals=[pressure,pressureTrend,cape,cin,shear];
+ if(vals.some(v=>v===null)){
+  status.textContent="Aguardando dados completos do painel Atmosfera. Atualize os parâmetros atmosféricos e tente novamente.";
+  output.innerHTML='—<em>%</em>';level.textContent="Dados incompletos";meter.style.width="0%";return;
  }
-}
-window.addEventListener('load',()=>{
- refreshCGNowcasting();
- if(typeof map!=='undefined'&&map&&map.on){
-  let refreshTimer;
-  map.on('moveend',()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(refreshCGNowcasting,700);});
+ if(pressure<850||pressure>1100||pressureTrend< -15||pressureTrend>15||cape<0||cape>10000||cin< -1000||cin>0||shear<0||shear>100){
+  status.textContent="Há valores fora dos limites aceitos. Confira as unidades e os números informados.";
+  output.innerHTML='—<em>%</em>';level.textContent="Verifique os parâmetros";meter.style.width="0%";return;
  }
-});
-</script>
 
+ // Componentes normalizados (0–100), com pesos explícitos.
+ // Queda de pressão em 3h favorece levantamento; CIN forte reduz a chance
+ // de a convecção iniciar; CAPE mede energia disponível; shear tem peso
+ // menor porque organiza tempestades, mas não cria chuva por si só.
+ const pressureScore=Math.max(0,Math.min(100,((Math.max(0,-pressureTrend))/5)*100));
+ const capeScore=Math.max(0,Math.min(100,(cape/2000)*100));
+ const cinScore=Math.max(0,Math.min(100,((cin+250)/250)*100));
+ const shearScore=Math.max(0,Math.min(100,(shear/30)*100));
+ let index=(pressureScore*0.25)+(capeScore*0.35)+(cinScore*0.25)+(shearScore*0.15);
+
+ // Penaliza cenários com energia muito baixa ou inibição muito forte.
+ if(cape<100)index*=0.45;
+ else if(cape<250)index*=0.70;
+ if(cin<=-250)index*=0.35;
+ else if(cin<=-150)index*=0.65;
+
+ const percent=Math.round(Math.max(0,Math.min(100,index)));
+ let label="Potencial muito baixo";
+ if(percent>=20)label="Potencial baixo";
+ if(percent>=40)label="Potencial moderado";
+ if(percent>=60)label="Potencial elevado";
+ if(percent>=80)label="Potencial muito elevado";
+ output.innerHTML=percent+'<em>%</em>';
+ level.textContent=label;
+ meter.style.width=percent+"%";
+ status.textContent=`Cálculo matemático local concluído · pressão ${pressure.toFixed(1)} hPa · tendência ${pressureTrend>0?"+":""}${pressureTrend.toFixed(1)} hPa/3h · CAPE ${Math.round(cape)} J/kg · CIN ${Math.round(cin)} J/kg · shear ${shear.toFixed(1)} m/s.`;
+}
+</script>
 <button id="cgPublicChatLauncher" class="cg-public-chat-launcher" type="button" onclick="cgOpenPublicChat()">CHAT PÚBLICO <span>●</span></button>
 <div id="cgPrivateChat" class="cg-chat-modal" aria-hidden="true">
  <section class="cg-chat-window" role="dialog" aria-modal="true" aria-labelledby="cgChatTitle">
@@ -6926,6 +7031,57 @@ function makePdfFromCanvas(sourceCanvas){
  button.addEventListener('click',()=>{clearTimeout(timer);search();});
  document.addEventListener('click',e=>{if(!e.target.closest('#cgPlaceSearch'))closeResults();});
 })();
+</script>
+
+<script>
+/* CLOUDGOD — localização privada + seleção do radar CAPPI 3 km do Nowcasting/CPTEC */
+let cgCptecUserMarker=null;
+function cgCptecOpenOfficial(){
+ const key=cptecRadarActiveKey;
+ const station=key&&CPTEC_RADAR_CONFIG&&CPTEC_RADAR_CONFIG[key];
+ const url=station?'https://nowcasting.cptec.inpe.br/paths/radar/layers/'+station.path+'/times':'https://nowcasting.cptec.inpe.br/';
+ window.open(url,'_blank','noopener,noreferrer');
+}
+function cgCptecDistanceKm(a,b){
+ const rad=x=>x*Math.PI/180, dLat=rad(b[0]-a[0]),dLon=rad(b[1]-a[1]);
+ const h=Math.sin(dLat/2)**2+Math.cos(rad(a[0]))*Math.cos(rad(b[0]))*Math.sin(dLon/2)**2;
+ return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
+}
+function cgCptecRequestLocation(){
+ const title=document.getElementById('cgCptecLocalTitle');
+ const status=document.getElementById('cgCptecLocalStatus');
+ const coords=document.getElementById('cgCptecCoordinates');
+ const button=document.getElementById('cgCptecLocateBtn');
+ const result=document.getElementById('cgCptecRadarResult');
+ if(!navigator.geolocation){title.textContent='LOCALIZAÇÃO INDISPONÍVEL';status.textContent='Este navegador não disponibiliza geolocalização. Abra o CLOUDGOD em HTTPS e permita a localização nas configurações do aparelho.';return;}
+ title.textContent='SOLICITANDO PERMISSÃO';status.textContent='Aguardando sua autorização de localização no aparelho…';button.disabled=true;
+ navigator.geolocation.getCurrentPosition(async pos=>{
+  const lat=pos.coords.latitude,lon=pos.coords.longitude,here=[lat,lon];
+  title.textContent='LOCALIZAÇÃO AUTORIZADA';
+  coords.textContent=`Coordenadas locais: ${lat.toFixed(4)}, ${lon.toFixed(4)} · precisão aproximada ${Math.round(pos.coords.accuracy)} m`;
+  try{if(window.map&&typeof window.map.setView==='function')window.map.setView(here,8,{animate:true});
+   if(window.L&&window.map){if(cgCptecUserMarker&&map.hasLayer(cgCptecUserMarker))map.removeLayer(cgCptecUserMarker);cgCptecUserMarker=L.circleMarker(here,{radius:7,color:'#fff',weight:2,fillColor:'#16a6ff',fillOpacity:1}).addTo(map).bindPopup('Sua localização · análise CAPPI 3 km');}
+  }catch(e){}
+  const configs=CPTEC_RADAR_CONFIG||{};
+  const candidates=['ararangua','gama','morroigreja','picocouto'].map(key=>({key,station:configs[key]}).filter(x=>x.station).map(x=>({...x,distance:cgCptecDistanceKm(here,x.station.center)}))).flat().sort((a,b)=>a.distance-b.distance);
+  const nearest=candidates[0];
+  if(!nearest||nearest.distance>nearest.station.rangeKm){
+   status.textContent='Localização obtida, mas nenhum dos quatro radares selecionados está dentro do alcance configurado. Não é possível concluir se está chovendo com esses radares.';
+   if(result)result.innerHTML='<strong>FORA DA COBERTURA CONFIGURADA</strong><p>Araranguá, Gama, Morro da Igreja e Pico do Couto não oferecem cobertura próxima suficiente para esta posição.</p><small>Não interpretar ausência de cobertura como ausência de chuva.</small>';
+  }else{
+   const km=Math.round(nearest.distance);
+   status.textContent=`Radar mais próximo: ${nearest.station.label} · aproximadamente ${km} km da sua posição. Carregando os horários e o CAPPI 3 km no mapa.`;
+   if(result)result.innerHTML=`<strong>RADAR SELECIONADO · ${nearest.station.label.toUpperCase()}</strong><p>Distância aproximada: ${km} km. Consultando os quadros de refletividade CAPPI 3 km diretamente no Nowcasting/CPTEC.</p><small>Isso identifica o radar mais próximo; a conclusão chuva/não chuva exige leitura válida do eco exatamente sobre sua coordenada.</small>`;
+   try{await cptecLoadStation(nearest.key);}catch(error){if(result)result.innerHTML+='<p>Falha ao carregar os quadros: '+String(error.message||error)+'</p>';}
+  }
+  button.textContent='ATUALIZAR LOCALIZAÇÃO';button.disabled=false;
+ },err=>{
+  title.textContent='NÃO FOI POSSÍVEL OBTER A LOCALIZAÇÃO';
+  const messages={1:'Permissão negada. Ative a localização para este site nas configurações do navegador e tente novamente.',2:'O aparelho não conseguiu determinar sua posição. Verifique o GPS e tente novamente.',3:'A solicitação demorou demais. Tente novamente.'};
+  status.textContent=messages[err.code]||'Falha ao obter a localização. Verifique as permissões do navegador.';
+  coords.textContent='Coordenadas: indisponíveis';button.disabled=false;button.textContent='TENTAR NOVAMENTE';
+ },{enableHighAccuracy:true,timeout:15000,maximumAge:60000});
+}
 </script>
 
 </body>
