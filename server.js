@@ -418,12 +418,26 @@ app.options(['/api/cptec', '/api/lightning', '/api/radar-image', '/api/ecmwf-tem
 app.get('/api/cptec', async (req, res) => {
   if (!applyCors(req, res)) return res.status(403).json({ error: 'Origem não autorizada.' });
 
-  const requestedPath = typeof req.query.path === 'string' ? req.query.path : '';
-  const isJsonEndpoint = /^\/paths\/radar\/layers\/[a-z0-9~_-]+\/(times|legend)$/i.test(requestedPath);
-  const isFrameEndpoint = /^\/paths\/frames\/radar\/[a-z0-9~_-]+\/20\d{10}\/full$/i.test(requestedPath);
+  const requestedPath = typeof req.query.path === 'string'
+    ? req.query.path.trim()
+    : '';
 
-  if (!isJsonEndpoint && !isFrameEndpoint) {
-    return res.status(400).json({ error: 'Caminho CPTEC inválido ou não permitido.' });
+  // Identificadores de camada e timestamps aceitos pelo Nowcasting.
+  // O host de destino permanece fixo em CPTEC_BASE.
+  const safeLayer = '[A-Za-z0-9._~-]+';
+  const safeTimestamp = '(?:20\\d{10,14}|20\\d{2}-\\d{2}-\\d{2}[Tt]\\d{2}:?\\d{2}(?::?\\d{2})?(?:\\.\\d{1,3})?(?:Z)?)';
+  const isJsonEndpoint = new RegExp('^/paths/radar/layers/' + safeLayer + '/(times|legend)$', 'i').test(requestedPath);
+  const isFrameEndpoint = new RegExp('^/paths/frames/radar/' + safeLayer + '/' + safeTimestamp + '/full$', 'i').test(requestedPath);
+
+  if (
+    (!isJsonEndpoint && !isFrameEndpoint) ||
+    requestedPath.includes('..') ||
+    requestedPath.includes('\\\\') ||
+    requestedPath.includes('?') ||
+    requestedPath.includes('#') ||
+    requestedPath.includes('//')
+  ) {
+    return res.status(400).json({ error: 'Caminho CPTEC inválido ou não permitido.', receivedPath: requestedPath });
   }
 
   try {
@@ -442,14 +456,37 @@ app.get('/api/cptec', async (req, res) => {
     }
 
     if (isFrameEndpoint) {
-      const contentType = upstream.headers.get('content-type') || 'image/png';
+      const upstreamType = (upstream.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
       const bytes = Buffer.from(await upstream.arrayBuffer());
       if (!bytes.length) return res.status(502).type('text/plain').send('O CPTEC retornou uma imagem vazia.');
+      if (bytes.length > 15 * 1024 * 1024) {
+        return res.status(413).type('text/plain').send('Quadro do radar excede o limite de 15 MB.');
+      }
+
+      // O gateway pode entregar octet-stream/MIME genérico; identifica o raster
+      // pela assinatura binária para que o navegador consiga renderizá-lo.
+      const detectedType = detectImageType(bytes);
+      const contentType = detectedType || (
+        ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(upstreamType)
+          ? upstreamType
+          : ''
+      );
+      if (!contentType) {
+        console.error('[CLOUDGOD CPTEC] Quadro não reconhecido como imagem:', {
+          upstreamType,
+          bytes: bytes.length,
+          path: requestedPath
+        });
+        return res.status(502).type('text/plain').send('O CPTEC não retornou um quadro de radar em formato de imagem reconhecido.');
+      }
 
       res.set({
-        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        'Cache-Control': 'public, max-age=15, stale-while-revalidate=10',
         'X-Content-Type-Options': 'nosniff',
-        'Content-Type': contentType
+        'Content-Type': contentType,
+        'Content-Length': String(bytes.length),
+        'X-CPTEC-Proxy': 'Nowcasting',
+        'Access-Control-Expose-Headers': 'X-CPTEC-Proxy'
       });
       return res.status(200).send(bytes);
     }
