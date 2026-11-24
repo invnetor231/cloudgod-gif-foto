@@ -3490,13 +3490,14 @@ async function cptecPollLatestFrames(){
   const slider=document.getElementById("cptecRadarTimeline");
   if(slider){slider.max=String(Math.max(0,fresh.length-1));slider.value=String(cptecRadarIndex);}
   if(changed){
-   await cptecRenderFrame();
-   if(key===cptecRadarActiveKey)cptecSetStatus("AO VIVO · novo quadro recebido · "+fresh[fresh.length-1]+" UTC · consulta a cada 60 s.");
+   const frameOk=await cptecRenderFrame();
+   if(key===cptecRadarActiveKey&&frameOk)cptecSetStatus("AO VIVO · novo quadro recebido · "+fresh[fresh.length-1]+" UTC · consulta a cada 60 s.");
+   else if(key===cptecRadarActiveKey)cptecSetStatus("Novo horário recebido, mas a imagem do radar não carregou. A última imagem válida foi mantida.");
   }else{
-   cptecSetStatus("AO VIVO · sem novo quadro publicado · último horário "+fresh[fresh.length-1]+" UTC · próxima consulta em até 60 s.");
+   cptecSetStatus("Consulta atualizada · sem novo quadro publicado · último horário "+fresh[fresh.length-1]+" UTC · próxima consulta em até 60 s.");
   }
  }catch(error){
-  cptecSetStatus("AO VIVO · falha ao consultar quadros ("+error.message+"). Mantendo a última imagem e tentando novamente.");
+  cptecSetStatus("Falha ao consultar novos quadros ("+error.message+"). Mantendo a última imagem válida e tentando novamente.");
  }finally{
   cptecRadarLiveBusy=false;
  }
@@ -3539,7 +3540,12 @@ async function cptecLoadStation(key){
   cptecSetStatus("Nenhum quadro disponível para esta estação.");
   return;
  }
- await cptecRenderFrame();
+ const frameOk=await cptecRenderFrame();
+ if(request!==cptecRadarRequest)return;
+ if(!frameOk){
+  cptecSetStatus("Horários encontrados, mas a imagem do radar não carregou. Tente atualizar ou selecionar outro horário.");
+  return;
+ }
  cptecSetStatus("AO VIVO · "+times.length+" quadros disponíveis · CAPPI 3 km · atualização automática a cada 60 s.");
  cptecStartLivePolling();
 }
