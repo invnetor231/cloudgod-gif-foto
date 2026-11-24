@@ -6809,10 +6809,8 @@ function calculateCGRainPotential(){
   status.textContent="Aguardando dados completos do painel Atmosfera. Atualize os parâmetros atmosféricos e tente novamente.";
   output.innerHTML='—<em>%</em>';level.textContent="Dados incompletos";meter.style.width="0%";return;
  }
- if(pressure<850||pressure>1100||pressureTrend< -15||pressureTrend>15||cape<0||cape>10000||cin< -1000||cin>0||shear<0||shear>100){
-  status.textContent="Há valores fora dos limites aceitos. Confira as unidades e os números informados.";
-  output.innerHTML='—<em>%</em>';level.textContent="Verifique os parâmetros";meter.style.width="0%";return;
- }
+ // Não há limites máximos ou mínimos fixos para os parâmetros.
+ // A validação acima verifica apenas se todos os campos contêm números finitos.
 
  // Componentes normalizados (0–100), com pesos explícitos.
  // Queda de pressão em 3h favorece levantamento; CIN forte reduz a chance
