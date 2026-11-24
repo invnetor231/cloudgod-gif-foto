@@ -3278,18 +3278,28 @@ function cptecFrameUrl(station,time){
 }
 function cptecExtractTimes(payload){
  const found=new Set();
+ const toStamp=date=>{
+  if(!(date instanceof Date)||!Number.isFinite(date.getTime()))return null;
+  return date.getUTCFullYear()+
+   String(date.getUTCMonth()+1).padStart(2,"0")+
+   String(date.getUTCDate()).padStart(2,"0")+
+   String(date.getUTCHours()).padStart(2,"0")+
+   String(date.getUTCMinutes()).padStart(2,"0")+
+   String(date.getUTCSeconds()).padStart(2,"0");
+ };
  const add=value=>{
   if(typeof value==="number"&&Number.isFinite(value)){
    const ms=value>1e12?value:value>1e9?value*1000:NaN;
-   if(Number.isFinite(ms)){const d=new Date(ms);if(!isNaN(d))found.add(d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0"));}
+   if(Number.isFinite(ms)){const stamp=toStamp(new Date(ms));if(stamp)found.add(stamp);}
    return;
   }
   if(typeof value!=="string")return;
-  const compact=value.match(/20\d{10}/g)||[];
+  // Preserva todos os dígitos do timestamp compacto recebido (inclusive segundos).
+  const compact=value.match(/20\d{10,14}/g)||[];
   compact.forEach(t=>found.add(t));
-  // Também aceita datas ISO retornadas pela API (ex.: 2026-11-14T12:30:00Z).
+  // Datas ISO são normalizadas para UTC com precisão de segundos.
   const iso=value.match(/20\d{2}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/g)||[];
-  iso.forEach(t=>{const d=new Date(t);if(!isNaN(d))found.add(d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0"));});
+  iso.forEach(t=>{const stamp=toStamp(new Date(t));if(stamp)found.add(stamp);});
  };
  const visit=value=>{
   if(typeof value==="string"||typeof value==="number")add(value);
@@ -7157,7 +7167,11 @@ function cgCptecRequestLocation(){
    if(window.L&&window.map){if(cgCptecUserMarker&&map.hasLayer(cgCptecUserMarker))map.removeLayer(cgCptecUserMarker);cgCptecUserMarker=L.circleMarker(here,{radius:7,color:'#fff',weight:2,fillColor:'#16a6ff',fillOpacity:1}).addTo(map).bindPopup('Sua localização · análise CAPPI 3 km');}
   }catch(e){}
   const configs=CPTEC_RADAR_CONFIG||{};
-  const candidates=['ararangua','gama','morroigreja','picocouto'].map(key=>({key,station:configs[key]}).filter(x=>x.station).map(x=>({...x,distance:cgCptecDistanceKm(here,x.station.center)}))).flat().sort((a,b)=>a.distance-b.distance);
+  const candidates=['ararangua','gama','morroigreja','picocouto']
+   .map(key=>({key,station:configs[key]}))
+   .filter(x=>x.station)
+   .map(x=>({...x,distance:cgCptecDistanceKm(here,x.station.center)}))
+   .sort((a,b)=>a.distance-b.distance);
   const nearest=candidates[0];
   if(!nearest||nearest.distance>nearest.station.rangeKm){
    status.textContent='Localização obtida, mas nenhum dos quatro radares selecionados está dentro do alcance configurado. Não é possível concluir se está chovendo com esses radares.';

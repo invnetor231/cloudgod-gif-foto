@@ -425,7 +425,7 @@ app.get('/api/cptec', async (req, res) => {
   // Identificadores de camada e timestamps aceitos pelo Nowcasting.
   // O host de destino permanece fixo em CPTEC_BASE.
   const safeLayer = '[A-Za-z0-9._~-]+';
-  const safeTimestamp = '(?:20\\d{10,14}|20\\d{2}-\\d{2}-\\d{2}[Tt]\\d{2}:?\\d{2}(?::?\\d{2})?(?:\\.\\d{1,3})?(?:Z)?)';
+  const safeTimestamp = '(?:20\\d{10,14}|20\\d{2}-\\d{2}-\\d{2}[Tt]\\d{2}:?\\d{2}(?::?\\d{2})?(?:\\.\\d{1,3})?(?:[Zz]|[+-]\\d{2}:?\\d{2})?)';
   const isJsonEndpoint = new RegExp('^/paths/radar/layers/' + safeLayer + '/(times|legend)$', 'i').test(requestedPath);
   const isFrameEndpoint = new RegExp('^/paths/frames/radar/' + safeLayer + '/' + safeTimestamp + '/full$', 'i').test(requestedPath);
 
