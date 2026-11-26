@@ -5192,62 +5192,118 @@ function drawSkewT(rows){
  const L=85,R=35,T=35,B=65,pmin=100,pmax=1050,tmin=-90,tmax=50,skew=28;
  const x=(temp,p)=>L+((temp+skew*Math.log(1000/p)-tmin)/(tmax-tmin))*(W-L-R);
  const y=p=>T+(Math.log(pmax)-Math.log(p))/(Math.log(pmax)-Math.log(pmin))*(H-T-B);
- ctx.font="15px Arial";ctx.fillStyle="#29415d";ctx.textAlign="center";ctx.fillText("Pressão (hPa) × Temperatura (°C)",W/2,22);
- // Isóbaras
+ const inside=(xx,yy)=>xx>=L-2&&xx<=W-R+2&&yy>=T-2&&yy<=H-B+2;
+ ctx.font="15px Arial";ctx.fillStyle="#29415d";ctx.textAlign="center";ctx.fillText("SKEW-T / LOG-P · DIAGRAMA TERMODINÂMICO",W/2,22);
+ // Isóbaras e subdivisões
  [1000,925,850,700,600,500,400,300,250,200,150,100].forEach(p=>{
-  const yy=y(p);ctx.strokeStyle="#d8e1eb";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(W-R,yy);ctx.stroke();
+  const yy=y(p);ctx.strokeStyle="#cbd7e4";ctx.lineWidth=1.15;ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(W-R,yy);ctx.stroke();
   ctx.fillStyle="#526a83";ctx.textAlign="right";ctx.font="13px Arial";ctx.fillText(String(p),L-10,yy+4);
  });
- // Isotermas oblíquas
- for(let temp=-80;temp<=50;temp+=10){
-  ctx.beginPath();ctx.strokeStyle=temp===0?"#aab8c8":"#e7edf3";ctx.lineWidth=temp===0?2:1;
-  for(let p=1050;p>=100;p-=10){const xx=x(temp,p),yy=y(p);if(p===1050)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);}
+ for(let p=1000;p>=100;p-=25){
+  if([1000,925,850,700,600,500,400,300,250,200,150,100].includes(p))continue;
+  const yy=y(p);ctx.strokeStyle="#edf1f5";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(L,yy);ctx.lineTo(W-R,yy);ctx.stroke();
+ }
+ // Isotermas
+ for(let temp=-90;temp<=50;temp+=10){
+  ctx.beginPath();ctx.strokeStyle=temp===0?"#9eacbd":"#e3eaf1";ctx.lineWidth=temp===0?1.8:1;
+  let begun=false;
+  for(let p=1050;p>=100;p-=5){const xx=x(temp,p),yy=y(p);if(!inside(xx,yy)){begun=false;continue;}if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);}
   ctx.stroke();
   const xx=x(temp,1000);ctx.fillStyle="#526a83";ctx.textAlign="center";ctx.font="12px Arial";ctx.fillText(String(temp),xx,H-B+22);
  }
- // Adiabatas secas (linhas tracejadas): referência termodinâmica do Skew-T.
- // theta é a temperatura potencial em kelvin; T = theta*(p/1000)^0.286.
  ctx.save();
- ctx.setLineDash([7,6]);
- for(let thetaC=-20;thetaC<=120;thetaC+=10){
-  const thetaK=thetaC+273.15;
-  ctx.beginPath();ctx.strokeStyle="rgba(104,119,139,.72)";ctx.lineWidth=1;
-  let started=false;
-  for(let p=1050;p>=100;p-=5){
-   const tempK=thetaK*Math.pow(p/1000,0.286);
-   const tempC=tempK-273.15;
-   const xx=x(tempC,p),yy=y(p);
-   if(xx<L-2||xx>W-R+2){started=false;continue;}
-   if(!started){ctx.moveTo(xx,yy);started=true;}else ctx.lineTo(xx,yy);
-  }
-  ctx.stroke();
+ // Adiabáticas secas: theta constante
+ ctx.setLineDash([7,5]);
+ for(let thetaC=-30;thetaC<=130;thetaC+=10){
+  const thetaK=thetaC+273.15;ctx.beginPath();ctx.strokeStyle="rgba(104,119,139,.72)";ctx.lineWidth=1;
+  let begun=false;
+  for(let p=1050;p>=100;p-=4){
+   const temp=thetaK*Math.pow(p/1000,0.2854)-273.15,xx=x(temp,p),yy=y(p);
+   if(!inside(xx,yy)){begun=false;continue;}if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);
+  }ctx.stroke();
  }
- // Linhas de razão de mistura (g/kg), calculadas pela pressão de vapor e Td.
+ // Linhas de razão de mistura (g/kg)
  ctx.setLineDash([3,5]);
- for(const w of [0.4,1,2,4,8,12,16,20]){
-  ctx.beginPath();ctx.strokeStyle="rgba(31,145,119,.58)";ctx.lineWidth=1;
-  let started=false;
-  for(let p=1050;p>=400;p-=5){
-   const e=(w*p)/(622+w);
-   const log=Math.log(e/6.112);
-   const td=243.5*log/(17.67-log);
-   const xx=x(td,p),yy=y(p);
-   if(xx<L-2||xx>W-R+2){started=false;continue;}
-   if(!started){ctx.moveTo(xx,yy);started=true;}else ctx.lineTo(xx,yy);
-  }
-  ctx.stroke();
+ for(const w of [.4,1,2,4,8,12,16,20]){
+  ctx.beginPath();ctx.strokeStyle="rgba(31,145,119,.58)";ctx.lineWidth=1;let begun=false;
+  for(let p=1050;p>=400;p-=4){
+   const e=(w*p)/(622+w),log=Math.log(e/6.112),td=243.5*log/(17.67-log),xx=x(td,p),yy=y(p);
+   if(!inside(xx,yy)){begun=false;continue;}if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);
+  }ctx.stroke();
+ }
+ // Adiabáticas úmidas pseudoadiabáticas aproximadas por integração da taxa de lapse saturada.
+ ctx.setLineDash([]);
+ const esat=t=>6.112*Math.exp(17.67*t/(t+243.5));
+ const rsat=(p,t)=>.622*esat(t)/Math.max(.1,p-esat(t));
+ const moistStep=(tk,p,dp)=>{
+  const tc=tk-273.15,rs=rsat(p,tc),Lv=2.5e6,Rd=287.05,Cp=1004,eps=.622,g=9.80665;
+  const gamma=g*(1+Lv*rs/(Rd*tk))/(Cp+(Lv*Lv*rs*eps)/(Rd*tk*tk));
+  const dtdp=gamma*Rd*tk/(g*p*100);
+  return tk+dtdp*dp;
+ };
+ for(let startC=-10;startC<=40;startC+=10){
+  let tk=startC+273.15,p=1000;ctx.beginPath();ctx.strokeStyle="rgba(205,112,35,.55)";ctx.lineWidth=1.25;
+  let begun=false;
+  while(p>=100){
+   const temp=tk-273.15,xx=x(temp,p),yy=y(p);
+   if(inside(xx,yy)){if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);}else begun=false;
+   const dp=-4;tk=moistStep(tk,p,dp);p+=dp;
+  }ctx.stroke();
  }
  ctx.restore();
+ // Trajetória de uma parcela levantada desde o nível mais próximo da superfície.
+ const valid=rows.filter(r=>Number.isFinite(r.p)&&r.p>0&&Number.isFinite(r.temp));
+ const sfc=valid.reduce((a,b)=>b.p>a.p?b:a,valid[0]||null);
+ if(sfc){
+  const p0=sfc.p,t0=sfc.temp,td0=Number.isFinite(sfc.dew)?sfc.dew:null;
+  let tlcl=null,plcl=null;
+  if(td0!==null){
+   const tK=t0+273.15,tdK=td0+273.15;
+   const tlcl=1/(1/(tdK-56)+Math.log(tK/tdK)/800)+56;
+   const tlclC=tlcl-273.15;
+   plcl=p0*Math.pow(tlcl/tK,1/0.2854);
+   ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle="#8b4cc7";ctx.lineWidth=2.5;ctx.beginPath();
+   let begun=false;
+   for(let p=p0;p>=Math.max(pmin,plcl);p-=3){
+    const temp=(t0+273.15)*Math.pow(p/p0,.2854)-273.15,xx=x(temp,p),yy=y(p);
+    if(inside(xx,yy)){if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);}
+   }
+   ctx.stroke();
+   // Continuação saturada a partir do LCL
+   let tk=tlcl,p=Math.min(p0,plcl);ctx.beginPath();ctx.strokeStyle="#8b4cc7";ctx.lineWidth=2.5;begun=false;
+   while(p>=pmin){
+    const xx=x(tk-273.15,p),yy=y(p);
+    if(inside(xx,yy)){if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);}
+    tk=moistStep(tk,p,-2);p-=2;
+   }
+   ctx.stroke();
+   if(plcl>=pmin&&plcl<=pmax){
+    const lx=x(tlclC,plcl),ly=y(plcl);ctx.setLineDash([2,3]);ctx.strokeStyle="#8b4cc7";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(L,ly);ctx.lineTo(W-R,ly);ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle="#8b4cc7";ctx.beginPath();ctx.arc(lx,ly,5,0,Math.PI*2);ctx.fill();
+    ctx.font="bold 12px Arial";ctx.textAlign="left";ctx.fillText("LCL",Math.min(W-R-32,lx+8),ly-8);
+   }
+   ctx.restore();
+  }
+ }
  // Moldura
  ctx.strokeStyle="#7890a8";ctx.lineWidth=2;ctx.strokeRect(L,T,W-L-R,H-T-B);
  function trace(key,color){
-  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=4;ctx.lineJoin="round";let started=false;
-  rows.forEach(r=>{const value=r[key];if(value===null||!Number.isFinite(value)){started=false;return;}const xx=x(value,r.p),yy=y(r.p);if(!started){ctx.moveTo(xx,yy);started=true;}else ctx.lineTo(xx,yy);});
-  ctx.stroke();
+  ctx.beginPath();ctx.strokeStyle=color;ctx.lineWidth=4;ctx.lineJoin="round";ctx.lineCap="round";let begun=false;
+  rows.forEach(r=>{const value=r[key];if(value===null||!Number.isFinite(value)||!Number.isFinite(r.p)){begun=false;return;}
+   const xx=x(value,r.p),yy=y(r.p);if(!inside(xx,yy)){begun=false;return;}
+   if(!begun){ctx.moveTo(xx,yy);begun=true;}else ctx.lineTo(xx,yy);
+  });ctx.stroke();
  }
  trace("temp","#e33c3c");trace("dew","#159b67");
- ctx.font="bold 14px Arial";ctx.textAlign="left";ctx.fillStyle="#e33c3c";ctx.fillText("T",W-62,55);ctx.fillStyle="#159b67";ctx.fillText("Td",W-62,76);
- ctx.font="12px Arial";ctx.fillStyle="#526a83";ctx.textAlign="center";ctx.fillText("Temperatura (°C)",(L+W-R)/2,H-15);
+ // Legenda completa
+ ctx.font="bold 12px Arial";ctx.textAlign="left";
+ ctx.fillStyle="#e33c3c";ctx.fillText("T",W-72,52);
+ ctx.fillStyle="#159b67";ctx.fillText("Td",W-72,70);
+ ctx.fillStyle="#8b4cc7";ctx.fillText("Parcela / LCL",W-150,88);
+ ctx.fillStyle="#cd7023";ctx.fillText("Adiabática úmida",W-185,106);
+ ctx.font="11px Arial";ctx.fillStyle="#526a83";ctx.textAlign="center";
+ ctx.fillText("Temperatura (°C)",(L+W-R)/2,H-15);
+ ctx.save();ctx.translate(19,(T+H-B)/2);ctx.rotate(-Math.PI/2);ctx.fillText("Pressão (hPa) · escala logarítmica",0,0);ctx.restore();
 }
 function drawHodograph(rows){
  const c=document.getElementById("rsHodoCanvas"),ctx=c.getContext("2d"),W=c.width,H=c.height;
