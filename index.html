@@ -1897,7 +1897,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
     <input id="cgRainCape" type="number" inputmode="decimal" min="0" max="10000" step="1" placeholder="Aguardando Atmosfera" readonly>
    </label>
    <label>CIN (J/kg)
-    <input id="cgRainCin" type="number" inputmode="decimal" min="-1000" max="0" step="1" placeholder="Aguardando Atmosfera" readonly>
+    <input id="cgRainCin" type="number" inputmode="decimal" min="-1000" max="1000" step="1" placeholder="Aguardando Atmosfera" readonly>
    </label>
    <label class="cg-raincalc-wide">WIND SHEAR 0–6 km (m/s)
     <input id="cgRainShear" type="number" inputmode="decimal" min="0" max="100" step="0.1" placeholder="Aguardando Atmosfera" readonly>
@@ -6838,7 +6838,7 @@ function calculateCGRainPotential(){
   status.textContent="Aguardando dados completos do painel Atmosfera. Atualize os parâmetros atmosféricos e tente novamente.";
   output.innerHTML='—<em>%</em>';level.textContent="Dados incompletos";meter.style.width="0%";return;
  }
- if(pressure<850||pressure>1100||pressureTrend< -15||pressureTrend>15||cape<0||cape>10000||cin< -1000||cin>0||shear<0||shear>100){
+ if(pressure<850||pressure>1100||pressureTrend< -15||pressureTrend>15||cape<0||cape>10000||cin< -1000||cin>1000||shear<0||shear>100){
   status.textContent="Há valores fora dos limites aceitos. Confira as unidades e os números informados.";
   output.innerHTML='—<em>%</em>';level.textContent="Verifique os parâmetros";meter.style.width="0%";return;
  }
@@ -6849,15 +6849,16 @@ function calculateCGRainPotential(){
  // menor porque organiza tempestades, mas não cria chuva por si só.
  const pressureScore=Math.max(0,Math.min(100,((Math.max(0,-pressureTrend))/5)*100));
  const capeScore=Math.max(0,Math.min(100,(cape/2000)*100));
- const cinScore=Math.max(0,Math.min(100,((cin+250)/250)*100));
+ const cinMagnitude=Math.abs(cin);
+ const cinScore=Math.max(0,Math.min(100,100-(cinMagnitude/250)*100));
  const shearScore=Math.max(0,Math.min(100,(shear/30)*100));
  let index=(pressureScore*0.25)+(capeScore*0.35)+(cinScore*0.25)+(shearScore*0.15);
 
  // Penaliza cenários com energia muito baixa ou inibição muito forte.
  if(cape<100)index*=0.45;
  else if(cape<250)index*=0.70;
- if(cin<=-250)index*=0.35;
- else if(cin<=-150)index*=0.65;
+ if(cinMagnitude>=250)index*=0.35;
+ else if(cinMagnitude>=150)index*=0.65;
 
  const percent=Math.round(Math.max(0,Math.min(100,index)));
  let label="Potencial muito baixo";
@@ -6868,7 +6869,7 @@ function calculateCGRainPotential(){
  output.innerHTML=percent+'<em>%</em>';
  level.textContent=label;
  meter.style.width=percent+"%";
- status.textContent=`Cálculo matemático local concluído · pressão ${pressure.toFixed(1)} hPa · tendência ${pressureTrend>0?"+":""}${pressureTrend.toFixed(1)} hPa/3h · CAPE ${Math.round(cape)} J/kg · CIN ${Math.round(cin)} J/kg · shear ${shear.toFixed(1)} m/s.`;
+ status.textContent=`Cálculo matemático local concluído · pressão ${pressure.toFixed(1)} hPa · tendência ${pressureTrend>0?"+":""}${pressureTrend.toFixed(1)} hPa/3h · CAPE ${Math.round(cape)} J/kg · CIN ${Math.round(cinMagnitude)} J/kg de inibição · shear ${shear.toFixed(1)} m/s.`;
 }
 </script>
 <button id="cgPublicChatLauncher" class="cg-public-chat-launcher" type="button" onclick="cgOpenPublicChat()">CHAT PÚBLICO <span>●</span></button>
