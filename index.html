@@ -6,7 +6,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="#070b13" name="theme-color"/>
-<title>CLOUDGOD | Radar Meteorológico</title>
+<title>SUBARU ZX | Radar Meteorológico</title>
 <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box}
@@ -1213,7 +1213,7 @@ button{letter-spacing:.2px}
     <div class="startup-topline"><span class="startup-live-dot"></span> CENTRAL DE OPERAÇÕES <span class="startup-version">CLOUDGOD · WEB RADAR</span></div>
     <div class="startup-brand">
       <div class="startup-logo">☁</div>
-      <div><h1>CLOUDGOD</h1><small>METEOROLOGICAL INTELLIGENCE PLATFORM</small></div>
+      <div><h1>SUBARU ZX</h1><small>METEOROLOGICAL INTELLIGENCE PLATFORM</small></div>
     </div>
     <div class="startup-hero">
       <div>
@@ -1254,10 +1254,10 @@ button{letter-spacing:.2px}
 </div>
 <header>
 <div class="cg-global-search"><input aria-label="Pesquisar opções" autocomplete="off" id="cgOptionSearch" placeholder="Pesquisar produto, mapa ou ferramenta…" type="search"/></div><div class="brand">
-<div class="logo">☁</div>
+<div class="logo">✦</div>
 <div>
-<h1>CLOUDGOD</h1>
-<small>MONITORAMENTO METEOROLÓGICO</small>
+<h1>SUBARU ZX</h1>
+<small>SUBARU ZX · METEOROLOGIA</small>
 </div>
 </div>
 <div class="cg-place-search" id="cgPlaceSearch">
@@ -1328,8 +1328,8 @@ button{letter-spacing:.2px}
   <div id="map"></div>
   <button id="cgLiveLauncher" onclick="cgToggleLivePanel()" type="button">👥 USUÁRIOS AO VIVO <span id="cgLiveCount">0</span></button>
   <section aria-label="Usuários ao vivo" id="cgLivePanel">
-<div class="cg-live-gate-brand"><strong>CLOUDGOD</strong><span>ACESSO AO CLOUDGOD LIVE USERS</span></div>
-<div class="cg-live-title"><strong>☁ CLOUDGOD LIVE</strong><button class="cg-live-close" onclick="cgToggleLivePanel(false)" type="button">✕</button></div>
+<div class="cg-live-gate-brand"><strong>SUBARU ZX</strong><span>ACESSO AO SUBARU ZX LIVE</span></div>
+<div class="cg-live-title"><strong>✦ SUBARU ZX LIVE</strong><button class="cg-live-close" onclick="cgToggleLivePanel(false)" type="button">✕</button></div>
 <div id="cgLiveAuthArea">
 <div class="cg-live-status">Entre ou crie uma conta para aparecer no mapa. Sua localização não será compartilhada até você ativar a opção abaixo.</div>
 <label class="cg-live-field" for="cgLiveEmail">E-MAIL</label><input autocomplete="email" class="cg-live-input" id="cgLiveEmail" placeholder="seu@email.com" type="email"/>
@@ -1372,6 +1372,9 @@ button{letter-spacing:.2px}
 <span id="frameNumber">0 / 0</span>
 </div>
 <div class="options">
+<label for="loopDate">DATA DO HISTÓRICO</label>
+<input id="loopDate" type="date" aria-label="Selecionar data do histórico" />
+<button class="secondary" type="button" onclick="refreshRadar()">CARREGAR DATA</button>
 <label>VELOCIDADE</label>
 <select id="speed">
 <option value="1500">Lenta</option>
@@ -1389,6 +1392,10 @@ button{letter-spacing:.2px}
 <option value="30">30 frames</option>
 <option value="45">45 frames</option>
 <option value="60">60 frames</option>
+<option value="90">90 frames</option>
+<option value="120">120 frames</option>
+<option value="150">150 frames</option>
+<option value="190">190 frames</option>
 </select>
 <label><input id="autoRefresh" type="checkbox"/> Atualização automática</label>
 </div>
@@ -2054,7 +2061,7 @@ Toque em qualquer local do mapa para medir a distância em linha reta a partir d
 <button class="secondary" onclick="toggleEconomy()">SAIR DO MODO ECONOMIA</button>
 <button class="secondary" onclick="requestLocation()">MINHA LOCALIZAÇÃO</button>
 </div>
-<div class="footer">CLOUDGOD · REDEMET/DECEA · NOAA GOES-19 ABI BAND 13 · GOES-19 GLM · OPENSTREETMAP</div>
+<div class="footer">SUBARU ZX · REDEMET/DECEA · NOAA GOES-19 ABI BAND 13 · OPENSTREETMAP</div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
 // Inicializa o visualizador regional CPTEC sem interferir na REDEMET.
 document.addEventListener("DOMContentLoaded",()=>{cptecLoadStation();});
@@ -3278,28 +3285,18 @@ function cptecFrameUrl(station,time){
 }
 function cptecExtractTimes(payload){
  const found=new Set();
- const toStamp=date=>{
-  if(!(date instanceof Date)||!Number.isFinite(date.getTime()))return null;
-  return date.getUTCFullYear()+
-   String(date.getUTCMonth()+1).padStart(2,"0")+
-   String(date.getUTCDate()).padStart(2,"0")+
-   String(date.getUTCHours()).padStart(2,"0")+
-   String(date.getUTCMinutes()).padStart(2,"0")+
-   String(date.getUTCSeconds()).padStart(2,"0");
- };
  const add=value=>{
   if(typeof value==="number"&&Number.isFinite(value)){
    const ms=value>1e12?value:value>1e9?value*1000:NaN;
-   if(Number.isFinite(ms)){const stamp=toStamp(new Date(ms));if(stamp)found.add(stamp);}
+   if(Number.isFinite(ms)){const d=new Date(ms);if(!isNaN(d))found.add(d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0"));}
    return;
   }
   if(typeof value!=="string")return;
-  // Preserva todos os dígitos do timestamp compacto recebido (inclusive segundos).
-  const compact=value.match(/20\d{10,14}/g)||[];
+  const compact=value.match(/20\d{10}/g)||[];
   compact.forEach(t=>found.add(t));
-  // Datas ISO são normalizadas para UTC com precisão de segundos.
+  // Também aceita datas ISO retornadas pela API (ex.: 2026-11-14T12:30:00Z).
   const iso=value.match(/20\d{2}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?/g)||[];
-  iso.forEach(t=>{const stamp=toStamp(new Date(t));if(stamp)found.add(stamp);});
+  iso.forEach(t=>{const d=new Date(t);if(!isNaN(d))found.add(d.getUTCFullYear()+String(d.getUTCMonth()+1).padStart(2,"0")+String(d.getUTCDate()).padStart(2,"0")+String(d.getUTCHours()).padStart(2,"0")+String(d.getUTCMinutes()).padStart(2,"0"));});
  };
  const visit=value=>{
   if(typeof value==="string"||typeof value==="number")add(value);
@@ -3698,6 +3695,15 @@ function selectProduct(product){
 // DATA UTC E URL
 // ============================================
 
+function selectedHistoryBaseHour(){
+ const input=document.getElementById("loopDate");
+ const value=input?.value;
+ if(value && /^\\d{4}-\\d{2}-\\d{2}$/.test(value)){
+  // Usa o fim do dia escolhido em UTC para consultar o histórico daquela data.
+  return value.replaceAll("-","")+"23";
+ }
+ return utcHour();
+}
 function utcHour(offsetHours=0){
  const d=new Date(Date.now()+Number(offsetHours||0)*60*60*1000);
  return d.getUTCFullYear()+
@@ -3708,11 +3714,11 @@ function utcHour(offsetHours=0){
 
 function selectedFrameCount(){
  const selected=document.getElementById("loopFrameCount")?.value||"all";
- const requested=selected==="all"?60:Number(selected);
- return Math.max(1,Math.min(60,Number.isFinite(requested)?Math.floor(requested):60));
+ const requested=selected==="all"?190:Number(selected);
+ return Math.max(1,Math.min(190,Number.isFinite(requested)?Math.floor(requested):190));
 }
 
-function buildURL(dataHour=utcHour(),frameLimit=15){
+function buildURL(dataHour=selectedHistoryBaseHour(),frameLimit=15){
  // A REDEMET limita RADAR e SATÉLITE a 15 quadros por consulta.
  // Quantidades maiores são montadas em lotes de 15 horários.
  const safeLimit=Math.max(1,Math.min(15,Math.floor(Number(frameLimit)||15)));
@@ -3736,7 +3742,7 @@ async function fetchSelectedFrames(signal){
  if(counter)counter.textContent="0/"+requested;
  if(number)number.textContent="0 / "+requested;
  if(message)message.textContent="Iniciando busca de quadros...";
- const maxBatches=Math.min(48,Math.max(4,Math.ceil(requested/15)+12));
+ const maxBatches=Math.min(240,Math.max(4,Math.ceil(requested/15)+12));
  let nextBatch=0;
  const concurrency=Math.min(TURBO_ENGINE?8:4,maxBatches);
  const batchErrors=[];
@@ -3744,7 +3750,9 @@ async function fetchSelectedFrames(signal){
   while(nextBatch<maxBatches&&collected.size<requested){
    if(signal?.aborted)throw new DOMException("Busca cancelada","AbortError");
    const batch=nextBatch++;
-   const dataHour=utcHour(-batch);
+   const base=selectedHistoryBaseHour();
+    const baseDate=new Date(Date.UTC(Number(base.slice(0,4)),Number(base.slice(4,6))-1,Number(base.slice(6,8)),Number(base.slice(8,10))-batch));
+    const dataHour=baseDate.getUTCFullYear()+String(baseDate.getUTCMonth()+1).padStart(2,"0")+String(baseDate.getUTCDate()).padStart(2,"0")+String(baseDate.getUTCHours()).padStart(2,"0");
    try{
     const response=await fetch(buildURL(dataHour,15),{signal,cache:"no-store"});
     if(!response.ok)throw new Error("HTTP "+response.status);
@@ -4300,6 +4308,17 @@ document.getElementById("opacity").addEventListener("input",event=>{
 document.getElementById("speed").addEventListener("change",()=>{
  if(loopTimer) startLoop();
 });
+const loopDateInput=document.getElementById("loopDate");
+if(loopDateInput){
+ const today=new Date();
+ loopDateInput.value=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
+ loopDateInput.max=loopDateInput.value;
+ loopDateInput.addEventListener("change",()=>{
+  pauseLoop();
+  const msg=document.getElementById("message");
+  if(msg)msg.textContent="Data selecionada: "+loopDateInput.value+". Toque em ATUALIZAR para buscar os quadros deste dia.";
+ });
+}
 document.getElementById("loopFrameCount").addEventListener("change",()=>{
  const indexes=getLoopFrameIndexes();
  const requested=selectedFrameCount();
@@ -6819,8 +6838,10 @@ function calculateCGRainPotential(){
   status.textContent="Aguardando dados completos do painel Atmosfera. Atualize os parâmetros atmosféricos e tente novamente.";
   output.innerHTML='—<em>%</em>';level.textContent="Dados incompletos";meter.style.width="0%";return;
  }
- // Não há limites máximos ou mínimos fixos para os parâmetros.
- // A validação acima verifica apenas se todos os campos contêm números finitos.
+ if(pressure<850||pressure>1100||pressureTrend< -15||pressureTrend>15||cape<0||cape>10000||cin< -1000||cin>0||shear<0||shear>100){
+  status.textContent="Há valores fora dos limites aceitos. Confira as unidades e os números informados.";
+  output.innerHTML='—<em>%</em>';level.textContent="Verifique os parâmetros";meter.style.width="0%";return;
+ }
 
  // Componentes normalizados (0–100), com pesos explícitos.
  // Queda de pressão em 3h favorece levantamento; CIN forte reduz a chance
@@ -6983,6 +7004,47 @@ function makePdfFromCanvas(sourceCanvas){
 @media(max-width:850px){.cg-place-search{order:4;flex:1 0 100%;max-width:none;min-width:0}}
 @media(max-width:620px){.cg-place-search-row{min-height:41px}.cg-place-search-row input{font-size:11px}}
 
+
+/* SUBARU ZX · redesign principal */
+:root{--blue:#e8edf5;--bg:#07090d;--text:#eef2f7;--muted:#8994a3;--border:#242a34}
+html,body{background:#07090d!important;color:#eef2f7}
+body{background:radial-gradient(ellipse at 50% -20%,#1a2230 0%,#090c12 48%,#050609 100%)!important}
+header{background:rgba(9,12,18,.96)!important;border-bottom:1px solid #303846!important;box-shadow:0 8px 35px #0008!important;backdrop-filter:blur(18px)}
+.brand .logo{background:radial-gradient(circle at 35% 25%,#fff,#aebbd0 36%,#28364a 72%,#10151e)!important;color:#080b10!important;border:1px solid #c7d3e5;box-shadow:0 0 22px #b7c8e833!important;font-size:29px}
+.brand h1{color:#f4f7fb!important;letter-spacing:3px!important;font-weight:900}
+.brand small{color:#8e9bad!important}
+.cg-global-search input{background:#111720!important;border-color:#303a49!important;color:#eef2f7!important}
+main{max-width:1780px}
+.dashboard{grid-template-columns:minmax(0,1fr) minmax(310px,370px)!important;gap:18px}
+.map-card,.panel,.loop,.mn-panel,.rs-panel,.cg-bulletin,.cg-nowcasting-card{background:linear-gradient(145deg,#111720,#0b0f16)!important;border:1px solid #2b3543!important;box-shadow:0 16px 45px #0007!important;border-radius:17px!important;color:#eaf0f7}
+.map-head{background:linear-gradient(100deg,#111923,#0b1018)!important;border-bottom:1px solid #2c3746!important}
+.map-head h2,.panel h3,.loop h3,.mn-head h2,.rs-head h2{color:#f2f5fa!important}
+.map-head small,.panel-title span,.panel small,.loop .timeinfo{color:#8d9bad}
+.side{gap:14px}
+.cg-tab-nav{background:#0d131c!important;border-color:#2b3543!important}
+.cg-tab-btn{color:#9aa8ba!important}
+.cg-tab-btn.active{background:#202b3a!important;color:#fff!important;box-shadow:inset 0 0 0 1px #71849c!important}
+.product{background:#101720!important;border-color:#2a3544!important;color:#eaf0f7}
+.product.active{background:#1a2737!important;border-color:#8da2bd!important}
+.product strong{color:#f1f5fa}
+.product small{color:#98a6b7!important}
+button{border:1px solid #394657!important}
+.primary{background:linear-gradient(120deg,#dce5f1,#8798ae)!important;color:#10151d!important;border-color:#dce5f1!important}
+.secondary,.mode-button{background:#1a2431!important;color:#dce5f1!important}
+.danger{background:#3a2025!important;color:#ffb9c1!important;border-color:#70414a!important}
+select,input[type=date]{background:#111923!important;color:#eaf0f7!important;border:1px solid #344153!important;border-radius:9px;padding:10px;font:11px Arial,sans-serif}
+label{color:#a9b5c4!important}
+.info,.storm-panel,.dbz-professional,.render-quality-panel{background:#111a25!important;border-color:#2e3d50!important;color:#c5d0dd!important}
+.storm-table td,.storm-table th,.bt-table td{border-color:#293543!important;color:#cbd5e1}
+#map{background:#0c131d!important;border:1px solid #293544}
+.loop{padding:18px!important}
+.loop-head{gap:10px;flex-wrap:wrap}
+.options{gap:9px 12px}
+.options input[type=date]{min-width:145px}
+#message{color:#aab7c7}
+.footer{color:#6e7b8d}
+@media(max-width:850px){.dashboard{grid-template-columns:1fr!important}.side{display:block}.cg-tab-nav{grid-template-columns:repeat(3,minmax(0,1fr))}.map-card{min-width:0}}
+@media(max-width:480px){header{gap:10px}.brand h1{font-size:18px!important}.dashboard{gap:12px}.loop{padding:13px!important}.options{align-items:stretch}.options label{width:auto}.options select,.options input[type=date]{width:100%}}
 </style>
 <script id="cg-central-product-fade-rotation">
 (function(){
@@ -7167,11 +7229,7 @@ function cgCptecRequestLocation(){
    if(window.L&&window.map){if(cgCptecUserMarker&&map.hasLayer(cgCptecUserMarker))map.removeLayer(cgCptecUserMarker);cgCptecUserMarker=L.circleMarker(here,{radius:7,color:'#fff',weight:2,fillColor:'#16a6ff',fillOpacity:1}).addTo(map).bindPopup('Sua localização · análise CAPPI 3 km');}
   }catch(e){}
   const configs=CPTEC_RADAR_CONFIG||{};
-  const candidates=['ararangua','gama','morroigreja','picocouto']
-   .map(key=>({key,station:configs[key]}))
-   .filter(x=>x.station)
-   .map(x=>({...x,distance:cgCptecDistanceKm(here,x.station.center)}))
-   .sort((a,b)=>a.distance-b.distance);
+  const candidates=['ararangua','gama','morroigreja','picocouto'].map(key=>({key,station:configs[key]}).filter(x=>x.station).map(x=>({...x,distance:cgCptecDistanceKm(here,x.station.center)}))).flat().sort((a,b)=>a.distance-b.distance);
   const nearest=candidates[0];
   if(!nearest||nearest.distance>nearest.station.rangeKm){
    status.textContent='Localização obtida, mas nenhum dos quatro radares selecionados está dentro do alcance configurado. Não é possível concluir se está chovendo com esses radares.';
